@@ -1,0 +1,18 @@
+spring:
+  profiles:
+    active: remote  # ??? yml ?? ??(local, remote, test)
+  main:
+    allow-bean-definition-overriding: true
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 10MB
+
+# ?? ?? ??
+logging:
+  level:
+    org.hibernate.SQL: debug
+    org.hibernate.type: trace # ?? ???? ????? ???? ??
+
+server:
+  port: 8080
