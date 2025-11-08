@@ -1,0 +1,28 @@
+version: "3.8"
+
+services:
+  aim:
+    container_name: aim
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: always
+    networks:
+      - mariadb_net
+    ports:
+      - "8080:8080"
+    environment:
+      - DB_HOST=167.86.111.93
+      - DB_PORT=3306
+      - DB_NAME=aim_db
+      - DB_USERNAME=aim
+      - DB_PASSWORD=aimserver#01
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - TZ=Asia/Seoul
+    volumes:
+      - ~/deploy/aim/uploaded:/uploaded
+
+networks:
+  mariadb_net:
+    external: true
