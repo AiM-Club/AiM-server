@@ -107,17 +107,18 @@ jobs:
       - name: Prepare Remote Directories
         run: |
           sshpass -p "${{ secrets.SERVER_PASSWORD }}" ssh -p ${{ secrets.SERVER_PORT }} ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} "
-            mkdir -p /home/aim/docker-compose
+            mkdir -p ${{ secrets.ENV_DEPLOY_PATH }}
           "
 
       # 15. Transfer JAR, Dockerfile, docker-compose, .env
       - name: Transfer Files
         run: |
-          sshpass -p "${{ secrets.SERVER_PASSWORD }}" scp -P ${{ secrets.SERVER_PORT }} build/libs/*.jar ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:/home/aim/docker-compose/app.jar
-          sshpass -p "${{ secrets.SERVER_PASSWORD }}" scp -P ${{ secrets.SERVER_PORT }} Dockerfile ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:/home/aim/docker-compose/Dockerfile
-          sshpass -p "${{ secrets.SERVER_PASSWORD }}" scp -P ${{ secrets.SERVER_PORT }} docker-compose.prod.yml ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:/home/aim/docker-compose/docker-compose.prod.yml
+          DEPLOY_PATH=${{ secrets.ENV_DEPLOY_PATH }}
+          sshpass -p "${{ secrets.SERVER_PASSWORD }}" scp -P ${{ secrets.SERVER_PORT }} build/libs/*.jar ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:$DEPLOY_PATH/app.jar
+          sshpass -p "${{ secrets.SERVER_PASSWORD }}" scp -P ${{ secrets.SERVER_PORT }} Dockerfile ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:$DEPLOY_PATH/Dockerfile
+          sshpass -p "${{ secrets.SERVER_PASSWORD }}" scp -P ${{ secrets.SERVER_PORT }} docker-compose.prod.yml ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:$DEPLOY_PATH/docker-compose.prod.yml
 
-      - name: Create .env.prod
+      - name: Create .env.prod and transfer
         run: |
           echo "DB_HOST=${{ secrets.ENV_DB_HOST }}" >> .env.prod
           echo "DB_NAME=${{ secrets.ENV_DB_NAME }}" >> .env.prod
@@ -127,14 +128,15 @@ jobs:
           echo "JWT_SECRET_KEY=${{ secrets.ENV_JWT_SECRET_KEY }}" >> .env.prod
           echo "GEMINI_API_KEY=${{ secrets.ENV_GEMINI_API_KEY }}" >> .env.prod
           echo "TZ=Asia/Seoul" >> .env.prod
-          sshpass -p "${{ secrets.SERVER_PASSWORD }}" scp -P ${{ secrets.SERVER_PORT }} .env.prod ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:/home/aim/docker-compose/.env.prod
+          DEPLOY_PATH=${{ secrets.ENV_DEPLOY_PATH }}
+          sshpass -p "${{ secrets.SERVER_PASSWORD }}" scp -P ${{ secrets.SERVER_PORT }} .env.prod ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:$DEPLOY_PATH/.env.prod
 
       # 16. Deploy with Docker Compose
       - name: Remote Deploy
         run: |
+          DEPLOY_PATH=${{ secrets.ENV_DEPLOY_PATH }}
           sshpass -p "${{ secrets.SERVER_PASSWORD }}" ssh -p ${{ secrets.SERVER_PORT }} ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} "
-            cd /home/aim/docker-compose &&
+            cd $DEPLOY_PATH &&
             docker compose --env-file .env.prod -f docker-compose.prod.yml down &&
             docker compose --env-file .env.prod -f docker-compose.prod.yml up -d --build
           "
-
