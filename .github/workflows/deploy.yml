@@ -82,6 +82,10 @@ jobs:
       # 10. Build Spring Boot JAR
       - name: Build JAR
         run: ./gradlew bootJar
+      # 빌드된 JAR 파일을 Docker 인식 하도록 함
+      - name: Rename jar for Docker
+        run: |
+          cp build/libs/*.jar app.jar
 
       # 11. Docker Hub Login
       - name: Docker Hub Login
