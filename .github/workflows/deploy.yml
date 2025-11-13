@@ -19,12 +19,12 @@ jobs:
           ref: main
 
       # 2. Checkout Frontend
-      - name: Checkout Frontend
-        uses: actions/checkout@v4
-        with:
-          repository: AiM-Club/AiM-web
-          path: frontend
-          ref: main
+      #- name: Checkout Frontend
+       # uses: actions/checkout@v4
+      # with:
+        #  repository: AiM-Club/AiM-web
+         # path: frontend
+          # ref: main
 
       # 3. Setup Node.js
       - name: Setup Node.js
