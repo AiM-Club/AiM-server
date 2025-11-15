@@ -44,11 +44,11 @@ jobs:
             ${{ runner.os }}-npm-
 
       # 5. Build Frontend
-      - name: Build Frontend
-        working-directory: ./frontend
-        run: |
-          npm ci
-          npm run build
+      # - name: Build Frontend
+        # working-directory: ./frontend
+        # run: |
+          # npm ci
+         # npm run build
 
       # 6. Copy frontend build to Spring Boot static
       - name: Copy frontend build to Spring Boot static
