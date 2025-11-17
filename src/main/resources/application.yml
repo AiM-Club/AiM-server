@@ -1,6 +1,6 @@
 spring:
   profiles:
-    active: local  # ??? yml ?? ??(local, remote, test)
+    active: remote  # ??? yml ?? ??(local, remote, test)
   main:
     allow-bean-definition-overriding: true
   servlet:
