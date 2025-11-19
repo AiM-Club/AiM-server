@@ -5,6 +5,9 @@ import lombok.*;
 import lombok.experimental.SuperBuilder;
 import targeter.aim.common.auditor.TimeStampedEntity;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Entity
 @SuperBuilder
 @AllArgsConstructor
@@ -21,6 +24,10 @@ public class Tier extends TimeStampedEntity {
 
     @Column(nullable = false, length = 50)
     private String name;
+
+    @OneToMany(mappedBy = "tier")
+    @Builder.Default
+    private List<User> users = new ArrayList<>();
 
 //    뱃지 이미지 컬럼. File 도메인 완성 시 구현
 //    @OneToOne(mappedBy = "tier", cascade = CascadeType.ALL, orphanRemoval = true)
