@@ -1,4 +1,6 @@
 FROM eclipse-temurin:21-jre-alpine
+EXPOSE 8080
+
 WORKDIR /app
 ENV TZ=Asia/Seoul
 
