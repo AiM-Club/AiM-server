@@ -50,12 +50,12 @@ jobs:
           # npm ci
          # npm run build
 
-      # 6. Copy frontend build to Spring Boot static
-      - name: Copy frontend build to Spring Boot static
-        run: |
-          rm -rf ./src/main/resources/static/*
-          mkdir -p ./src/main/resources/static
-          cp -r ./frontend/dist/* ./src/main/resources/static/
+#      # 6. Copy frontend build to Spring Boot static
+#      - name: Copy frontend build to Spring Boot static
+#        run: |
+#          rm -rf ./src/main/resources/static/*
+#          mkdir -p ./src/main/resources/static
+#          cp -r ./frontend/dist/* ./src/main/resources/static/
 
       # 7. Setup JDK
       - name: Setup JDK 21
