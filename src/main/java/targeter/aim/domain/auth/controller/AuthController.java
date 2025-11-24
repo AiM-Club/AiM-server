@@ -1,9 +1,13 @@
 package targeter.aim.domain.auth.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -26,4 +30,12 @@ public class AuthController {
     public UserDto.UserResponse signUp(@ModelAttribute @Valid AuthDto.SignUpRequest request) {
         return authService.signUp(request);
     }
+
+    @NoJwtAuth("로그인은 인증이 필요하지 않음")
+    @PostMapping("/login")
+    @ApiResponse(responseCode = "200", description = "로그인 성공")
+    public AuthDto.SignInResponse signIn(@ModelAttribute @Valid AuthDto.SignInRequest request) {
+        return authService.signIn(request);
+    }
+
 }
