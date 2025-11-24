@@ -7,8 +7,10 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.multipart.MultipartFile;
+import targeter.aim.domain.user.dto.UserDto;
 import targeter.aim.domain.user.entity.Gender;
 import targeter.aim.domain.user.entity.User;
+import targeter.aim.system.security.model.JwtDto;
 
 import java.time.LocalDate;
 
@@ -35,6 +37,36 @@ public class AuthDto {
                     .password(encoder.encode(password))
                     .birthday(birthday)
                     .gender(gender)
+                    .build();
+        }
+    }
+
+    // 로그인 요청 DTO
+    @Data
+    @AllArgsConstructor
+    @NoArgsConstructor
+    @Builder
+    public static class SignInRequest {
+        private String email;
+        private String password;
+    }
+
+    // 로그인 응답 DTO
+    @Data
+    @AllArgsConstructor
+    @NoArgsConstructor
+    @Builder
+    public static class SignInResponse {
+        private UserDto.UserResponse user;
+        private JwtDto.TokenInfo token;
+
+        public static SignInResponse of(
+                UserDto.UserResponse user,
+                JwtDto.TokenInfo token
+        ) {
+            return SignInResponse.builder()
+                    .user(user)
+                    .token(token)
                     .build();
         }
     }
