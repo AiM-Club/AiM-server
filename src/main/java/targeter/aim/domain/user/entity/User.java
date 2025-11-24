@@ -2,6 +2,7 @@ package targeter.aim.domain.user.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import lombok.experimental.SuperBuilder;
 import targeter.aim.common.auditor.TimeStampedEntity;
 
 import java.time.LocalDate;
@@ -11,6 +12,7 @@ import java.time.LocalDate;
 @NoArgsConstructor
 @Getter
 @Setter
+@SuperBuilder
 @Table(name = "USER_ACCOUNT", uniqueConstraints = {
         @UniqueConstraint(name = "USER_EMAIL", columnNames = "email"),
         @UniqueConstraint(name = "USER_NICKNAME", columnNames = "nickname")
@@ -25,7 +27,7 @@ public class User extends TimeStampedEntity {
     @Column(nullable = false, length = 50)
     private String email;   // 계정 아이디 + 구글/카카오 이메일
 
-    @Column(nullable = false, length = 50)
+    @Column(nullable = false, length = 60)
     private String password;
 
     @Column(nullable = false, length = 50)
