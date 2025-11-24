@@ -3,6 +3,7 @@ package targeter.aim.domain.auth.controller;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -21,6 +22,7 @@ import targeter.aim.system.security.model.UserDetails;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/auth")
+@Tag(name = "Auth", description = "인증/인가 API")
 public class AuthController {
     private final AuthService authService;
 
@@ -34,12 +36,14 @@ public class AuthController {
 
     @NoJwtAuth("로그인은 인증이 필요하지 않음")
     @PostMapping("/login")
+    @Operation(summary = "로그인", description = "아이디와 비밀번호로 로그인하여 JWT 토큰을 발급받습니다.")
     @ApiResponse(responseCode = "200", description = "로그인 성공")
     public AuthDto.SignInResponse signIn(@ModelAttribute @Valid AuthDto.SignInRequest request) {
         return authService.signIn(request);
     }
 
     @PostMapping("/logout")
+    @Operation(summary = "로그아웃", description = "현재 사용자의 Refresh Token을 삭제하며 로그아웃 처리합니다.")
     @ApiResponse(responseCode = "200", description = "로그아웃 성공")
     public ResponseEntity<String> logout(
             @Parameter (hidden = true) @AuthenticationPrincipal UserDetails userDetails, HttpServletRequest request) {
