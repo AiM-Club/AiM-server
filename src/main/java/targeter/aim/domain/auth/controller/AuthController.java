@@ -16,6 +16,7 @@ import targeter.aim.domain.auth.dto.AuthDto;
 import targeter.aim.domain.auth.service.AuthService;
 import targeter.aim.domain.user.dto.UserDto;
 import targeter.aim.system.security.annotation.NoJwtAuth;
+import targeter.aim.system.security.model.UserDetails;
 
 @RestController
 @RequiredArgsConstructor
@@ -38,4 +39,11 @@ public class AuthController {
         return authService.signIn(request);
     }
 
+    @PostMapping("/logout")
+    @ApiResponse(responseCode = "200", description = "로그아웃 성공")
+    public ResponseEntity<String> logout(
+            @Parameter (hidden = true) @AuthenticationPrincipal UserDetails userDetails, HttpServletRequest request) {
+        authService.logout(userDetails, request);
+        return ResponseEntity.ok("Logout successful.");
+    }
 }
