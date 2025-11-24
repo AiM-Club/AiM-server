@@ -1,5 +1,6 @@
 package targeter.aim.domain.auth.service;
 
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -10,6 +11,7 @@ import targeter.aim.domain.auth.token.entity.RefreshToken;
 import targeter.aim.domain.auth.token.entity.dto.RefreshTokenDto;
 import targeter.aim.domain.auth.token.repository.RefreshTokenCacheRepository;
 import targeter.aim.domain.auth.token.repository.RefreshTokenRepository;
+import targeter.aim.domain.auth.token.validator.RefreshTokenValidator;
 import targeter.aim.domain.user.dto.UserDto;
 import targeter.aim.domain.user.entity.Tier;
 import targeter.aim.domain.user.entity.User;
@@ -20,6 +22,7 @@ import targeter.aim.system.exception.model.RestException;
 import targeter.aim.system.security.model.JwtDto;
 import targeter.aim.system.security.model.UserDetails;
 import targeter.aim.system.security.utility.jwt.JwtTokenProvider;
+import targeter.aim.system.security.utility.jwt.JwtTokenResolver;
 
 
 @Service
@@ -29,8 +32,10 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final TierRepository tierRepository;
     private final JwtTokenProvider jwtTokenProvider;
+    private final JwtTokenResolver jwtTokenResolver;
     private final RefreshTokenRepository refreshTokenRepository;
     private final RefreshTokenCacheRepository refreshTokenCacheRepository;
+    private final RefreshTokenValidator refreshTokenValidator;
 
     @Transactional
     public UserDto.UserResponse signUp(AuthDto.SignUpRequest request) {
@@ -73,4 +78,18 @@ public class AuthService {
 
     }
 
+    @Transactional
+    public void logout(UserDetails userDetails, HttpServletRequest request) {
+        String accessToken = getAccessTokenFromRequest(request);
+        String refreshUuid = jwtTokenResolver.resolveTokenFromString(accessToken).getRefreshUuid();
+
+        refreshTokenValidator.validateOrThrow(userDetails.getKey(), refreshUuid);
+        refreshTokenRepository.deleteByUuid(refreshUuid);
+        refreshTokenCacheRepository.evictRefreshUuid(refreshUuid);
+    }
+
+    private String getAccessTokenFromRequest(HttpServletRequest request) {
+        return jwtTokenResolver.parseTokenFromRequest(request)
+                .orElseThrow(() -> new RestException(ErrorCode.AUTH_TOKEN_MISSING));
+    }
 }
