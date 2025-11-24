@@ -25,8 +25,12 @@ public enum ErrorCode {
     AUTH_CANNOT_GENERATE_TOKEN(400, "인증키를 생성 할 수 없습니다."),
     AUTH_TOKEN_MISSING(401, "JWT 토큰이 누락되었습니다."),
 
+    // Auth
+    AUTH_PASSWORD_NOT_MATCH(401, "비밀번호가 올바르지 않습니다."),
+
     // User
     USER_ALREADY_EMAIL_EXISTS(409, "중복되는 아이디입니다."),
+    USER_NOT_FOUND(404, "존재하지 않는 사용자입니다."),
 
     // TIER
     TIER_NOT_FOUND(404, "해당 티어를 찾을 수 없습니다."),
