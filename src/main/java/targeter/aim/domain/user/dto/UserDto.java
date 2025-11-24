@@ -44,6 +44,8 @@ public class UserDto {
             return UserResponse.builder()
                     .email(user.getEmail())
                     .nickname(user.getNickname())
+                    .birthday(user.getBirthday())
+                    .gender(user.getGender())
                     .socialLogin(user.getSocialLogin() == null ? null : user.getSocialLogin().name())
                     .createdAt(user.getCreatedAt())
                     .lastModifiedAt(user.getLastModifiedAt())
