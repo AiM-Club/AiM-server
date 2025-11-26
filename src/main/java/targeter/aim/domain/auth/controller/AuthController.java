@@ -15,6 +15,7 @@ import targeter.aim.domain.auth.service.AuthService;
 import targeter.aim.domain.user.dto.UserDto;
 import targeter.aim.system.security.annotation.NoJwtAuth;
 import targeter.aim.system.security.model.UserDetails;
+import targeter.aim.system.security.utility.validator.ValidatorUtil;
 
 @RestController
 @RequiredArgsConstructor
@@ -37,6 +38,13 @@ public class AuthController {
     @ApiResponse(responseCode = "200", description = "로그인 성공")
     public AuthDto.SignInResponse signIn(@RequestBody @Valid AuthDto.SignInRequest request) {
         return authService.signIn(request);
+    }
+
+    @NoJwtAuth("아이디 검증은 인증이 필요하지 않음")
+    @GetMapping("/id-exist")
+    public AuthDto.IdExistResponse checkId(@RequestParam("id") String loginId) {
+        ValidatorUtil.validateId(loginId);
+        return authService.checkId(loginId);
     }
 
     @PostMapping("/logout")

@@ -107,4 +107,19 @@ public class AuthDto {
                     .build();
         }
     }
+
+    // 아이디 중복검사 응답 DTO
+    @Data
+    @AllArgsConstructor
+    @NoArgsConstructor
+    @Builder
+    public static class IdExistResponse {
+        private Boolean isExist;
+
+        public static IdExistResponse from(Boolean isExist) {
+            return IdExistResponse.builder()
+                    .isExist(isExist)
+                    .build();
+        }
+    }
 }

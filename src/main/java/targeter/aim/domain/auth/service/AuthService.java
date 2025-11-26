@@ -78,6 +78,12 @@ public class AuthService {
 
     }
 
+    @Transactional(readOnly = true)
+    public AuthDto.IdExistResponse checkId(String loginId) {
+        boolean exists = userRepository.existsByLoginId(loginId);
+        return AuthDto.IdExistResponse.from(exists);
+    }
+
     @Transactional
     public void logout(UserDetails userDetails, HttpServletRequest request) {
         String accessToken = getAccessTokenFromRequest(request);
