@@ -47,6 +47,13 @@ public class AuthController {
         return authService.checkId(loginId);
     }
 
+    @NoJwtAuth("닉네임 검증은 인증이 필요하지 않음")
+    @GetMapping("/nickname-exist")
+    public AuthDto.NicknameExistResponse checkNickname(@RequestParam("nickname") String nickname) {
+        ValidatorUtil.validateNickname(nickname);
+        return authService.checkNickname(nickname);
+    }
+
     @PostMapping("/logout")
     @Operation(summary = "로그아웃", description = "현재 사용자의 Refresh Token을 삭제하며 로그아웃 처리합니다.")
     @ApiResponse(responseCode = "200", description = "로그아웃 성공")

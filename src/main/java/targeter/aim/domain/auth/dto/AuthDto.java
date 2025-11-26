@@ -122,4 +122,19 @@ public class AuthDto {
                     .build();
         }
     }
+
+    // 닉네임 중복검사 응답 DTO
+    @Data
+    @AllArgsConstructor
+    @NoArgsConstructor
+    @Builder
+    public static class NicknameExistResponse {
+        private Boolean isExist;
+
+        public static NicknameExistResponse from(Boolean isExist) {
+            return NicknameExistResponse.builder()
+                    .isExist(isExist)
+                    .build();
+        }
+    }
 }

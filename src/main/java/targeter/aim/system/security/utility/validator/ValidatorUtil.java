@@ -21,4 +21,14 @@ public class ValidatorUtil {
             throw new RestException(ErrorCode.AUTH_INVALID_ID_FORMAT);
         }
     }
+
+    public static void validateNickname(String nickname) {
+        if(!StringUtils.hasText(nickname)) {
+            throw new RestException(ErrorCode.AUTH_NICKNAME_REQUIRED);
+        }
+
+        if(!Pattern.matches(NICKNAME_REGEXP, nickname)) {
+            throw new RestException(ErrorCode.AUTH_INVALID_NICKNAME_FORMAT);
+        }
+    }
 }
