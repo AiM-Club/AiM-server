@@ -14,7 +14,8 @@ import java.time.LocalDate;
 @Setter
 @SuperBuilder
 @Table(name = "USER_ACCOUNT", uniqueConstraints = {
-        @UniqueConstraint(name = "USER_EMAIL", columnNames = "email"),
+        @UniqueConstraint(name = "USER_LOGIN_ID", columnNames = "login_id"),
+        @UniqueConstraint(name = "USER_SOCIAL_ID", columnNames = "social_id"),
         @UniqueConstraint(name = "USER_NICKNAME", columnNames = "nickname")
 })
 public class User extends TimeStampedEntity {
@@ -24,11 +25,11 @@ public class User extends TimeStampedEntity {
     @Setter(AccessLevel.NONE)
     private Long id;
 
-    @Column(nullable = false, length = 50)
-    private String email;   // 계정 아이디 + 구글/카카오 이메일
+    @Column(length = 50, name = "login_id")
+    private String loginId;     // 자체 로그인 계정 아이디, 소셜 로그인 시 null
 
-    @Column(nullable = false, length = 60)
-    private String password;
+    @Column(length = 60)
+    private String password;    // 소셜 로그인 시 null
 
     @Column(nullable = false, length = 50)
     private String nickname;
@@ -44,6 +45,9 @@ public class User extends TimeStampedEntity {
     @Column(length = 50, name = "social_login")
     private SocialLogin socialLogin;
 
+    @Column(name = "social_id")
+    private String socialId;    // 구글 / 카카오 연동 아이디
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(nullable = false, name = "tier_id")
     private Tier tier;  // 1~30 : Bronze, 31~60 : Silver, 61~80 : Gold, 81~100 : Diamond
@@ -52,4 +56,12 @@ public class User extends TimeStampedEntity {
 //    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
 //    @JoinColumn(name = "profile_image_id")
 //    private ProfileImage profileImage;
+
+    public boolean isLocalUser() {
+        return this.socialLogin == null;
+    }
+
+    public boolean isSocialUser() {
+        return this.socialLogin != null;
+    }
 }
