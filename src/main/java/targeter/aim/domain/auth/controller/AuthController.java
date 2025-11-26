@@ -42,6 +42,8 @@ public class AuthController {
 
     @NoJwtAuth("아이디 검증은 인증이 필요하지 않음")
     @GetMapping("/id-exist")
+    @Operation(summary = "아이디 중복 검사", description = "입력된 아이디의 중복 여부를 확인합니다.")
+    @ApiResponse(responseCode = "200", description = "아이디 중복 검사 성공")
     public AuthDto.IdExistResponse checkId(@RequestParam("id") String loginId) {
         ValidatorUtil.validateId(loginId);
         return authService.checkId(loginId);
@@ -49,6 +51,8 @@ public class AuthController {
 
     @NoJwtAuth("닉네임 검증은 인증이 필요하지 않음")
     @GetMapping("/nickname-exist")
+    @Operation(summary = "닉네임 중복 검사", description = "입력된 닉네임의 중복 여부를 확인합니다.")
+    @ApiResponse(responseCode = "200", description = "닉네임 중복 검사 성공")
     public AuthDto.NicknameExistResponse checkNickname(@RequestParam("nickname") String nickname) {
         ValidatorUtil.validateNickname(nickname);
         return authService.checkNickname(nickname);

@@ -113,7 +113,9 @@ public class AuthDto {
     @AllArgsConstructor
     @NoArgsConstructor
     @Builder
+    @Schema(description = "아이디 중복 검사 응답 DTO")
     public static class IdExistResponse {
+        @Schema(description = "아이디 존재 여부 (true/false)", example = "false")
         private Boolean isExist;
 
         public static IdExistResponse from(Boolean isExist) {
@@ -128,7 +130,9 @@ public class AuthDto {
     @AllArgsConstructor
     @NoArgsConstructor
     @Builder
+    @Schema(description = "닉네임 중복 검사 응답 DTO")
     public static class NicknameExistResponse {
+        @Schema(description = "닉네임 존재 여부 (true/false)", example = "false")
         private Boolean isExist;
 
         public static NicknameExistResponse from(Boolean isExist) {
