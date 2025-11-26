@@ -15,7 +15,7 @@ public class UserDto {
     @Getter
     public static class UserResponse {
         @Schema(description = "아이디", example = "user1234")
-        private String email;
+        private String loginId;
 
         @Schema(description = "사용자 닉네임", example = "nickname")
         private String nickname;
@@ -42,7 +42,7 @@ public class UserDto {
 
         public static UserResponse from(User user) {
             return UserResponse.builder()
-                    .email(user.getEmail())
+                    .loginId(user.getLoginId())
                     .nickname(user.getNickname())
                     .birthday(user.getBirthday())
                     .gender(user.getGender())

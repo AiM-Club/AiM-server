@@ -27,9 +27,13 @@ public enum ErrorCode {
 
     // Auth
     AUTH_PASSWORD_NOT_MATCH(401, "비밀번호가 올바르지 않습니다."),
+    AUTH_ID_REQUIRED(400, "자체 회원가입 시 아이디는 필수 입력 값입니다."),
+    AUTH_INVALID_ID_FORMAT(400, "아이디는 영문 소문자와 숫자를 포함한 8~16글자여야 합니다."),
+    AUTH_NICKNAME_REQUIRED(400, "닉네임은 필수 입력 값입니다."),
+    AUTH_INVALID_NICKNAME_FORMAT(400, "닉네임은 한글, 영문, 숫자로만 구성되며 1~10자여야 합니다."),
 
     // User
-    USER_ALREADY_EMAIL_EXISTS(409, "중복되는 아이디입니다."),
+    USER_ALREADY_LOGIN_ID_EXISTS(409, "중복되는 아이디입니다."),
     USER_NOT_FOUND(404, "존재하지 않는 사용자입니다."),
 
     // TIER

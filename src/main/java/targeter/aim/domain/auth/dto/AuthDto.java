@@ -23,12 +23,12 @@ public class AuthDto {
     @AllArgsConstructor
     @NoArgsConstructor
     @Builder
-    @Schema(description = "회원가입 요청 DTO",  requiredProperties = {"email", "nickname", "password", "birthday", "gender"})
+    @Schema(description = "회원가입 요청 DTO",  requiredProperties = {"login_id", "nickname", "password", "birthday", "gender"})
     public static class SignUpRequest {
         @NotBlank(message = "아이디를 입력해주세요.")
         @Schema(description = "아이디", example = "user1234")
         @Pattern(regexp = "^(?=.*[a-z])(?=.*[0-9])[a-z0-9]{8,16}$", message = "아이디는 영문 소문자와 숫자를 각각 1자 이상 포함하며, 8~16자여야 합니다.")
-        private String email;
+        private String loginId;
 
         @NotBlank(message = "닉네임을 입력해주세요.")
         @Schema(description = "닉네임", example = "nickname")
@@ -58,7 +58,7 @@ public class AuthDto {
 
         public User toEntity(PasswordEncoder encoder) {
             return User.builder()
-                    .email(email)
+                    .loginId(loginId)
                     .nickname(nickname)
                     .password(encoder.encode(password))
                     .birthday(birthday)
@@ -76,7 +76,7 @@ public class AuthDto {
     public static class SignInRequest {
         @NotBlank(message = "아이디를 입력해주세요.")
         @Schema(description = "아이디", example = "user1234")
-        private String email;
+        private String loginId;
 
         @NotBlank(message = "비밀번호를 입력해주세요.")
         @Pattern(regexp = "^(?=.*[a-z])(?=.*[0-9])(?=.*[!@#$%^&*?_])[a-z0-9!@#$%^&*?_]{8,16}$",  message = "비밀번호는 영문 소문자, 숫자, 특수문자를 각각 1자 이상 포함하며 8~16자여야 합니다.")
@@ -104,6 +104,40 @@ public class AuthDto {
             return SignInResponse.builder()
                     .user(user)
                     .token(token)
+                    .build();
+        }
+    }
+
+    // 아이디 중복검사 응답 DTO
+    @Data
+    @AllArgsConstructor
+    @NoArgsConstructor
+    @Builder
+    @Schema(description = "아이디 중복 검사 응답 DTO")
+    public static class IdExistResponse {
+        @Schema(description = "아이디 존재 여부 (true/false)", example = "false")
+        private Boolean isExist;
+
+        public static IdExistResponse from(Boolean isExist) {
+            return IdExistResponse.builder()
+                    .isExist(isExist)
+                    .build();
+        }
+    }
+
+    // 닉네임 중복검사 응답 DTO
+    @Data
+    @AllArgsConstructor
+    @NoArgsConstructor
+    @Builder
+    @Schema(description = "닉네임 중복 검사 응답 DTO")
+    public static class NicknameExistResponse {
+        @Schema(description = "닉네임 존재 여부 (true/false)", example = "false")
+        private Boolean isExist;
+
+        public static NicknameExistResponse from(Boolean isExist) {
+            return NicknameExistResponse.builder()
+                    .isExist(isExist)
                     .build();
         }
     }
