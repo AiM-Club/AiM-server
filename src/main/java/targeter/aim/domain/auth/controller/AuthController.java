@@ -9,10 +9,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.ModelAttribute;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import targeter.aim.domain.auth.dto.AuthDto;
 import targeter.aim.domain.auth.service.AuthService;
 import targeter.aim.domain.user.dto.UserDto;
@@ -38,7 +35,7 @@ public class AuthController {
     @PostMapping("/login")
     @Operation(summary = "로그인", description = "아이디와 비밀번호로 로그인하여 JWT 토큰을 발급받습니다.")
     @ApiResponse(responseCode = "200", description = "로그인 성공")
-    public AuthDto.SignInResponse signIn(@ModelAttribute @Valid AuthDto.SignInRequest request) {
+    public AuthDto.SignInResponse signIn(@RequestBody @Valid AuthDto.SignInRequest request) {
         return authService.signIn(request);
     }
 
