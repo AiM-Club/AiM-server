@@ -29,7 +29,7 @@ public enum ErrorCode {
     AUTH_PASSWORD_NOT_MATCH(401, "비밀번호가 올바르지 않습니다."),
 
     // User
-    USER_ALREADY_EMAIL_EXISTS(409, "중복되는 아이디입니다."),
+    USER_ALREADY_LOGIN_ID_EXISTS(409, "중복되는 아이디입니다."),
     USER_NOT_FOUND(404, "존재하지 않는 사용자입니다."),
 
     // TIER

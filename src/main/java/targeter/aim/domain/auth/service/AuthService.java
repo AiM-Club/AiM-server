@@ -39,9 +39,9 @@ public class AuthService {
 
     @Transactional
     public UserDto.UserResponse signUp(AuthDto.SignUpRequest request) {
-        boolean isExisting = userRepository.existsByEmail(request.getEmail());
+        boolean isExisting = userRepository.existsByLoginId(request.getLoginId());
         if (isExisting){
-            throw new RestException(ErrorCode.USER_ALREADY_EMAIL_EXISTS);
+            throw new RestException(ErrorCode.USER_ALREADY_LOGIN_ID_EXISTS);
         }
         User toSave = request.toEntity(passwordEncoder);
         Tier bronze = tierRepository.findByName("BRONZE") // 신규 회원 기본 티어=BRONZE 설정
@@ -55,7 +55,7 @@ public class AuthService {
 
     @Transactional
     public AuthDto.SignInResponse signIn(@Valid AuthDto.SignInRequest request) {
-        var found = userRepository.findByEmail(request.getEmail())
+        var found = userRepository.findByLoginId(request.getLoginId())
                 .orElseThrow(() -> new RestException(ErrorCode.USER_NOT_FOUND));
 
         if (!passwordEncoder.matches(request.getPassword(), found.getPassword()))
