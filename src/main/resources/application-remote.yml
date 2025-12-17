@@ -1,18 +1,19 @@
 spring:
-  h2:
-    console:
-      enabled: true
+
 
   datasource:
-    url: jdbc:mariadb://${DB_HOST}:${DB_PORT}/${DB_NAME}
-    driver-class-name: org.mariadb.jdbc.Driver
-    username: ${DB_USERNAME}
-    password: ${DB_PASSWORD}
+    url: jdbc:mysql://your-rds-url:3306/aim?characterEncoding=UTF-8&serverTimezone=UTC
+    username: your-username
+    password: your-password
+    driver-class-name:
 
-  # jpa설정
+    # jpa설정
   jpa:
     hibernate:
       ddl-auto: update
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQL8Dialect
 
 # 로그 레벨 설정
 logging:
