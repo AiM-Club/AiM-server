@@ -1,6 +1,6 @@
 spring:
   profiles:
-    active: test  # 사용할 프로필: local, remote, test
+    active: remote  # 사용할 프로필: local, remote, test
   main:
     allow-bean-definition-overriding: true
   servlet:
