@@ -17,3 +17,14 @@ spring:
     properties: # property 사용 설정
       hibernate: # hibernate property 설정
         format_sql: true
+
+jwt:
+  secret: QWltU2VjcmV0S2V5XzIwMjUhQCNBaW1TZXJ2ZXJKV1Q=
+  access-token-expiration-minutes: 30
+  refresh-token-expiration-weeks: 2
+
+cache:
+  specs:
+    refresh-token-uuid:
+      expiration-week: 2
+      maximum-size: 10000

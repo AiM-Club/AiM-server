@@ -14,6 +14,7 @@ import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedBy;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+import targeter.aim.domain.user.entity.User;
 
 import java.time.LocalDateTime;
 
@@ -32,12 +33,12 @@ public abstract class UserStampedEntity {
     @LastModifiedDate
     private LocalDateTime lastModifiedAt;
 
-//    @CreatedBy
-//    @ManyToOne(fetch = FetchType.LAZY)
-//    private User createdBy;
-//
-//    @LastModifiedBy
-//    @ManyToOne(fetch = FetchType.LAZY)
-//    private User lastModifiedBy;
+    @CreatedBy
+    @ManyToOne(fetch = FetchType.LAZY)
+    private User createdBy;
+
+    @LastModifiedBy
+    @ManyToOne(fetch = FetchType.LAZY)
+    private User lastModifiedBy;
 
 }

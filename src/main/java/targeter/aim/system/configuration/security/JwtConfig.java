@@ -1,0 +1,69 @@
+package targeter.aim.system.configuration.security;
+
+import io.jsonwebtoken.SignatureAlgorithm;
+import io.jsonwebtoken.security.Keys;
+import org.springframework.beans.factory.annotation.Value;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.util.StringUtils;
+import org.springframework.web.servlet.HandlerExceptionResolver;
+import targeter.aim.domain.auth.token.validator.RefreshTokenValidator;
+import targeter.aim.system.security.configurer.JwtAutoConfigurerFactory;
+import targeter.aim.system.security.initializer.JwtAuthPathInitializer;
+import targeter.aim.system.security.utility.jwt.JwtTokenProvider;
+import targeter.aim.system.security.utility.jwt.JwtTokenResolver;
+
+import java.security.Key;
+
+@Slf4j
+@Configuration
+public class JwtConfig {
+    private final Key secret;
+    private final HandlerExceptionResolver handlerExceptionResolver;
+    private final RefreshTokenValidator refreshTokenValidator;
+    private final JwtAuthPathInitializer jwtAuthPathInitializer;
+
+    public JwtConfig(
+            @Value("${jwt.secret:#{null}}")
+            String secretText,
+            HandlerExceptionResolver handlerExceptionResolver,
+            RefreshTokenValidator refreshTokenValidator,
+            JwtAuthPathInitializer jwtAuthPathInitializer
+    ) {
+        if(StringUtils.hasText(secretText) && secretText.length() < 32) {
+            throw new IllegalStateException("Jwt Secret 은 32자 이상이어야 합니다.");
+        }else {
+            if(StringUtils.hasText(secretText)) {
+                secret = Keys.hmacShaKeyFor(secretText.getBytes());
+            }else{
+                this.secret = Keys.secretKeyFor(SignatureAlgorithm.HS256);
+                log.warn("JWT Secret이 설정되지 않았습니다. 랜덤한 값이 생성되어 사용됩니다.");
+            }
+        }
+
+        this.handlerExceptionResolver = handlerExceptionResolver;
+        this.refreshTokenValidator = refreshTokenValidator;
+        this.jwtAuthPathInitializer = jwtAuthPathInitializer;
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    public JwtTokenProvider jwtTokenProvider(JwtProperties jwtProperties) {
+        return new JwtTokenProvider(secret, jwtProperties);
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    public JwtTokenResolver jwtTokenResolver() {
+        return new JwtTokenResolver(secret);
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    public JwtAutoConfigurerFactory jwtAutoConfigurerFactory() {
+        return new JwtAutoConfigurerFactory(this.handlerExceptionResolver, jwtTokenResolver(), refreshTokenValidator, jwtAuthPathInitializer);
+    }
+}
+
