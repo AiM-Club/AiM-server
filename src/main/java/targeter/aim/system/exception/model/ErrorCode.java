@@ -45,6 +45,11 @@ public enum ErrorCode {
     // TIER
     TIER_NOT_FOUND(404, "해당 티어를 찾을 수 없습니다."),
 
+    // File Storage
+    FILE_METADATA_BUT_DISK_NOT_FOUND(404, "파일 메타데이터는 존재하지만 디스크에서 파일을 찾을 수 없습니다."),
+    FILE_NOT_READABLE(400, "파일을 읽을 수 없습니다."),
+    FILE_ACCESS_DENIED(403, "파일 접근 권한이 없습니다."),
+
     // Other
     INTERNAL_SERVER_ERROR(500, "오류가 발생했습니다.");
 
