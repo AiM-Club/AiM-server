@@ -6,6 +6,7 @@ import lombok.Getter;
 @AllArgsConstructor
 @Getter
 public enum ErrorCode {
+
     // Global
     GLOBAL_BAD_REQUEST(400, "올바르지 않은 요청입니다."),
     GLOBAL_NOT_FOUND(404, "요청한 사항을 찾을 수 없습니다."),
@@ -14,8 +15,14 @@ public enum ErrorCode {
     GLOBAL_INVALID_PARAMETER(400, "올바르지 않은 파라미터입니다."),
     INVALID_INPUT_VALUE(400, "유효하지 않은 입력 값입니다."),
 
+    // File
+    FILE_UPLOAD_FAILED(400, "파일 업로드에 실패했습니다."),
+    FILE_DELETE_FAILED(400, "파일 삭제에 실패했습니다."),
+    FILE_NOT_FOUND(404, "파일을 찾을 수 없습니다."),
+    FILE_INVALID_TYPE(400, "요청된 파일 타입이 올바르지 않습니다."),
+
     // Other
-    INTERNAL_SERVER_ERROR(500, "오류가 발생했습니다."), ;
+    INTERNAL_SERVER_ERROR(500, "오류가 발생했습니다.");
 
     private final int statusCode;
     private final String message;

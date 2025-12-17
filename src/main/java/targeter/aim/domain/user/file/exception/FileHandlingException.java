@@ -1,7 +1,11 @@
 package targeter.aim.domain.user.file.exception;
 
-public class FileHandlingException extends RuntimeException {
-    public FileHandlingException(String message) {
-        super(message);
+import targeter.aim.system.exception.model.ErrorCode;
+import targeter.aim.system.exception.model.RestException;
+
+public class FileHandlingException extends RestException {
+
+    public FileHandlingException(ErrorCode errorCode) {
+        super(errorCode);
     }
 }
