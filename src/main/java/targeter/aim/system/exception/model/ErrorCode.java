@@ -2,7 +2,6 @@ package targeter.aim.system.exception.model;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
-
 @AllArgsConstructor
 @Getter
 public enum ErrorCode {
@@ -25,6 +24,26 @@ public enum ErrorCode {
     FILE_METADATA_BUT_DISK_NOT_FOUND(404, "파일 메타데이터는 존재하지만 디스크에서 파일을 찾을 수 없습니다."),
     FILE_NOT_READABLE(400, "파일을 읽을 수 없습니다."),
     FILE_ACCESS_DENIED(403, "파일 접근 권한이 없습니다."),
+
+    // Auth - Validation
+    AUTH_ID_REQUIRED(400, "아이디는 필수 입력값입니다."),
+    AUTH_INVALID_ID_FORMAT(400, "아이디 형식이 올바르지 않습니다."),
+    AUTH_NICKNAME_REQUIRED(400, "닉네임은 필수 입력값입니다."),
+    AUTH_INVALID_NICKNAME_FORMAT(400, "닉네임 형식이 올바르지 않습니다."),
+
+    // Auth - Login / Token
+    AUTH_PASSWORD_NOT_MATCH(401, "비밀번호가 올바르지 않습니다."),
+    AUTH_FORBIDDEN(403, "접근 권한이 없습니다."),
+    AUTH_TOKEN_NOT_FOUND(401, "인증 토큰이 존재하지 않습니다."),
+    AUTH_TOKEN_MISSING(401, "인증 토큰이 존재하지 않습니다."),
+    AUTH_TOKEN_INVALID(401, "유효하지 않은 토큰입니다."),
+    AUTH_TOKEN_EXPIRED(401, "만료된 토큰입니다."),
+    AUTH_TOKEN_MALFORMED(401, "손상된 토큰입니다."),
+
+    // User / Tier
+    USER_ALREADY_LOGIN_ID_EXISTS(400, "이미 존재하는 로그인 아이디입니다."),
+    USER_NOT_FOUND(404, "존재하지 않는 사용자입니다."),
+    TIER_NOT_FOUND(404, "존재하지 않는 티어입니다."),
 
     // Other
     INTERNAL_SERVER_ERROR(500, "오류가 발생했습니다.");
