@@ -12,9 +12,11 @@ import java.util.UUID;
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Entity
-@Inheritance(strategy = InheritanceType.SINGLE_TABLE) // 단일 테이블 전략
-@DiscriminatorColumn(name = "type", discriminatorType = DiscriminatorType.STRING) // 타입 구분 컬럼
-@Table(name = "attached_file")
+@Inheritance(strategy = InheritanceType.SINGLE_TABLE)
+@DiscriminatorColumn(
+        name = "type",
+        discriminatorType = DiscriminatorType.STRING
+)
 @SuperBuilder(toBuilder = true)
 public abstract class AttachedFile {
 
