@@ -1,12 +1,11 @@
 package targeter.aim.domain.user.file.exception;
 
+import targeter.aim.system.exception.model.ErrorCode;
+import targeter.aim.system.exception.model.RestException;
 
-public class FileStorageException extends RuntimeException {
-    public FileStorageException(String message) {
-        super(message);
-    }
+public class FileStorageException extends RestException {
 
-    public FileStorageException(String message, Throwable cause) {
-        super(message, cause);
+    public FileStorageException(ErrorCode errorCode) {
+        super(errorCode);
     }
 }

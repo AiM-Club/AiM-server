@@ -1,46 +1,65 @@
 package targeter.aim.domain.user.file.service;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import targeter.aim.domain.user.file.entity.AttachedFile;
 import targeter.aim.domain.user.file.entity.HandlingType;
 import targeter.aim.domain.user.file.exception.FileHandlingException;
-import targeter.aim.domain.user.file.handler.FileHandler;
+import targeter.aim.domain.user.file.exception.FileStorageException;
+import targeter.aim.domain.user.file.repository.AttachedFileRepository;
 import targeter.aim.system.exception.model.ErrorCode;
+
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class FileService {
 
-    private final FileHandler fileHandler;
+    private final AttachedFileRepository fileRepository;
 
-    public ResponseEntity<Resource> getImage(String uuid) {
-        FileHandler.FileResource fileResource = fileHandler.loadFileAndMetadata(uuid)
-                .orElseThrow(() -> new FileHandlingException(ErrorCode.FILE_NOT_FOUND));
+    public record FileResource(AttachedFile attachedFile, Resource resource) {}
 
-        AttachedFile file = fileResource.attachedFile();
+    public FileResource getImage(String uuid) {
+        FileResource fr = loadFileAndMetadata(uuid);
 
-        if (file.getHandlingType() != HandlingType.IMAGE) {
+        if (fr.attachedFile().getHandlingType() != HandlingType.IMAGE) {
             throw new FileHandlingException(ErrorCode.FILE_INVALID_TYPE);
         }
-
-        return fileHandler.createViewImageResponse(fileResource);
+        return fr;
     }
 
-    public ResponseEntity<Resource> downloadFile(String uuid) {
-        FileHandler.FileResource fileResource = fileHandler.loadFileAndMetadata(uuid)
-                .orElseThrow(() -> new FileHandlingException(ErrorCode.FILE_NOT_FOUND));
+    public FileResource downloadFile(String uuid) {
+        FileResource fr = loadFileAndMetadata(uuid);
 
-        AttachedFile file = fileResource.attachedFile();
-
-        if (file.getHandlingType() != HandlingType.DOWNLOADABLE) {
+        if (fr.attachedFile().getHandlingType() != HandlingType.DOWNLOADABLE) {
             throw new FileHandlingException(ErrorCode.FILE_INVALID_TYPE);
         }
+        return fr;
+    }
 
-        return fileHandler.createDownloadResponse(fileResource);
+    private FileResource loadFileAndMetadata(String fileUuid) {
+        AttachedFile attachedFile = fileRepository.findByUuid(fileUuid)
+                .orElseThrow(() -> new FileHandlingException(ErrorCode.FILE_NOT_FOUND));
+
+        Path path = Paths.get(attachedFile.getFilePath());
+        if (!Files.exists(path)) {
+            throw new FileStorageException(ErrorCode.FILE_METADATA_BUT_DISK_NOT_FOUND);
+        }
+
+        try {
+            Resource resource = new FileSystemResource(path.toFile());
+            if (!resource.exists() || !resource.isReadable()) {
+                throw new FileStorageException(ErrorCode.FILE_NOT_READABLE);
+            }
+            return new FileResource(attachedFile, resource);
+        } catch (SecurityException e) {
+            throw new FileStorageException(ErrorCode.FILE_ACCESS_DENIED);
+        }
     }
 }
