@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 import targeter.aim.common.auditor.TimeStampedEntity;
+import targeter.aim.domain.file.entity.ProfileImage;
 
 import java.time.LocalDate;
 
@@ -52,10 +53,9 @@ public class User extends TimeStampedEntity {
     @JoinColumn(nullable = false, name = "tier_id")
     private Tier tier;  // 1~30 : Bronze, 31~60 : Silver, 61~80 : Gold, 81~100 : Diamond
 
-//    프로필 이미지 컬럼. File 도메인 완성 시 구현
-//    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
-//    @JoinColumn(name = "profile_image_id")
-//    private ProfileImage profileImage;
+    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JoinColumn(name = "profile_image_id")
+    private ProfileImage profileImage;
 
     public boolean isLocalUser() {
         return this.socialLogin == null;

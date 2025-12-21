@@ -2,7 +2,10 @@ package targeter.aim.domain.user.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
+import targeter.aim.domain.file.dto.FileDto;
+import targeter.aim.domain.file.entity.ProfileImage;
 import targeter.aim.domain.user.entity.Gender;
+import targeter.aim.domain.user.entity.SocialLogin;
 import targeter.aim.domain.user.entity.User;
 
 import java.time.LocalDate;
@@ -32,7 +35,10 @@ public class UserDto {
                 allowableValues = {"KAKAO", "GOOGLE"},
                 nullable = true
         )
-        private String socialLogin;
+        private SocialLogin socialLogin;
+
+        @Schema(description = "사용자 프로필 이미지")
+        private FileDto.FileResponse profileImage;
 
         @Schema(description = "계정 생성 시간", example = "ISO Datetime")
         private LocalDateTime createdAt;
@@ -46,7 +52,7 @@ public class UserDto {
                     .nickname(user.getNickname())
                     .birthday(user.getBirthday())
                     .gender(user.getGender())
-                    .socialLogin(user.getSocialLogin() == null ? null : user.getSocialLogin().name())
+                    .socialLogin(user.getSocialLogin() == null ? null : user.getSocialLogin())
                     .createdAt(user.getCreatedAt())
                     .lastModifiedAt(user.getLastModifiedAt())
                     .build();
