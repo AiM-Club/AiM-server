@@ -1,4 +1,4 @@
-package targeter.aim.domain.user.file.exception;
+package targeter.aim.domain.file.exception;
 
 public class FileNotFoundException extends RuntimeException {
     public FileNotFoundException(String message) {

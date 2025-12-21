@@ -1,4 +1,4 @@
-package targeter.aim.domain.user.file.controller;
+package targeter.aim.domain.file.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -9,8 +9,8 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import targeter.aim.domain.user.file.entity.AttachedFile;
-import targeter.aim.domain.user.file.service.FileService;
+import targeter.aim.domain.file.entity.AttachedFile;
+import targeter.aim.domain.file.service.FileService;
 import targeter.aim.system.security.annotation.NoJwtAuth;
 
 @RestController

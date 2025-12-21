@@ -1,12 +1,12 @@
-package targeter.aim.domain.user.file.dto;
+package targeter.aim.domain.file.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import targeter.aim.domain.user.file.entity.AttachedFile;
-import targeter.aim.domain.user.file.entity.HandlingType;
+import targeter.aim.domain.file.entity.AttachedFile;
+import targeter.aim.domain.file.entity.HandlingType;
 
 import java.util.Objects;
 

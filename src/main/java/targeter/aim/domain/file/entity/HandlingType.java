@@ -1,4 +1,4 @@
-package targeter.aim.domain.user.file.entity;
+package targeter.aim.domain.file.entity;
 
 public enum HandlingType {
     DOWNLOADABLE,

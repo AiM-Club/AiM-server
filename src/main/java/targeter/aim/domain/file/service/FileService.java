@@ -1,15 +1,15 @@
-package targeter.aim.domain.user.file.service;
+package targeter.aim.domain.file.service;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import targeter.aim.domain.user.file.entity.AttachedFile;
-import targeter.aim.domain.user.file.entity.HandlingType;
-import targeter.aim.domain.user.file.exception.FileHandlingException;
-import targeter.aim.domain.user.file.exception.FileStorageException;
-import targeter.aim.domain.user.file.repository.AttachedFileRepository;
+import targeter.aim.domain.file.entity.AttachedFile;
+import targeter.aim.domain.file.entity.HandlingType;
+import targeter.aim.domain.file.exception.FileHandlingException;
+import targeter.aim.domain.file.exception.FileStorageException;
+import targeter.aim.domain.file.repository.AttachedFileRepository;
 import targeter.aim.system.exception.model.ErrorCode;
 
 import java.nio.file.Files;

@@ -1,4 +1,4 @@
-package targeter.aim.domain.user.file.exception;
+package targeter.aim.domain.file.exception;
 
 import targeter.aim.system.exception.model.ErrorCode;
 import targeter.aim.system.exception.model.RestException;
