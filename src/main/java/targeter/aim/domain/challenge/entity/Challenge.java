@@ -18,6 +18,7 @@ import java.time.LocalDate;
 public class Challenge extends TimeStampedEntity {
 
     @Id
+    @Column(name = "challenge_id")
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Setter(AccessLevel.NONE)
     private Long id;

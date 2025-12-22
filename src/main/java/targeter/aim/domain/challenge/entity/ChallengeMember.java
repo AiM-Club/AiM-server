@@ -15,19 +15,8 @@ import targeter.aim.domain.user.entity.User;
 @Table(name="member")
 public class ChallengeMember extends TimeStampedEntity {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Setter(AccessLevel.NONE)
-    @Column(name = "challenge_member_id")
-    private Long id;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "challenge_id", nullable = false)
-    private Challenge challenge;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
-    private User user;
+    @EmbeddedId
+    private ChallengeMemberId id;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
