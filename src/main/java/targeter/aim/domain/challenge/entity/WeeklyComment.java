@@ -12,37 +12,31 @@ import targeter.aim.domain.user.entity.User;
 @SuperBuilder
 @NoArgsConstructor
 @AllArgsConstructor
-@Table(name="weekly_progress")
-public class WeeklyProgress extends TimeStampedEntity {
+@Table(name = "weekly_comment")
+public class WeeklyComment extends TimeStampedEntity {
 
     @Id
+    @Column(name = "weekly_comment_id")
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Setter(AccessLevel.NONE)
-    @Column(name = "weekly_progress_id")
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "challenge_id", nullable = false)
-    private Challenge challenge;
+    @JoinColumn(name = "parent_comment_id")
+    private WeeklyComment parentComment;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "weekly_progress_id", nullable = false)
+    private WeeklyProgress weeklyProgress;
 
-    @Column(name = "week_number", nullable = false)
-    private Integer weekNumber;
-
-    @Column
-    private String title;
-
-    @Column(columnDefinition = "TEXT")
+    @Column(nullable = false, columnDefinition = "TEXT")
     private String content;
 
-    @Column(name = "stopwatch_time_seconds")
-    private Integer stopwatchTimeSeconds;
-
-    @Column(name = "is_complete", nullable = false)
-    private Boolean isComplete;
+    @Column(nullable = false)
+    private Integer depth;
 
 }

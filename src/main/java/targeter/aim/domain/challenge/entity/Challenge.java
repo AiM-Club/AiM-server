@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 import targeter.aim.common.auditor.TimeStampedEntity;
+import targeter.aim.domain.user.entity.User;
 
 import java.time.LocalDate;
 
@@ -21,8 +22,9 @@ public class Challenge extends TimeStampedEntity {
     @Setter(AccessLevel.NONE)
     private Long id;
 
-    @Column(name="host_id", nullable = false)
-    private Long hostId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "host_id", nullable = false)
+    private User host;
 
     @Column(nullable = false)
     private String name;
