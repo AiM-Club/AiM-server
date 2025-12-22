@@ -29,7 +29,6 @@ public class WeeklyProgress extends TimeStampedEntity {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
-
     @Column(name = "week_number", nullable = false)
     private Integer weekNumber;
 

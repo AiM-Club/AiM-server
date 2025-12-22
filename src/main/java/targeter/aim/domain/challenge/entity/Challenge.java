@@ -26,7 +26,7 @@ public class Challenge extends TimeStampedEntity {
     @JoinColumn(name = "host_id", nullable = false)
     private User host;
 
-    @Column(nullable = false)
+    @Column(nullable = false, length = 15)
     private String name;
 
     @Column(nullable = false)

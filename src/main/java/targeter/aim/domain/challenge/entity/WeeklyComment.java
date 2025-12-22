@@ -33,7 +33,7 @@ public class WeeklyComment extends TimeStampedEntity {
     @JoinColumn(name = "weekly_progress_id", nullable = false)
     private WeeklyProgress weeklyProgress;
 
-    @Column(nullable = false, columnDefinition = "TEXT")
+    @Column(nullable = false)
     private String content;
 
     @Column(nullable = false)
