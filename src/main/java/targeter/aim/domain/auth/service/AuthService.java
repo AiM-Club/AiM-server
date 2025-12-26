@@ -13,6 +13,8 @@ import targeter.aim.domain.auth.token.repository.RefreshTokenCacheRepository;
 import targeter.aim.domain.auth.token.repository.RefreshTokenRepository;
 import targeter.aim.domain.auth.token.validator.RefreshTokenValidator;
 import targeter.aim.domain.user.dto.UserDto;
+import targeter.aim.domain.user.entity.Gender;
+import targeter.aim.domain.user.entity.SocialLogin;
 import targeter.aim.domain.user.entity.Tier;
 import targeter.aim.domain.user.entity.User;
 import targeter.aim.domain.user.repository.TierRepository;
@@ -24,6 +26,7 @@ import targeter.aim.system.security.model.UserDetails;
 import targeter.aim.system.security.utility.jwt.JwtTokenProvider;
 import targeter.aim.system.security.utility.jwt.JwtTokenResolver;
 
+import java.time.LocalDate;
 
 @Service
 @RequiredArgsConstructor
@@ -40,10 +43,12 @@ public class AuthService {
     @Transactional
     public UserDto.UserResponse signUp(AuthDto.SignUpRequest request) {
         boolean isExisting = userRepository.existsByLoginId(request.getLoginId());
-        if (isExisting){
+        if (isExisting) {
             throw new RestException(ErrorCode.USER_ALREADY_LOGIN_ID_EXISTS);
         }
+
         User toSave = request.toEntity(passwordEncoder);
+
         Tier bronze = tierRepository.findByName("BRONZE") // 신규 회원 기본 티어=BRONZE 설정
                 .orElseThrow(() -> new RestException(ErrorCode.TIER_NOT_FOUND));
         toSave.setTier(bronze);
@@ -58,24 +63,27 @@ public class AuthService {
         var found = userRepository.findByLoginId(request.getLoginId())
                 .orElseThrow(() -> new RestException(ErrorCode.USER_NOT_FOUND));
 
-        if (!passwordEncoder.matches(request.getPassword(), found.getPassword()))
+        if (!passwordEncoder.matches(request.getPassword(), found.getPassword())) {
             throw new RestException(ErrorCode.AUTH_PASSWORD_NOT_MATCH);
+        }
 
         var userDetails = UserDetails.from(found);
-
         var tokenPair = jwtTokenProvider.createTokenPair(userDetails);
 
         String refreshUuid = tokenPair.getRefreshToken().getTokenString();
         RefreshToken refreshToken = RefreshTokenDto.toEntity(
                 refreshUuid,
                 userDetails.getKey(),
-                tokenPair.getRefreshToken().getExpireAt());
+                tokenPair.getRefreshToken().getExpireAt()
+        );
 
         refreshTokenRepository.save(refreshToken);
-        refreshTokenCacheRepository.cacheRefreshUuid(refreshUuid,userDetails.getKey());
+        refreshTokenCacheRepository.cacheRefreshUuid(refreshUuid, userDetails.getKey());
 
-        return AuthDto.SignInResponse.of(UserDto.UserResponse.from(found), JwtDto.TokenInfo.of(tokenPair));
-
+        return AuthDto.SignInResponse.of(
+                UserDto.UserResponse.from(found),
+                JwtDto.TokenInfo.of(tokenPair)
+        );
     }
 
     @Transactional(readOnly = true)
@@ -98,6 +106,58 @@ public class AuthService {
         refreshTokenValidator.validateOrThrow(userDetails.getKey(), refreshUuid);
         refreshTokenRepository.deleteByUuid(refreshUuid);
         refreshTokenCacheRepository.evictRefreshUuid(refreshUuid);
+    }
+
+    @Transactional
+    public JwtDto.TokenInfo issueTokenByGoogle(String email, String googleSub) {
+        if (email == null || email.isBlank()) {
+            throw new RestException(ErrorCode.GLOBAL_BAD_REQUEST);
+        }
+        if (googleSub == null || googleSub.isBlank()) {
+            throw new RestException(ErrorCode.GLOBAL_BAD_REQUEST);
+        }
+
+        User user = userRepository.findByLoginId(email)
+                .orElseGet(() -> createGoogleUser(email, googleSub));
+
+        var userDetails = UserDetails.from(user);
+        var tokenPair = jwtTokenProvider.createTokenPair(userDetails);
+
+        String refreshUuid = tokenPair.getRefreshToken().getTokenString();
+        RefreshToken refreshToken = RefreshTokenDto.toEntity(
+                refreshUuid,
+                userDetails.getKey(),
+                tokenPair.getRefreshToken().getExpireAt()
+        );
+
+        refreshTokenRepository.save(refreshToken);
+        refreshTokenCacheRepository.cacheRefreshUuid(refreshUuid, userDetails.getKey());
+
+        return JwtDto.TokenInfo.of(tokenPair);
+    }
+
+    private User createGoogleUser(String email, String googleSub) {
+        Tier bronze = tierRepository.findByName("BRONZE")
+                .orElseThrow(() -> new RestException(ErrorCode.TIER_NOT_FOUND));
+
+        User user = User.builder()
+                .email(email)
+
+                .loginId(email)
+
+                .nickname("google_" + System.currentTimeMillis())
+                .password("")
+
+                .socialLogin(SocialLogin.GOOGLE)
+                .socialId(googleSub)
+
+                .birthday(LocalDate.of(2000, 1, 1))
+                .gender(Gender.UNKNOWN)
+
+                .tier(bronze)
+                .build();
+
+        return userRepository.save(user);
     }
 
     private String getAccessTokenFromRequest(HttpServletRequest request) {

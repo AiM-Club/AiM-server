@@ -32,6 +32,10 @@ public class User extends TimeStampedEntity {
     @Column(length = 60)
     private String password;    // 소셜 로그인 시 null
 
+    @Column(nullable = false, unique = true, length = 255)
+    private String email;
+
+
     @Column(nullable = false, length = 50)
     private String nickname;
 

@@ -1,5 +1,5 @@
 package targeter.aim.domain.user.entity;
 
 public enum Gender {
-    MALE, FEMALE, OTHER;
+    MALE, FEMALE, OTHER, UNKNOWN;
 }
