@@ -52,3 +52,6 @@ cache:
     refresh-token-uuid:
       expiration-week: ${JWT_REFRESH_TOKEN_EXPIRATION_WEEKS:2}
       maximum-size: 10000
+
+gemini:
+  api-key: ${GEMINI_API_KEY}
