@@ -13,6 +13,6 @@ public class RoutePayload {
         private Integer weekNumber; // 주차
         private String title;       // 제목
         private String content;     // 내용
-        private Long targetSeconds; // 목표 시간초
+        private Integer targetSeconds; // 목표 시간초
     }
 }
