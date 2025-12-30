@@ -53,6 +53,9 @@ cache:
       expiration-week: ${JWT_REFRESH_TOKEN_EXPIRATION_WEEKS:2}
       maximum-size: 10000
 
+gemini:
+  api-key: ${GEMINI_API_KEY}
+
 app:
   cors:
     allowed-origins: ${APP_CORS_ORIGINS:}

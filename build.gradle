@@ -67,9 +67,13 @@ dependencies {
     // Validation
     implementation 'org.springframework.boot:spring-boot-starter-validation'
 
-    //oauth
+    // oauth
     implementation 'org.springframework.boot:spring-boot-starter-oauth2-client'
 
+    // Langchain4j
+    implementation 'dev.langchain4j:langchain4j:1.0.0-beta3'
+    implementation 'dev.langchain4j:langchain4j-spring-boot-starter:1.0.0-beta3'
+    implementation 'dev.langchain4j:langchain4j-google-ai-gemini:1.0.0-beta3'
 }
 
 tasks.named('test') {
