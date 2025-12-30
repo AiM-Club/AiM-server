@@ -55,3 +55,7 @@ cache:
 
 gemini:
   api-key: ${GEMINI_API_KEY}
+
+app:
+  cors:
+    allowed-origins: ${APP_CORS_ORIGINS:}

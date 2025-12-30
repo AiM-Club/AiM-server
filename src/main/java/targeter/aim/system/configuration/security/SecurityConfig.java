@@ -1,6 +1,7 @@
 package targeter.aim.system.configuration.security;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -24,6 +25,9 @@ import java.util.Arrays;
 public class SecurityConfig {
 
     private final JwtAutoConfigurerFactory jwtAutoConfigurerFactory;
+
+    @Value("${app.cors.allowed-origins}")
+    private String[] allowedOrigins;
 
     @Bean
     SecurityFilterChain securityFilterChain(
@@ -66,6 +70,8 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigSrc() {
         CorsConfiguration corsConfiguration = new CorsConfiguration();
         corsConfiguration.setAllowCredentials(true);
+
+        corsConfiguration.setAllowedOrigins(Arrays.asList(allowedOrigins));
         corsConfiguration.setAllowedMethods(Arrays.asList(
                 "HEAD", "GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"
         ));
