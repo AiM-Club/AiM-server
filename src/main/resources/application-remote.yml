@@ -55,4 +55,4 @@ cache:
 
 app:
   cors:
-    allowed-origins: ${APP_CORS_ORIGINS}
+    allowed-origins: ${APP_CORS_ORIGINS:}
