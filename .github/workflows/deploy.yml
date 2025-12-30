@@ -136,6 +136,7 @@ jobs:
           echo "DB_PORT=${{ secrets.ENV_DB_PORT }}" >> .env.prod
           echo "JWT_SECRET_KEY=${{ secrets.ENV_JWT_SECRET_KEY }}" >> .env.prod
           echo "GEMINI_API_KEY=${{ secrets.ENV_GEMINI_API_KEY }}" >> .env.prod
+          echo "APP_CORS_ORIGINS=${{ secrets.FRONTEND_URL }}" >> .env.prod
           echo "TZ=Asia/Seoul" >> .env.prod
 
           DEPLOY_PATH=${{ secrets.ENV_DEPLOY_PATH }}
