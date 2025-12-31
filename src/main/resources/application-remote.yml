@@ -9,24 +9,49 @@ spring:
     username: ${DB_USERNAME}
     password: ${DB_PASSWORD}
 
-  # jpa설정
   jpa:
     hibernate:
       ddl-auto: update
 
-# 로그 레벨 설정
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            client-id: ${GOOGLE_CLIENT_ID}
+            client-secret: ${GOOGLE_CLIENT_SECRET}
+            scope:
+              - profile
+              - email
+            redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"
+
 logging:
   level:
     org.hibernate.SQL: off
-    org.hibernate.type: off # 실제 들어가는 파라미터값 찍어주는 설정
+    org.hibernate.type: off
 
 jwt:
-  secret: ${JWT_SECRET_KEY} # base64 encoded & len > 32 여야함
+  secret: ${JWT_SECRET_KEY}
   access-token-expiration-minutes: ${JWT_ACCESS_TOKEN_EXPIRATION_MINUTES:30}
   refresh-token-expiration-weeks: ${JWT_REFRESH_TOKEN_EXPIRATION_WEEKS:2}
 
 cache:
   specs:
-    refresh-token-uuid:
+    refreshTokenUuid:
       expiration-week: ${JWT_REFRESH_TOKEN_EXPIRATION_WEEKS:2}
       maximum-size: 10000
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,mappings
+  endpoint:
+    health:
+      show-details: always
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui/index.html

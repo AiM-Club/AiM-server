@@ -29,11 +29,27 @@ public class WebAppServletConfig implements WebMvcConfigurer {
                 .resourceChain(true)
                 .addResolver(new PathResourceResolver() {
                     @Override
-                    protected Resource getResource(String resourcePath,
-                                                   Resource location) throws IOException {
+                    protected Resource getResource(String resourcePath, Resource location) throws IOException {
+
+                        // 백엔드 라우트는 SPA fallback에서 제외 (Spring MVC가 처리하도록 null 반환)
+                        if (resourcePath.startsWith("api/")
+                                || resourcePath.startsWith("actuator/")
+                                || resourcePath.startsWith("v3/")
+                                || resourcePath.startsWith("swagger-ui/")
+                                || resourcePath.equals("swagger-ui.html")
+                                || resourcePath.equals("error")) {
+                            return null;
+                        }
+
                         Resource requestedResource = location.createRelative(resourcePath);
-                        return requestedResource.exists() && requestedResource.isReadable() ? requestedResource
-                                : new ClassPathResource("/static/index.html");
+
+                        // static 파일이면 그대로 제공
+                        if (requestedResource.exists() && requestedResource.isReadable()) {
+                            return requestedResource;
+                        }
+
+                        // 그 외는 SPA fallback
+                        return new ClassPathResource("/static/index.html");
                     }
                 });
     }

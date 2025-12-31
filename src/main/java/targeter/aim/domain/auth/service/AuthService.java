@@ -49,7 +49,7 @@ public class AuthService {
 
         User toSave = request.toEntity(passwordEncoder);
 
-        Tier bronze = tierRepository.findByName("BRONZE") // 신규 회원 기본 티어=BRONZE 설정
+        Tier bronze = tierRepository.findByName("BRONZE")
                 .orElseThrow(() -> new RestException(ErrorCode.TIER_NOT_FOUND));
         toSave.setTier(bronze);
 
@@ -70,7 +70,9 @@ public class AuthService {
         var userDetails = UserDetails.from(found);
         var tokenPair = jwtTokenProvider.createTokenPair(userDetails);
 
-        String refreshUuid = tokenPair.getRefreshToken().getTokenString();
+        String refreshTokenString = tokenPair.getRefreshToken().getTokenString();
+        String refreshUuid = jwtTokenResolver.resolveTokenFromString(refreshTokenString).getRefreshUuid();
+
         RefreshToken refreshToken = RefreshTokenDto.toEntity(
                 refreshUuid,
                 userDetails.getKey(),
@@ -123,7 +125,9 @@ public class AuthService {
         var userDetails = UserDetails.from(user);
         var tokenPair = jwtTokenProvider.createTokenPair(userDetails);
 
-        String refreshUuid = tokenPair.getRefreshToken().getTokenString();
+        String refreshTokenString = tokenPair.getRefreshToken().getTokenString();
+        String refreshUuid = jwtTokenResolver.resolveTokenFromString(refreshTokenString).getRefreshUuid();
+
         RefreshToken refreshToken = RefreshTokenDto.toEntity(
                 refreshUuid,
                 userDetails.getKey(),
@@ -142,18 +146,13 @@ public class AuthService {
 
         User user = User.builder()
                 .email(email)
-
                 .loginId(email)
-
                 .nickname("google_" + System.currentTimeMillis())
                 .password("")
-
                 .socialLogin(SocialLogin.GOOGLE)
                 .socialId(googleSub)
-
                 .birthday(LocalDate.of(2000, 1, 1))
                 .gender(Gender.UNKNOWN)
-
                 .tier(bronze)
                 .build();
 

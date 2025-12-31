@@ -17,7 +17,6 @@ public class RefreshTokenValidator {
 
     public void validateOrThrow(String userKey, String refreshUuid) {
         if (refreshUuid == null || refreshUuid.isBlank()) {
-            log.info("Cache miss => refreshUuid: {}", refreshUuid);
             log.warn("Invalid refreshUuid: null or blank.");
             throw new RestException(ErrorCode.AUTH_TOKEN_INVALID);
         }

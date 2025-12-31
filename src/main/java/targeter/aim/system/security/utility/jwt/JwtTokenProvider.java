@@ -25,12 +25,7 @@ public class JwtTokenProvider {
         claims.put("tokenType", "REFRESH");
         claims.put("refreshUuid", refreshUuid);
 
-        int weeks = jwtProperties.getRefreshTokenExpirationWeeks();
-        if (weeks <= 0) {
-            throw new IllegalStateException("jwt.refreshTokenExpirationWeeks must be > 0");
-        }
-
-        LocalDateTime expireAt = LocalDateTime.now().plusWeeks(weeks);
+        LocalDateTime expireAt = LocalDateTime.now().plusWeeks(jwtProperties.getRefreshTokenExpirationWeeks());
         String tokenString = buildTokenString(claims, expireAt);
 
         return JwtDto.TokenData.builder()
@@ -44,12 +39,7 @@ public class JwtTokenProvider {
         claims.put("tokenType", "ACCESS");
         claims.put("refreshUuid", refreshUuid);
 
-        int minutes = jwtProperties.getAccessTokenExpirationMinutes();
-        if (minutes <= 0) {
-            throw new IllegalStateException("jwt.accessTokenExpirationMinutes must be > 0");
-        }
-
-        LocalDateTime expireAt = LocalDateTime.now().plusMinutes(minutes);
+        LocalDateTime expireAt = LocalDateTime.now().plusMinutes(jwtProperties.getAccessTokenExpirationMinutes());
         String tokenString = buildTokenString(claims, expireAt);
 
         return JwtDto.TokenData.builder()
@@ -72,9 +62,7 @@ public class JwtTokenProvider {
                 .setClaims(claims)
                 .setIssuedAt(new Date())
                 .setExpiration(Date.from(expireAt.atZone(ZoneId.systemDefault()).toInstant()))
-                // 알고리즘을 명시해서(HS256) 서버/클라이언트 일관성 고정
                 .signWith(secret, SignatureAlgorithm.HS256)
                 .compact();
     }
 }
-

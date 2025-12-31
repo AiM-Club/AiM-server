@@ -32,7 +32,6 @@ public class SecurityConfig {
             OAuth2LoginSuccessHandler oAuth2LoginSuccessHandler
     ) throws Exception {
 
-        // JWT 관련 설정 (기존 로직 유지)
         jwtAutoConfigurerFactory.create(userLoadServiceImpl)
                 .pathConfigure((it) -> {
                     it.include("/api/**", ApiPathPattern.METHODS.GET);
@@ -41,6 +40,10 @@ public class SecurityConfig {
                     it.include("/api/**", ApiPathPattern.METHODS.PATCH);
                     it.include("/api/**", ApiPathPattern.METHODS.DELETE);
                     it.include("/api/**", ApiPathPattern.METHODS.OPTIONS);
+                    it.exclude("/v3/api-docs/**", ApiPathPattern.METHODS.GET);
+                    it.exclude("/swagger-ui/**", ApiPathPattern.METHODS.GET);
+                    it.exclude("/swagger-ui.html", ApiPathPattern.METHODS.GET);
+                    it.exclude("/actuator/**", ApiPathPattern.METHODS.GET);
                 })
                 .configure(httpSecurity);
 
@@ -68,10 +71,7 @@ public class SecurityConfig {
                 Arrays.asList("Authorization", "Cache-Control", "Content-Type")
         );
         corsConfiguration.setAllowedOriginPatterns(
-                Arrays.asList(
-                        "http://localhost:3000",
-                        "http://localhost:8080"
-                )
+                Arrays.asList("http://localhost:3000", "http://localhost:8080")
         );
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
@@ -84,5 +84,3 @@ public class SecurityConfig {
         return new BCryptPasswordEncoder();
     }
 }
-
-
