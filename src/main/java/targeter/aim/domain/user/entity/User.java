@@ -5,6 +5,7 @@ import lombok.*;
 import lombok.experimental.SuperBuilder;
 import targeter.aim.common.auditor.TimeStampedEntity;
 import targeter.aim.domain.file.entity.ProfileImage;
+import targeter.aim.domain.label.entity.Field;
 import targeter.aim.domain.label.entity.Tag;
 
 import java.time.LocalDate;
@@ -69,6 +70,16 @@ public class User extends TimeStampedEntity {
     @Builder.Default
     @ToString.Exclude
     private Set<Tag> tags = new HashSet<>();
+
+    @ManyToMany
+    @JoinTable(
+            name = "USER_FIELD_MAPPING",
+            joinColumns = @JoinColumn(name = "user_id"),
+            inverseJoinColumns = @JoinColumn(name = "field_id")
+    )
+    @Builder.Default
+    @ToString.Exclude
+    private Set<Field> fields = new HashSet<>();
 
     public boolean isLocalUser() {
         return this.socialLogin == null;
