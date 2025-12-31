@@ -4,9 +4,13 @@ import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 import targeter.aim.common.auditor.TimeStampedEntity;
+import targeter.aim.domain.label.entity.Field;
+import targeter.aim.domain.label.entity.Tag;
 import targeter.aim.domain.user.entity.User;
 
 import java.time.LocalDate;
+import java.util.HashSet;
+import java.util.Set;
 
 @Entity
 @Getter
@@ -51,4 +55,23 @@ public class Challenge extends TimeStampedEntity {
     @Column(nullable = false)
     private ChallengeVisibility visibility;
 
+    @ManyToMany
+    @JoinTable(
+            name = "CHALLENGE_TAG_MAPPING",
+            joinColumns = @JoinColumn(name = "challenge_id"),
+            inverseJoinColumns = @JoinColumn(name = "tag_id")
+    )
+    @Builder.Default
+    @ToString.Exclude
+    private Set<Tag> tags = new HashSet<>();
+
+    @ManyToMany
+    @JoinTable(
+            name = "CHALLENGE_FIELD_MAPPING",
+            joinColumns = @JoinColumn(name = "challenge_id"),
+            inverseJoinColumns = @JoinColumn(name = "field_id")
+    )
+    @Builder.Default
+    @ToString.Exclude
+    private Set<Field> fields = new HashSet<>();
 }
