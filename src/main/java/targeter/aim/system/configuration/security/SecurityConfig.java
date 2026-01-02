@@ -18,6 +18,7 @@ import targeter.aim.system.security.model.ApiPathPattern;
 import targeter.aim.system.security.service.UserLoadServiceImpl;
 
 import java.util.Arrays;
+import java.util.List;
 
 @Configuration
 @EnableWebSecurity
@@ -30,28 +31,20 @@ public class SecurityConfig {
     private String[] allowedOrigins;
 
     @Bean
-    SecurityFilterChain securityFilterChain(
+    public SecurityFilterChain securityFilterChain(
             HttpSecurity httpSecurity,
             UserLoadServiceImpl userLoadServiceImpl
     ) throws Exception {
 
+        // 기본 Security 설정
         httpSecurity
+                .csrf(csrf -> csrf.disable())
                 .cors(cors -> cors.configurationSource(corsConfigSrc()))
-                .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(
-                                "/oauth2/**",
-                                "/login/oauth2/**",
-                                "/error",
-                                "/swagger-ui/**",
-                                "/v3/api-docs/**",
-                                "/h2-console/**"
-                        ).permitAll()
-                        .requestMatchers("/api/**").authenticated()
-                        .anyRequest().permitAll()
-                )
-                .oauth2Login(oauth -> {})
-                .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED));
+                .sessionManagement(session ->
+                        session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+                );
 
+        // JWT 자동 설정
         jwtAutoConfigurerFactory.create(userLoadServiceImpl)
                 .pathConfigure(it -> {
                     it.include("/api/**", ApiPathPattern.METHODS.GET);
@@ -70,14 +63,13 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigSrc() {
         CorsConfiguration corsConfiguration = new CorsConfiguration();
         corsConfiguration.setAllowCredentials(true);
-
-        corsConfiguration.setAllowedOrigins(Arrays.asList(allowedOrigins));
-        corsConfiguration.setAllowedMethods(Arrays.asList(
-                "HEAD", "GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"
-        ));
-        corsConfiguration.setAllowedHeaders(Arrays.asList(
-                "Authorization", "Cache-Control", "Content-Type"
-        ));
+        corsConfiguration.setAllowedOrigins(List.of(allowedOrigins));
+        corsConfiguration.setAllowedMethods(
+                Arrays.asList("HEAD", "GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS")
+        );
+        corsConfiguration.setAllowedHeaders(
+                Arrays.asList("Authorization", "Cache-Control", "Content-Type")
+        );
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", corsConfiguration);
