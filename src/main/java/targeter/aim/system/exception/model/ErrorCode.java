@@ -20,6 +20,7 @@ public enum ErrorCode {
     FILE_DELETE_FAILED(400, "파일 삭제에 실패했습니다."),
     FILE_NOT_FOUND(404, "파일을 찾을 수 없습니다."),
     FILE_INVALID_TYPE(400, "요청된 파일 타입이 올바르지 않습니다."),
+    FILE_NOT_IMAGE(400, "이미지 파일이 아닙니다."),
 
     // File Storage
     FILE_METADATA_BUT_DISK_NOT_FOUND(404, "파일 메타데이터는 존재하지만 디스크에서 파일을 찾을 수 없습니다."),

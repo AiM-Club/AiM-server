@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 import targeter.aim.common.auditor.TimeStampedEntity;
+import targeter.aim.domain.file.entity.BadgeImage;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -29,8 +30,7 @@ public class Tier extends TimeStampedEntity {
     @Builder.Default
     private List<User> users = new ArrayList<>();
 
-//    뱃지 이미지 컬럼. File 도메인 완성 시 구현
-//    @OneToOne(mappedBy = "tier", cascade = CascadeType.ALL, orphanRemoval = true)
-//    @JoinColumn(name = "badge_image_id")
-//    private BadgeImage badgeImage;
+    @OneToOne(mappedBy = "tier", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JoinColumn(name = "badge_image_id")
+    private BadgeImage badgeImage;
 }
