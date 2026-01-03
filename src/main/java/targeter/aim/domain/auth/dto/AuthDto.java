@@ -1,5 +1,7 @@
 package targeter.aim.domain.auth.dto;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -67,7 +69,6 @@ public class AuthDto {
         }
     }
 
-    // 로그인 요청 DTO
     @Data
     @AllArgsConstructor
     @NoArgsConstructor
@@ -83,8 +84,7 @@ public class AuthDto {
         @Schema(description = "아이디", example = "password123!")
         private String password;
     }
-
-    // 로그인 응답 DTO
+//로그인 응답 DTO
     @Data
     @AllArgsConstructor
     @NoArgsConstructor
@@ -108,7 +108,6 @@ public class AuthDto {
         }
     }
 
-    // 아이디 중복검사 응답 DTO
     @Data
     @AllArgsConstructor
     @NoArgsConstructor
@@ -124,8 +123,7 @@ public class AuthDto {
                     .build();
         }
     }
-
-    // 닉네임 중복검사 응답 DTO
+//중복검사DTO
     @Data
     @AllArgsConstructor
     @NoArgsConstructor
@@ -139,6 +137,135 @@ public class AuthDto {
             return NicknameExistResponse.builder()
                     .isExist(isExist)
                     .build();
+        }
+    }
+
+    @Data
+    @AllArgsConstructor
+    @NoArgsConstructor
+    @Builder
+    @Schema(description = "카카오 로그인 요청 DTO")
+    public static class KakaoLoginRequest {
+        @NotBlank(message = "인가 코드를 입력해주세요.")
+        @Schema(description = "카카오 인증 서버로부터 받은 인가 코드", example = "authorization_code")
+        private String code;
+
+        @NotBlank(message = "redirectUri를 입력해주세요.")
+        @Schema(description = "카카오 developers에 등록된 Redirect URI (검증용)", example = "http://localhost:8080/oauth/kakao/callback")
+        private String redirectUri;
+    }
+
+    @Data
+    @AllArgsConstructor
+    @NoArgsConstructor
+    @Builder
+    @Schema(description = "카카오 로그인 응답 DTO")
+    public static class AuthResponse {
+        @Schema(description = "서비스 전용 JWT Access Token")
+        private String accessToken;
+
+        @Schema(description = "서비스 전용 JWT Refresh Token")
+        private String refreshToken;
+
+        @JsonProperty("isNewUser")
+        @Schema(description = "최초 가입 여부")
+        private boolean isNewUser;
+
+        @Schema(description = "유저 정보")
+        private AuthUserResponse user;
+
+        public static AuthResponse of(
+                String accessToken,
+                String refreshToken,
+                boolean isNewUser,
+                AuthUserResponse user
+        ) {
+            return AuthResponse.builder()
+                    .accessToken(accessToken)
+                    .refreshToken(refreshToken)
+                    .isNewUser(isNewUser)
+                    .user(user)
+                    .build();
+        }
+    }
+
+    @Data
+    @AllArgsConstructor
+    @NoArgsConstructor
+    @Builder
+    @Schema(description = "카카오 로그인 유저 응답 DTO")
+    public static class AuthUserResponse {
+        private Long id;
+        private String email;
+        private String nickname;
+        private String profileUrl;
+
+        public static AuthUserResponse of(Long id, String email, String nickname, String profileUrl) {
+            return AuthUserResponse.builder()
+                    .id(id)
+                    .email(email)
+                    .nickname(nickname)
+                    .profileUrl(profileUrl)
+                    .build();
+        }
+    }
+
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Builder
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public static class KakaoTokenResponse {
+        @JsonProperty("access_token")
+        private String accessToken;
+
+        @JsonProperty("token_type")
+        private String tokenType;
+
+        @JsonProperty("refresh_token")
+        private String refreshToken;
+
+        @JsonProperty("expires_in")
+        private Integer expiresIn;
+
+        @JsonProperty("refresh_token_expires_in")
+        private Integer refreshTokenExpiresIn;
+
+        private String scope;
+    }
+
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Builder
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public static class KakaoUserResponse {
+        private Long id;
+
+        @JsonProperty("kakao_account")
+        private KakaoAccount kakaoAccount;
+
+        @Data
+        @NoArgsConstructor
+        @AllArgsConstructor
+        @Builder
+        @JsonIgnoreProperties(ignoreUnknown = true)
+        public static class KakaoAccount {
+            private String email;
+
+            private Profile profile;
+
+            @Data
+            @NoArgsConstructor
+            @AllArgsConstructor
+            @Builder
+            @JsonIgnoreProperties(ignoreUnknown = true)
+            public static class Profile {
+                private String nickname;
+
+                @JsonProperty("profile_image_url")
+                private String profileImageUrl;
+            }
         }
     }
 }

@@ -39,6 +39,7 @@ public class SecurityConfig {
                 .cors(cors -> cors.configurationSource(corsConfigSrc()))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
+                                "/api/auth/**",
                                 "/oauth2/**",
                                 "/login/oauth2/**",
                                 "/error",
@@ -54,6 +55,14 @@ public class SecurityConfig {
 
         jwtAutoConfigurerFactory.create(userLoadServiceImpl)
                 .pathConfigure(it -> {
+                    //auth는 JWT 인증 제외 (로그인/회원가입/카카오로그인 등)
+                    it.exclude("/api/auth/**", ApiPathPattern.METHODS.GET);
+                    it.exclude("/api/auth/**", ApiPathPattern.METHODS.POST);
+                    it.exclude("/api/auth/**", ApiPathPattern.METHODS.PUT);
+                    it.exclude("/api/auth/**", ApiPathPattern.METHODS.PATCH);
+                    it.exclude("/api/auth/**", ApiPathPattern.METHODS.DELETE);
+                    it.exclude("/api/auth/**", ApiPathPattern.METHODS.OPTIONS);
+                    //기존 유지
                     it.include("/api/**", ApiPathPattern.METHODS.GET);
                     it.include("/api/**", ApiPathPattern.METHODS.POST);
                     it.include("/api/**", ApiPathPattern.METHODS.PUT);

@@ -39,11 +39,11 @@ public class User extends TimeStampedEntity {
     @Column(nullable = false, length = 50)
     private String nickname;
 
-    @Column(nullable = false)
+    @Column(nullable = true)
     private LocalDate birthday;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 50)
+    @Column(nullable = true, length = 50)
     private Gender gender;
 
     @Enumerated(EnumType.STRING)

@@ -40,6 +40,14 @@ public class AuthController {
         return authService.signIn(request);
     }
 
+    @NoJwtAuth("카카오 로그인은 인증이 필요하지 않음")
+    @PostMapping("/login/kakao")
+    @Operation(summary = "카카오 로그인", description = "카카오 인가 코드로 로그인/회원가입을 처리하고 JWT 토큰을 발급합니다.")
+    @ApiResponse(responseCode = "200", description = "카카오 로그인 성공")
+    public AuthDto.AuthResponse loginWithKakao(@RequestBody @Valid AuthDto.KakaoLoginRequest request) {
+        return authService.loginWithKakao(request);
+    }
+
     @NoJwtAuth("아이디 검증은 인증이 필요하지 않음")
     @GetMapping("/id-exist")
     @Operation(summary = "아이디 중복 검사", description = "입력된 아이디의 중복 여부를 확인합니다.")
@@ -62,7 +70,7 @@ public class AuthController {
     @Operation(summary = "로그아웃", description = "현재 사용자의 Refresh Token을 삭제하며 로그아웃 처리합니다.")
     @ApiResponse(responseCode = "200", description = "로그아웃 성공")
     public ResponseEntity<String> logout(
-            @Parameter (hidden = true) @AuthenticationPrincipal UserDetails userDetails, HttpServletRequest request) {
+            @Parameter(hidden = true) @AuthenticationPrincipal UserDetails userDetails, HttpServletRequest request) {
         authService.logout(userDetails, request);
         return ResponseEntity.ok("Logout successful.");
     }
