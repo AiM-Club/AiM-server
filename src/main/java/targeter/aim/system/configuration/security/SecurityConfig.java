@@ -37,6 +37,7 @@ public class SecurityConfig {
 
         httpSecurity
                 .cors(cors -> cors.configurationSource(corsConfigSrc()))
+                .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
                                 "/api/auth/**",
@@ -50,8 +51,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/**").authenticated()
                         .anyRequest().permitAll()
                 )
-                .oauth2Login(oauth -> {})
-                .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED));
+                .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
 
         jwtAutoConfigurerFactory.create(userLoadServiceImpl)
                 .pathConfigure(it -> {

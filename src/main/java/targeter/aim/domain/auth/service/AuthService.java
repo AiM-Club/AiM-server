@@ -31,6 +31,7 @@ import targeter.aim.system.security.model.UserDetails;
 import targeter.aim.system.security.utility.jwt.JwtTokenProvider;
 import targeter.aim.system.security.utility.jwt.JwtTokenResolver;
 
+import java.util.Map;
 import java.util.Optional;
 
 @Service
@@ -46,6 +47,15 @@ public class AuthService {
     private final RefreshTokenValidator refreshTokenValidator;
 
     private final RestTemplate restTemplate = new RestTemplate();
+
+    @Value("${spring.security.oauth2.client.registration.google.client-id}")
+    private String googleClientId;
+
+    @Value("${spring.security.oauth2.client.registration.google.client-secret}")
+    private String googleClientSecret;
+
+    private static final String GOOGLE_TOKEN_URI = "https://oauth2.googleapis.com/token";
+    private static final String GOOGLE_USERINFO_URI = "https://openidconnect.googleapis.com/v1/userinfo";
 
     @Value("${spring.security.oauth2.client.registration.kakao.client-id}")
     private String kakaoClientId;
@@ -86,43 +96,70 @@ public class AuthService {
         var userDetails = UserDetails.from(found);
         var tokenPair = jwtTokenProvider.createTokenPair(userDetails);
 
-        String refreshUuid = tokenPair.getRefreshToken().getTokenString();
-        RefreshToken refreshToken = RefreshTokenDto.toEntity(
-                refreshUuid,
-                userDetails.getKey(),
-                tokenPair.getRefreshToken().getExpireAt());
-
-        refreshTokenRepository.save(refreshToken);
-        refreshTokenCacheRepository.cacheRefreshUuid(refreshUuid,userDetails.getKey());
+        saveRefreshToken(userDetails, tokenPair);
 
         return AuthDto.SignInResponse.of(UserDto.UserResponse.from(found), JwtDto.TokenInfo.of(tokenPair));
     }
 
-    @Transactional(readOnly = true)
-    public AuthDto.IdExistResponse checkId(String loginId) {
-        boolean exists = userRepository.existsByLoginId(loginId);
-        return AuthDto.IdExistResponse.from(exists);
-    }
-
-    @Transactional(readOnly = true)
-    public AuthDto.NicknameExistResponse checkNickname(String nickname) {
-        boolean exists = userRepository.existsByNickname(nickname);
-        return AuthDto.NicknameExistResponse.from(exists);
-    }
-
     @Transactional
-    public void logout(UserDetails userDetails, HttpServletRequest request) {
-        String accessToken = getAccessTokenFromRequest(request);
-        String refreshUuid = jwtTokenResolver.resolveTokenFromString(accessToken).getRefreshUuid();
+    public AuthDto.SocialSignInResponse loginGoogle(@Valid AuthDto.GoogleLoginRequest request) {
+        try {
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
 
-        refreshTokenValidator.validateOrThrow(userDetails.getKey(), refreshUuid);
-        refreshTokenRepository.deleteByUuid(refreshUuid);
-        refreshTokenCacheRepository.evictRefreshUuid(refreshUuid);
-    }
+            MultiValueMap<String, String> body = new LinkedMultiValueMap<>();
+            body.add("code", request.getCode());
+            body.add("client_id", googleClientId);
+            body.add("client_secret", googleClientSecret);
+            body.add("redirect_uri", request.getRedirectUri());
+            body.add("grant_type", "authorization_code");
 
-    private String getAccessTokenFromRequest(HttpServletRequest request) {
-        return jwtTokenResolver.parseTokenFromRequest(request)
-                .orElseThrow(() -> new RestException(ErrorCode.AUTH_TOKEN_MISSING));
+            HttpEntity<MultiValueMap<String, String>> tokenReq = new HttpEntity<>(body, headers);
+
+            ResponseEntity<Map> tokenRes = restTemplate.exchange(
+                    GOOGLE_TOKEN_URI,
+                    HttpMethod.POST,
+                    tokenReq,
+                    Map.class
+            );
+
+            Map<String, Object> tokenMap = tokenRes.getBody();
+            if (tokenMap == null) {
+                throw new RestException(ErrorCode.GLOBAL_BAD_REQUEST);
+            }
+
+            Object accessTokenObj = tokenMap.get("access_token");
+            if (accessTokenObj == null) {
+                throw new RestException(ErrorCode.AUTH_AUTHENTICATION_FAILED);
+            }
+
+            String googleAccessToken = String.valueOf(accessTokenObj);
+
+            HttpHeaders userinfoHeaders = new HttpHeaders();
+            userinfoHeaders.setBearerAuth(googleAccessToken);
+
+            HttpEntity<Void> userinfoReq = new HttpEntity<>(userinfoHeaders);
+
+            ResponseEntity<Map> userinfoRes = restTemplate.exchange(
+                    GOOGLE_USERINFO_URI,
+                    HttpMethod.GET,
+                    userinfoReq,
+                    Map.class
+            );
+
+            Map<String, Object> userinfo = userinfoRes.getBody();
+            if (userinfo == null) {
+                throw new RestException(ErrorCode.GLOBAL_BAD_REQUEST);
+            }
+
+            String email = userinfo.get("email") == null ? null : String.valueOf(userinfo.get("email"));
+            String sub = userinfo.get("sub") == null ? null : String.valueOf(userinfo.get("sub"));
+
+            return issueTokenByGoogle(email, sub);
+
+        } catch (RestClientResponseException e) {
+            throw new RestException(ErrorCode.AUTH_AUTHENTICATION_FAILED);
+        }
     }
 
     @Transactional
@@ -170,14 +207,7 @@ public class AuthService {
         var userDetails = UserDetails.from(user);
         var tokenPair = jwtTokenProvider.createTokenPair(userDetails);
 
-        String refreshUuid = tokenPair.getRefreshToken().getTokenString();
-        RefreshToken refreshToken = RefreshTokenDto.toEntity(
-                refreshUuid,
-                userDetails.getKey(),
-                tokenPair.getRefreshToken().getExpireAt());
-
-        refreshTokenRepository.save(refreshToken);
-        refreshTokenCacheRepository.cacheRefreshUuid(refreshUuid, userDetails.getKey());
+        saveRefreshToken(userDetails, tokenPair);
 
         return AuthDto.AuthResponse.of(
                 tokenPair.getAccessToken().getTokenString(),
@@ -190,6 +220,115 @@ public class AuthService {
                         profileUrl
                 )
         );
+    }
+
+    @Transactional(readOnly = true)
+    public AuthDto.IdExistResponse checkId(String loginId) {
+        boolean exists = userRepository.existsByLoginId(loginId);
+        return AuthDto.IdExistResponse.from(exists);
+    }
+
+    @Transactional(readOnly = true)
+    public AuthDto.NicknameExistResponse checkNickname(String nickname) {
+        boolean exists = userRepository.existsByNickname(nickname);
+        return AuthDto.NicknameExistResponse.from(exists);
+    }
+
+    @Transactional
+    public void logout(UserDetails userDetails, HttpServletRequest request) {
+        String accessToken = getAccessTokenFromRequest(request);
+        String refreshUuid = jwtTokenResolver.resolveTokenFromString(accessToken).getRefreshUuid();
+
+        refreshTokenValidator.validateOrThrow(userDetails.getKey(), refreshUuid);
+        refreshTokenRepository.deleteByUuid(refreshUuid);
+        refreshTokenCacheRepository.evictRefreshUuid(refreshUuid);
+    }
+
+    private String getAccessTokenFromRequest(HttpServletRequest request) {
+        return jwtTokenResolver.parseTokenFromRequest(request)
+                .orElseThrow(() -> new RestException(ErrorCode.AUTH_TOKEN_MISSING));
+    }
+
+    @Transactional
+    public AuthDto.SocialSignInResponse issueTokenByGoogle(String email, String googleSub) {
+        if (email == null || email.isBlank()) {
+            throw new RestException(ErrorCode.GLOBAL_BAD_REQUEST);
+        }
+        if (googleSub == null || googleSub.isBlank()) {
+            throw new RestException(ErrorCode.GLOBAL_BAD_REQUEST);
+        }
+
+        User user = findOrCreateGoogleUser(email, googleSub);
+
+        var userDetails = UserDetails.from(user);
+        var tokenPair = jwtTokenProvider.createTokenPair(userDetails);
+
+        saveRefreshToken(userDetails, tokenPair);
+
+        UserDto.UserResponse userRes = UserDto.UserResponse.from(user);
+        return AuthDto.SocialSignInResponse.of(
+                userRes,
+                JwtDto.TokenInfo.of(tokenPair),
+                userRes.getIsNewUser()
+        );
+    }
+
+    private User findOrCreateGoogleUser(String email, String googleSub) {
+        var byEmail = userRepository.findByEmail(email);
+        if (byEmail.isPresent()) {
+            User existing = byEmail.get();
+
+            if (existing.isSocialUser()
+                    && existing.getSocialLogin() == SocialLogin.GOOGLE) {
+                return existing;
+            }
+
+            throw new RestException(ErrorCode.DUPLICATE_EMAIL_PROVIDER);
+        }
+
+        var byLoginId = userRepository.findByLoginId(email);
+        if (byLoginId.isPresent()) {
+            throw new RestException(ErrorCode.DUPLICATE_EMAIL_PROVIDER);
+        }
+
+        return createGoogleUser(email, googleSub);
+    }
+
+    private User createGoogleUser(String email, String googleSub) {
+        Tier bronze = tierRepository.findByName("BRONZE")
+                .orElseThrow(() -> new RestException(ErrorCode.TIER_NOT_FOUND));
+
+        User user = User.builder()
+                .loginId(null)
+                .email(email)
+                .nickname("google_" + System.currentTimeMillis())
+                .password(null)
+                .socialLogin(SocialLogin.GOOGLE)
+                .socialId(googleSub)
+                .birthday(null)
+                .gender(null)
+                .tier(bronze)
+                .build();
+
+        return userRepository.save(user);
+    }
+
+    private void saveRefreshToken(UserDetails userDetails, JwtDto.TokenPair tokenPair) {
+        String accessTokenString = tokenPair.getAccessToken().getTokenString();
+        String refreshUuid = jwtTokenResolver.resolveTokenFromString(accessTokenString).getRefreshUuid();
+
+        if (refreshUuid == null || refreshUuid.isBlank()) {
+            throw new RestException(ErrorCode.GLOBAL_BAD_REQUEST);
+        }
+
+        RefreshToken refreshToken = RefreshTokenDto.toEntity(
+                refreshUuid,
+                userDetails.getKey(),
+                tokenPair.getRefreshToken().getExpireAt()
+        );
+
+        refreshTokenRepository.save(refreshToken);
+        refreshTokenCacheRepository.cacheRefreshUuid(refreshUuid, userDetails.getKey());
     }
 
     private String requestKakaoAccessToken(String code, String redirectUri) {
