@@ -2,8 +2,8 @@ package targeter.aim.system.configuration.security;
 
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
-import org.springframework.beans.factory.annotation.Value;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -16,10 +16,10 @@ import targeter.aim.system.security.utility.jwt.JwtTokenProvider;
 import targeter.aim.system.security.utility.jwt.JwtTokenResolver;
 
 import java.security.Key;
-
 @Slf4j
 @Configuration
 public class JwtConfig {
+
     private final Key secret;
     private final HandlerExceptionResolver handlerExceptionResolver;
     private final RefreshTokenValidator refreshTokenValidator;
@@ -32,12 +32,13 @@ public class JwtConfig {
             RefreshTokenValidator refreshTokenValidator,
             JwtAuthPathInitializer jwtAuthPathInitializer
     ) {
-        if(StringUtils.hasText(secretText) && secretText.length() < 32) {
+
+        if (StringUtils.hasText(secretText) && secretText.length() < 32) {
             throw new IllegalStateException("Jwt Secret 은 32자 이상이어야 합니다.");
-        }else {
-            if(StringUtils.hasText(secretText)) {
-                secret = Keys.hmacShaKeyFor(secretText.getBytes());
-            }else{
+        } else {
+            if (StringUtils.hasText(secretText)) {
+                this.secret = Keys.hmacShaKeyFor(secretText.getBytes());
+            } else {
                 this.secret = Keys.secretKeyFor(SignatureAlgorithm.HS256);
                 log.warn("JWT Secret이 설정되지 않았습니다. 랜덤한 값이 생성되어 사용됩니다.");
             }
@@ -63,7 +64,11 @@ public class JwtConfig {
     @Bean
     @ConditionalOnMissingBean
     public JwtAutoConfigurerFactory jwtAutoConfigurerFactory() {
-        return new JwtAutoConfigurerFactory(this.handlerExceptionResolver, jwtTokenResolver(), refreshTokenValidator, jwtAuthPathInitializer);
+        return new JwtAutoConfigurerFactory(
+                this.handlerExceptionResolver,
+                jwtTokenResolver(),
+                refreshTokenValidator,
+                jwtAuthPathInitializer
+        );
     }
 }
-

@@ -49,7 +49,7 @@ jwt:
 
 cache:
   specs:
-    refresh-token-uuid:
+    refreshTokenUuid:
       expiration-week: 2
       maximum-size: 10000
 

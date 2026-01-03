@@ -8,7 +8,6 @@ import java.time.LocalDateTime;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-@Getter
 @Builder
 public class RefreshTokenDto {
     private String uuid;
@@ -20,6 +19,10 @@ public class RefreshTokenDto {
             String userKey,
             LocalDateTime expiryDate
     ) {
+        if (uuid == null || uuid.isBlank()) {
+            throw new IllegalArgumentException("RefreshToken uuid is null/blank. Check JwtTokenResolver claim mapping.");
+        }
+
         return RefreshToken.builder()
                 .uuid(uuid)
                 .userKey(userKey)
