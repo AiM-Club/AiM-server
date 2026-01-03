@@ -11,6 +11,7 @@ import java.security.Key;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Date;
+import java.util.UUID;
 
 @RequiredArgsConstructor
 public class JwtTokenProvider {
@@ -19,8 +20,14 @@ public class JwtTokenProvider {
     private final JwtProperties jwtProperties;
 
     public JwtDto.TokenData createRefreshToken(AuthDetails authDetails) {
+        String refreshUuid = UUID.randomUUID().toString();
+        return createRefreshToken(authDetails, refreshUuid);
+    }
+
+    private JwtDto.TokenData createRefreshToken(AuthDetails authDetails, String refreshUuid) {
         Claims claims = Jwts.claims().setSubject(authDetails.getName());
         claims.put("tokenType", "REFRESH");
+        claims.put("refreshUuid", refreshUuid);
 
         LocalDateTime expireLocalDateTime =
                 LocalDateTime.now().plusWeeks(jwtProperties.getRefreshTokenExpirationWeeks());
@@ -50,8 +57,10 @@ public class JwtTokenProvider {
     }
 
     public JwtDto.TokenPair createTokenPair(AuthDetails authDetails) {
-        JwtDto.TokenData refreshTokenData = createRefreshToken(authDetails);
-        JwtDto.TokenData accessTokenData = createAccessToken(authDetails, refreshTokenData.getTokenString());
+        String refreshUuid = UUID.randomUUID().toString();
+
+        JwtDto.TokenData refreshTokenData = createRefreshToken(authDetails, refreshUuid);
+        JwtDto.TokenData accessTokenData = createAccessToken(authDetails, refreshUuid);
 
         return JwtDto.TokenPair.of(refreshTokenData, accessTokenData);
     }

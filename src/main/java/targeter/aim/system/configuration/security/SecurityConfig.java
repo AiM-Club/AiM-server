@@ -13,6 +13,7 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import targeter.aim.domain.auth.handler.OAuth2LoginSuccessHandler;
 import targeter.aim.system.security.configurer.JwtAutoConfigurerFactory;
 import targeter.aim.system.security.model.ApiPathPattern;
 import targeter.aim.system.security.service.UserLoadServiceImpl;
@@ -33,10 +34,10 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(
             HttpSecurity httpSecurity,
-            UserLoadServiceImpl userLoadServiceImpl
+            UserLoadServiceImpl userLoadServiceImpl,
+            OAuth2LoginSuccessHandler oAuth2LoginSuccessHandler
     ) throws Exception {
 
-        // 기본 Security 설정
         httpSecurity
                 .csrf(csrf -> csrf.disable())
                 .cors(cors -> cors.configurationSource(corsConfigSrc()))
@@ -44,7 +45,11 @@ public class SecurityConfig {
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 );
 
-        // JWT 자동 설정
+        // OAuth2 Login (Google/Kakao)
+        httpSecurity.oauth2Login(oauth -> oauth
+                .successHandler(oAuth2LoginSuccessHandler)
+        );
+
         jwtAutoConfigurerFactory.create(userLoadServiceImpl)
                 .pathConfigure(it -> {
                     it.include("/api/**", ApiPathPattern.METHODS.GET);
