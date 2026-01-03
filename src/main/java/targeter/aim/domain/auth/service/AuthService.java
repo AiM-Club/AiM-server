@@ -167,6 +167,66 @@ public class AuthService {
         }
     }
 
+    @Transactional
+    public AuthDto.AuthResponse loginWithKakao(@Valid AuthDto.KakaoLoginRequest request) {
+        String kakaoAccessToken = requestKakaoAccessToken(request.getCode(), request.getRedirectUri());
+        AuthDto.KakaoUserResponse kakaoUser = requestKakaoUserInfo(kakaoAccessToken);
+
+        String socialId = String.valueOf(kakaoUser.getId());
+
+        Optional<User> existing = userRepository.findBySocialLoginAndSocialId(SocialLogin.KAKAO, socialId);
+
+        String email = null;
+        String nicknameFromKakao = null;
+        String profileUrl = null;
+
+        if (kakaoUser.getKakaoAccount() != null) {
+            email = kakaoUser.getKakaoAccount().getEmail();
+            if (kakaoUser.getKakaoAccount().getProfile() != null) {
+                nicknameFromKakao = kakaoUser.getKakaoAccount().getProfile().getNickname();
+                profileUrl = kakaoUser.getKakaoAccount().getProfile().getProfileImageUrl();
+            }
+        }
+
+        boolean isNewUser = false;
+        User user;
+
+        if (existing.isPresent()) {
+            user = existing.get();
+        } else {
+            isNewUser = true;
+
+            Tier bronze = tierRepository.findByName("BRONZE")
+                    .orElseThrow(() -> new RestException(ErrorCode.TIER_NOT_FOUND));
+
+            user = User.builder()
+                    .nickname(generateUniqueNickname(nicknameFromKakao))
+                    .socialLogin(SocialLogin.KAKAO)
+                    .socialId(socialId)
+                    .tier(bronze)
+                    .build();
+
+            user = userRepository.save(user);
+        }
+
+        var userDetails = UserDetails.from(user);
+        var tokenPair = jwtTokenProvider.createTokenPair(userDetails);
+
+        saveRefreshToken(userDetails, tokenPair);
+
+        return AuthDto.AuthResponse.of(
+                tokenPair.getAccessToken().getTokenString(),
+                tokenPair.getRefreshToken().getTokenString(),
+                isNewUser,
+                AuthDto.AuthUserResponse.of(
+                        user.getId(),
+                        email,
+                        user.getNickname(),
+                        profileUrl
+                )
+        );
+    }
+
     @Transactional(readOnly = true)
     public AuthDto.IdExistResponse checkId(String loginId) {
         boolean exists = userRepository.existsByLoginId(loginId);
@@ -271,71 +331,6 @@ public class AuthService {
         refreshTokenCacheRepository.cacheRefreshUuid(refreshUuid, userDetails.getKey());
     }
 
-    private String getAccessTokenFromRequest(HttpServletRequest request) {
-        return jwtTokenResolver.parseTokenFromRequest(request)
-                .orElseThrow(() -> new RestException(ErrorCode.AUTH_TOKEN_MISSING));
-    }
-
-    @Transactional
-    public AuthDto.AuthResponse loginWithKakao(@Valid AuthDto.KakaoLoginRequest request) {
-        String kakaoAccessToken = requestKakaoAccessToken(request.getCode(), request.getRedirectUri());
-        AuthDto.KakaoUserResponse kakaoUser = requestKakaoUserInfo(kakaoAccessToken);
-
-        String socialId = String.valueOf(kakaoUser.getId());
-
-        Optional<User> existing = userRepository.findBySocialLoginAndSocialId(SocialLogin.KAKAO, socialId);
-
-        String email = null;
-        String nicknameFromKakao = null;
-        String profileUrl = null;
-
-        if (kakaoUser.getKakaoAccount() != null) {
-            email = kakaoUser.getKakaoAccount().getEmail();
-            if (kakaoUser.getKakaoAccount().getProfile() != null) {
-                nicknameFromKakao = kakaoUser.getKakaoAccount().getProfile().getNickname();
-                profileUrl = kakaoUser.getKakaoAccount().getProfile().getProfileImageUrl();
-            }
-        }
-
-        boolean isNewUser = false;
-        User user;
-
-        if (existing.isPresent()) {
-            user = existing.get();
-        } else {
-            isNewUser = true;
-
-            Tier bronze = tierRepository.findByName("BRONZE")
-                    .orElseThrow(() -> new RestException(ErrorCode.TIER_NOT_FOUND));
-
-            user = User.builder()
-                    .nickname(generateUniqueNickname(nicknameFromKakao))
-                    .socialLogin(SocialLogin.KAKAO)
-                    .socialId(socialId)
-                    .tier(bronze)
-                    .build();
-
-            user = userRepository.save(user);
-        }
-
-        var userDetails = UserDetails.from(user);
-        var tokenPair = jwtTokenProvider.createTokenPair(userDetails);
-
-        saveRefreshToken(userDetails, tokenPair);
-
-        return AuthDto.AuthResponse.of(
-                tokenPair.getAccessToken().getTokenString(),
-                tokenPair.getRefreshToken().getTokenString(),
-                isNewUser,
-                AuthDto.AuthUserResponse.of(
-                        user.getId(),
-                        email,
-                        user.getNickname(),
-                        profileUrl
-                )
-        );
-    }
-
     private String requestKakaoAccessToken(String code, String redirectUri) {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
@@ -400,5 +395,10 @@ public class AuthService {
             }
         }
         return candidate;
+    }
+
+    private String getAccessTokenFromRequest(HttpServletRequest request) {
+        return jwtTokenResolver.parseTokenFromRequest(request)
+                .orElseThrow(() -> new RestException(ErrorCode.AUTH_TOKEN_MISSING));
     }
 }
