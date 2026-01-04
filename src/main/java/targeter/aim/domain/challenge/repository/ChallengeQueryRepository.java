@@ -1,0 +1,220 @@
+package targeter.aim.domain.challenge.repository;
+
+import com.querydsl.core.Tuple;
+import com.querydsl.core.types.dsl.CaseBuilder;
+import com.querydsl.core.types.dsl.Expressions;
+import com.querydsl.jpa.JPAExpressions;
+import com.querydsl.jpa.impl.JPAQuery;
+import com.querydsl.jpa.impl.JPAQueryFactory;
+import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Repository;
+import targeter.aim.domain.challenge.dto.ChallengeDto;
+import targeter.aim.domain.challenge.entity.Challenge;
+import targeter.aim.domain.challenge.entity.ChallengeMode;
+import targeter.aim.domain.challenge.entity.ChallengeStatus;
+import targeter.aim.domain.file.dto.FileDto;
+import targeter.aim.domain.file.entity.ProfileImage;
+import targeter.aim.domain.user.entity.User;
+import targeter.aim.system.security.model.UserDetails;
+
+import java.time.LocalDate;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import static targeter.aim.domain.challenge.entity.QChallenge.challenge;
+import static targeter.aim.domain.challenge.entity.QChallengeLiked.challengeLiked;
+import static targeter.aim.domain.challenge.entity.QChallengeMember.challengeMember;
+import static targeter.aim.domain.label.entity.QField.field;
+import static targeter.aim.domain.label.entity.QTag.tag;
+
+@Repository
+@RequiredArgsConstructor
+public class ChallengeQueryRepository {
+
+    private final JPAQueryFactory queryFactory;
+
+    public Page<ChallengeDto.ChallengeListResponse> paginateByType(
+            UserDetails userDetails,
+            Pageable pageable,
+            ChallengeFilterType filterType,
+            ChallengeSortType sortType
+    ) {
+
+        if (sortType == ChallengeSortType.ONGOING || sortType == ChallengeSortType.FINISHED) {
+            List<Tuple> tuples = buildBaseQuery(userDetails, filterType).fetch();
+
+            List<ChallengeDto.ChallengeListResponse> all = enrichDetails(tuples);
+
+            List<ChallengeDto.ChallengeListResponse> inProgress = all.stream()
+                    .filter(dto -> dto.getStatus() == ChallengeStatus.IN_PROGRESS)
+                    .sorted(Comparator.comparing(this::endDate))
+                    .toList();
+
+            List<ChallengeDto.ChallengeListResponse> completed = all.stream()
+                    .filter(dto -> dto.getStatus() == ChallengeStatus.COMPLETED)
+                    .sorted(Comparator.comparing(this::endDate).reversed())
+                    .toList();
+
+            List<ChallengeDto.ChallengeListResponse> sorted = (sortType == ChallengeSortType.ONGOING)
+                    ? Stream.concat(inProgress.stream(), completed.stream()).toList()
+                    : Stream.concat(completed.stream(), inProgress.stream()).toList();
+
+            int start = (int) pageable.getOffset();
+            int end = Math.min(start + pageable.getPageSize(), sorted.size());
+
+            return new PageImpl<>(
+                    start >= sorted.size() ? List.of() : sorted.subList(start, end),
+                    pageable,
+                    sorted.size()
+            );
+        }
+
+        JPAQuery<Tuple> contentQuery = buildBaseQuery(userDetails, filterType);
+        applySorting(contentQuery, sortType);
+
+        List<Tuple> tuples = contentQuery
+                .offset(pageable.getOffset())
+                .limit(pageable.getPageSize())
+                .fetch();
+
+        Long total = buildCountQuery(userDetails, filterType).fetchOne();
+        List<ChallengeDto.ChallengeListResponse> content = enrichDetails(tuples);
+
+        return new PageImpl<>(content, pageable, total == null ? 0 : total);
+    }
+
+    private JPAQuery<Tuple> buildBaseQuery(
+            UserDetails userDetails,
+            ChallengeFilterType filterType
+    ) {
+        JPAQuery<Tuple> query = queryFactory
+                .select(
+                        challenge,
+                        userDetails != null
+                                ? JPAExpressions.selectOne()
+                                .from(challengeLiked)
+                                .where(challengeLiked.challenge.eq(challenge)
+                                        .and(challengeLiked.user.id.eq(userDetails.getUser().getId())))
+                                .exists()
+                                : Expressions.FALSE,
+                        JPAExpressions.select(challengeLiked.count())
+                                .from(challengeLiked)
+                                .where(challengeLiked.challenge.eq(challenge))
+                )
+                .from(challenge)
+                .where(challenge.mode.eq(ChallengeMode.VS))
+                .leftJoin(challenge.host).fetchJoin()
+                .leftJoin(challenge.host.tier).fetchJoin()
+                .leftJoin(challenge.host.profileImage).fetchJoin();
+
+        applyFilterType(query, userDetails, filterType);
+
+        return query;
+    }
+
+    private JPAQuery<Long> buildCountQuery(UserDetails userDetails, ChallengeFilterType filterType) {
+        JPAQuery<Long> query = queryFactory
+                .select(challenge.count())
+                .from(challenge)
+                .where(challenge.mode.eq(ChallengeMode.VS));
+        applyFilterType(query, userDetails, filterType);
+        return query;
+    }
+
+    private void applyFilterType(JPAQuery<?> query, UserDetails userDetails, ChallengeFilterType filterType) {
+        if (filterType == ChallengeFilterType.MY) {
+            query.join(challengeMember)
+                    .on(challengeMember.id.challenge.eq(challenge))
+                    .where(challengeMember.id.user.id.eq(userDetails.getUser().getId()));
+        }
+    }
+
+    private void applySorting(JPAQuery<?> query, ChallengeSortType sortType) {
+        switch (sortType) {
+            case LATEST -> query.orderBy(challenge.createdAt.desc());
+            case OLDEST -> query.orderBy(challenge.createdAt.asc());
+            case TITLE -> query.orderBy(challenge.name.asc());
+            case ONGOING -> query.orderBy(new CaseBuilder().when(challenge.status.eq(ChallengeStatus.IN_PROGRESS)).then(1).otherwise(2).asc());
+            case FINISHED -> query.orderBy(new CaseBuilder().when(challenge.status.eq(ChallengeStatus.COMPLETED)).then(1).otherwise(2).asc());
+        }
+    }
+
+    private List<ChallengeDto.ChallengeListResponse> enrichDetails(List<Tuple> tuples) {
+        if (tuples.isEmpty()) return List.of();
+
+        List<Long> challengeIds = tuples.stream().map(t -> t.get(0, Challenge.class).getId()).toList();
+
+        Map<Long, List<String>> fieldMap = fetchFields(challengeIds);
+        Map<Long, List<String>> tagMap = fetchTags(challengeIds);
+
+        return tuples.stream()
+                .map(t -> mapToDto(t, fieldMap, tagMap))
+                .toList();
+    }
+
+    private Map<Long, List<String>> fetchFields(List<Long> challengeIds) {
+        return queryFactory
+                .select(challenge.id, field.name)
+                .from(challenge)
+                .join(challenge.fields, field)
+                .where(challenge.id.in(challengeIds))
+                .fetch()
+                .stream()
+                .collect(Collectors.groupingBy(
+                        t -> t.get(challenge.id),
+                        Collectors.mapping(t -> t.get(field.name), Collectors.toList())
+                ));
+    }
+
+    private Map<Long, List<String>> fetchTags(List<Long> challengeIds) {
+        return queryFactory
+                .select(challenge.id, tag.name)
+                .from(challenge)
+                .join(challenge.tags, tag)
+                .where(challenge.id.in(challengeIds))
+                .fetch()
+                .stream()
+                .collect(Collectors.groupingBy(
+                        t -> t.get(challenge.id),
+                        Collectors.mapping(t -> t.get(tag.name), Collectors.toList())
+                ));
+    }
+
+    private ChallengeDto.ChallengeListResponse mapToDto(
+            Tuple tuple, Map<Long, List<String>> fieldMap, Map<Long, List<String>> tagMap
+    ) {
+        Challenge c = tuple.get(0, Challenge.class);
+        User host = c.getHost();
+        ProfileImage profileImage = host.getProfileImage();
+
+        return ChallengeDto.ChallengeListResponse.builder()
+                .user(ChallengeDto.UserResponse.builder()
+                        .userId(host.getId())
+                        .nickname(host.getNickname())
+                        .badge(host.getTier().getName())
+                        .profileImage(profileImage != null ? FileDto.FileResponse.from(profileImage) : null)
+                        .build())
+                .startDate(c.getStartedAt())
+                .duration(c.getDurationWeek() + "주")
+                .status(c.getStatus())
+                .name(c.getName())
+                .fields(fieldMap.getOrDefault(c.getId(), List.of()))
+                .tags(tagMap.getOrDefault(c.getId(), List.of()))
+                .job(c.getJob())
+                .liked(Boolean.TRUE.equals(tuple.get(1, Boolean.class)))
+                .likeCount(tuple.get(2, Long.class) != null ? tuple.get(2, Long.class).intValue() : 0)
+                .createdAt(c.getCreatedAt())
+                .lastModifiedAt(c.getLastModifiedAt())
+                .build();
+    }
+
+    private LocalDate endDate(ChallengeDto.ChallengeListResponse dto) {
+        return dto.getStartDate().plusWeeks(Integer.parseInt(dto.getDuration().replace("주", "")));
+    }
+}
