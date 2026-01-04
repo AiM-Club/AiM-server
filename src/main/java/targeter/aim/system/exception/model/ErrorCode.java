@@ -47,6 +47,7 @@ public enum ErrorCode {
     AUTH_USER_NOT_FOUND(404, "등록된 유저를 찾을 수 없습니다."),
     AUTH_CANNOT_GENERATE_TOKEN(400, "인증키를 생성 할 수 없습니다."),
     DUPLICATE_EMAIL_PROVIDER(409, "이미 존재하는 이메일입니다. 다른 로그인 방식으로 가입된 계정입니다."),
+    AUTH_LOGIN_REQUIRED(401, "로그인이 필요합니다."),
 
     // User
     USER_ALREADY_LOGIN_ID_EXISTS(409, "중복되는 아이디입니다."),
