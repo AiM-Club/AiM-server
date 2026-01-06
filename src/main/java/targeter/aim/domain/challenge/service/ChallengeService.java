@@ -1,20 +1,23 @@
 package targeter.aim.domain.challenge.service;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import targeter.aim.domain.ai.llm.dto.RoutePayload;
 import targeter.aim.domain.challenge.dto.ChallengeDto;
 import targeter.aim.domain.challenge.entity.Challenge;
 import targeter.aim.domain.challenge.entity.WeeklyProgress;
-import targeter.aim.domain.challenge.repository.ChallengeRepository;
-import targeter.aim.domain.challenge.repository.WeeklyProgressRepository;
+import targeter.aim.domain.challenge.repository.*;
 import targeter.aim.domain.label.entity.Field;
 import targeter.aim.domain.label.entity.Tag;
 import targeter.aim.domain.label.repository.FieldRepository;
 import targeter.aim.domain.label.repository.TagRepository;
 import targeter.aim.domain.user.entity.User;
 import targeter.aim.domain.user.repository.UserRepository;
+import targeter.aim.domain.challenge.repository.ChallengeRepository;
+import targeter.aim.domain.challenge.repository.WeeklyProgressRepository;
 import targeter.aim.system.exception.model.ErrorCode;
 import targeter.aim.system.exception.model.RestException;
 import targeter.aim.system.security.model.UserDetails;
@@ -25,10 +28,12 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class ChallengeService {
 
+    private final ChallengeQueryRepository challengeQueryRepository;
     private final ChallengeRepository challengeRepository;
     private final WeeklyProgressRepository weeklyProgressRepository;
     private final UserRepository userRepository;
@@ -37,6 +42,33 @@ public class ChallengeService {
 
     private final ChallengeRoutePersistService persistService;
     private final ChallengeRouteGenerationService generationService;
+
+    @Transactional(readOnly = true)
+    public ChallengeDto.ChallengePageResponse getVsChallenges(
+            ChallengeDto.ListSearchCondition condition,
+            UserDetails userDetails,
+            Pageable pageable
+    ) {
+        ChallengeFilterType filterType =
+                ChallengeFilterType.valueOf(condition.getFilterType());
+
+        ChallengeSortType sortType =
+                ChallengeSortType.valueOf(condition.getSort());
+
+        // MY 탭은 로그인 필요
+        if (filterType == ChallengeFilterType.MY && userDetails == null) {
+            throw new RestException(ErrorCode.AUTH_LOGIN_REQUIRED);
+        }
+
+        var page = challengeQueryRepository.paginateByType(
+                userDetails,
+                pageable,
+                filterType,
+                sortType
+        );
+
+        return ChallengeDto.ChallengePageResponse.from(page);
+    }
 
     @Transactional
     public ChallengeDto.ChallengeDetailsResponse createChallenge(UserDetails userDetails, ChallengeDto.ChallengeCreateRequest request) {
