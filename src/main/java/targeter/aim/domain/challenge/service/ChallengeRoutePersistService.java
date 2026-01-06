@@ -48,8 +48,6 @@ public class ChallengeRoutePersistService {
                 .job(String.join(",", req.getJobs()))
                 .startedAt(req.getStartedAt())
                 .durationWeek(req.getDuration())
-                .mode(req.getMode())
-                .visibility(req.getVisibility())
                 .status(ChallengeStatus.IN_PROGRESS)
                 .build();
 
