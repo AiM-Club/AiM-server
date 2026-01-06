@@ -139,24 +139,24 @@ public class ChallengeDto {
             private List<CommentDetails> replyComments;
         }
     }
-
-    @Data
-    @AllArgsConstructor
-    @NoArgsConstructor
-    @Builder
-    public static class ProgressCreateRequest {
-        private String name;
-
-        private LocalDate startedAt;
-
-        private Integer duration;
-
-        private List<String> tags;
-
-        private List<String> fields;
-
-        private List<String> jobs;
-
-        private String userRequest;
-    }
+//
+//    @Data
+//    @AllArgsConstructor
+//    @NoArgsConstructor
+//    @Builder
+//    public static class ProgressCreateRequest {
+//        private String name;
+//
+//        private LocalDate startedAt;
+//
+//        private Integer duration;
+//
+//        private List<String> tags;
+//
+//        private List<String> fields;
+//
+//        private List<String> jobs;
+//
+//        private String userRequest;
+//    }
 }

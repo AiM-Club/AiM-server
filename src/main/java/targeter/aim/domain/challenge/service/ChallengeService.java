@@ -42,23 +42,11 @@ public class ChallengeService {
     public ChallengeDto.ChallengeDetailsResponse createChallenge(UserDetails userDetails, ChallengeDto.ChallengeCreateRequest request) {
 
         User user = userDetails.getUser();
+        // 1. 주차별 계획(Payload) 생성
+        RoutePayload routePayload = generationService.generateRoute(request);
 
-        // 1. AI 주차별 생성 로직을 위한 request 생성
-        ChallengeDto.ProgressCreateRequest progressRequest = ChallengeDto.ProgressCreateRequest.builder()
-                .name(request.getName())
-                .startedAt(request.getStartedAt())
-                .duration(request.getDuration())
-                .tags(request.getTags())
-                .fields(request.getFields())
-                .jobs(request.getJobs())
-                .userRequest(request.getUserRequest())
-                .build();
-
-        // 2. 주차별 계획(Payload) 생성
-        RoutePayload routePayload = generationService.generateRoute(progressRequest);
-
-        // 3. 생성된 데이터 저장
-        Long challengeId = persistService.persistAtomic(user.getId(), progressRequest, routePayload);
+        // 2. 생성된 데이터 저장
+        Long challengeId = persistService.persistAtomic(user.getId(), request, routePayload);
 
         // 4. 생성된 챌린지 조회 및 추가 정보
         Challenge challenge = challengeRepository.findById(challengeId)

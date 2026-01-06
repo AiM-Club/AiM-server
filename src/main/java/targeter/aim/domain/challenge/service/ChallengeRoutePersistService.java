@@ -28,7 +28,7 @@ public class ChallengeRoutePersistService {
 
     // 상위 트랜잭션과 독립적으로 실행
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public Long persistAtomic(Long userId, ChallengeDto.ProgressCreateRequest req, RoutePayload payload) {
+    public Long persistAtomic(Long userId, ChallengeDto.ChallengeCreateRequest req, RoutePayload payload) {
         // 1. Host 유저 조회
         User host = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
@@ -49,6 +49,8 @@ public class ChallengeRoutePersistService {
                 .startedAt(req.getStartedAt())
                 .durationWeek(req.getDuration())
                 .status(ChallengeStatus.IN_PROGRESS)
+                .mode(req.getMode())
+                .visibility(req.getVisibility())
                 .build();
 
         Challenge savedChallenge = challengeRepository.save(challenge);

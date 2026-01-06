@@ -14,9 +14,9 @@ import targeter.aim.system.security.model.UserDetails;
 @RequiredArgsConstructor
 @RequestMapping("/api/challenge")
 public class ChallengeController {
-    private ChallengeService challengeService;
+    private final ChallengeService challengeService;
 
-    @PostMapping(consumes = "multipart/form-data")
+    @PostMapping
     public ChallengeDto.ChallengeDetailsResponse createChallenge(
             @RequestBody ChallengeDto.ChallengeCreateRequest request,
             @AuthenticationPrincipal UserDetails userDetails
