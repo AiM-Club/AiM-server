@@ -11,21 +11,28 @@ import java.security.Key;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Date;
+import java.util.UUID;
 
 @RequiredArgsConstructor
 public class JwtTokenProvider {
+
     private final Key secret;
     private final JwtProperties jwtProperties;
 
     public JwtDto.TokenData createRefreshToken(AuthDetails authDetails) {
+        String refreshUuid = UUID.randomUUID().toString();
+        return createRefreshToken(authDetails, refreshUuid);
+    }
+
+    private JwtDto.TokenData createRefreshToken(AuthDetails authDetails, String refreshUuid) {
         Claims claims = Jwts.claims().setSubject(authDetails.getName());
         claims.put("tokenType", "REFRESH");
+        claims.put("refreshUuid", refreshUuid);
 
         LocalDateTime expireLocalDateTime =
                 LocalDateTime.now().plusWeeks(jwtProperties.getRefreshTokenExpirationWeeks());
 
-
-        String tokenString = getTokenString(claims, expireLocalDateTime);
+        String tokenString = buildTokenString(claims, expireLocalDateTime);
 
         return JwtDto.TokenData.builder()
                 .tokenString(tokenString)
@@ -41,7 +48,7 @@ public class JwtTokenProvider {
         LocalDateTime expireLocalDateTime =
                 LocalDateTime.now().plusMinutes(jwtProperties.getAccessTokenExpirationMinutes());
 
-        String tokenString = getTokenString(claims, expireLocalDateTime);
+        String tokenString = buildTokenString(claims, expireLocalDateTime);
 
         return JwtDto.TokenData.builder()
                 .tokenString(tokenString)
@@ -50,17 +57,19 @@ public class JwtTokenProvider {
     }
 
     public JwtDto.TokenPair createTokenPair(AuthDetails authDetails) {
-        JwtDto.TokenData refreshTokenData = createRefreshToken(authDetails);
-        JwtDto.TokenData accessTokenData = createAccessToken(authDetails, refreshTokenData.getTokenString());
+        String refreshUuid = UUID.randomUUID().toString();
+
+        JwtDto.TokenData refreshTokenData = createRefreshToken(authDetails, refreshUuid);
+        JwtDto.TokenData accessTokenData = createAccessToken(authDetails, refreshUuid);
 
         return JwtDto.TokenPair.of(refreshTokenData, accessTokenData);
     }
 
-    private String getTokenString(Claims claims, LocalDateTime expireLocalDateTime) {
+    private String buildTokenString(Claims claims, LocalDateTime expireAt) {
         return Jwts.builder()
                 .setClaims(claims)
                 .setIssuedAt(new Date())
-                .setExpiration(Date.from(expireLocalDateTime.atZone(ZoneId.systemDefault()).toInstant()))
+                .setExpiration(Date.from(expireAt.atZone(ZoneId.systemDefault()).toInstant()))
                 .signWith(secret)
                 .compact();
     }
