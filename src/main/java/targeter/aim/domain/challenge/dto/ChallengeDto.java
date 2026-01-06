@@ -14,30 +14,6 @@ import java.util.List;
 public class ChallengeDto {
 
     @Data
-    @AllArgsConstructor
-    @NoArgsConstructor
-    @Builder
-    public static class ChallengeCreateRequest {
-        private String name;
-
-        private LocalDate startedAt;
-
-        private Integer duration;
-
-        private List<String> tags;
-
-        private List<String> fields;
-
-        private List<String> jobs;
-
-        private String userRequest;
-
-        private ChallengeMode mode;
-
-        private ChallengeVisibility visibility;
-    }
-
-    @Data
     @NoArgsConstructor
     @AllArgsConstructor
     @Builder
@@ -148,6 +124,41 @@ public class ChallengeDto {
     @AllArgsConstructor
     @NoArgsConstructor
     @Builder
+    @Schema(description = "챌린지 생성 요청")
+    public static class ChallengeCreateRequest {
+        @Schema(description = "챌린지 이름", example = "다이어트 챌린지")
+        private String name;
+
+        @Schema(description = "시작일", example = "2026-01-01")
+        private LocalDate startedAt;
+
+        @Schema(description = "기간(주)", example = "6")
+        private Integer duration;
+
+        @Schema(description = "태그 목록(1~3개)", example = "[\"태그1\", \"태그2\", \"태그3\"]")
+        private List<String> tags;
+
+        @Schema(description = "분야 목록(1~3개)", example = "[\"IT\", \"경영\"]")
+        private List<String> fields;
+
+        @Schema(description = "직무 목록(1~3개)", example = "[\"직업1\"]")
+        private List<String> jobs;
+
+        @Schema(description = "AI 요청사항", example = "4주동안 빠르게 다이어트할 수 있는 방법을 알려줘. 금식은 최대한 자제할거야.")
+        private String userRequest;
+
+        @Schema(description = "챌린지 모드", example = "SOLO", allowableValues = { "SOLO", "VS" })
+        private ChallengeMode mode;
+
+        @Schema(description = "공개 여부", example = "PUBLIC", allowableValues = { "PUBLIC", "PRIVATE" })
+        private ChallengeVisibility visibility;
+    }
+
+    // 챌린지 생성 테스트 용도, 추후 챌린지 상세보기 개발 시 수정
+    @Data
+    @AllArgsConstructor
+    @NoArgsConstructor
+    @Builder
     public static class ChallengeDetailsResponse {
         private ChallengeInfo challengeInfo;        // 전체 챌린지 정보
 
@@ -243,24 +254,4 @@ public class ChallengeDto {
             private List<CommentDetails> replyComments;
         }
     }
-//
-//    @Data
-//    @AllArgsConstructor
-//    @NoArgsConstructor
-//    @Builder
-//    public static class ProgressCreateRequest {
-//        private String name;
-//
-//        private LocalDate startedAt;
-//
-//        private Integer duration;
-//
-//        private List<String> tags;
-//
-//        private List<String> fields;
-//
-//        private List<String> jobs;
-//
-//        private String userRequest;
-//    }
 }
