@@ -40,7 +40,7 @@ class ChallengeRoutePersistServiceTest {
     void persistAtomic_Skip_If_Exists() {
         // given
         Long userId = 1L;
-        ChallengeDto.ProgressCreateRequest request = ChallengeDto.ProgressCreateRequest.builder()
+        ChallengeDto.ChallengeCreateRequest request = ChallengeDto.ChallengeCreateRequest.builder()
                 .name("Existing Challenge")
                 .startedAt(LocalDate.now())
                 .build();
@@ -70,7 +70,7 @@ class ChallengeRoutePersistServiceTest {
     void persistAtomic_Success() {
         // given
         Long userId = 1L;
-        ChallengeDto.ProgressCreateRequest request = ChallengeDto.ProgressCreateRequest.builder()
+        ChallengeDto.ChallengeCreateRequest request = ChallengeDto.ChallengeCreateRequest.builder()
                 .name("New Challenge")
                 .startedAt(LocalDate.now())
                 .jobs(List.of("Dev"))
