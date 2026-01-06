@@ -13,7 +13,6 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-import targeter.aim.domain.auth.handler.OAuth2LoginSuccessHandler;
 import targeter.aim.system.security.configurer.JwtAutoConfigurerFactory;
 import targeter.aim.system.security.model.ApiPathPattern;
 import targeter.aim.system.security.service.UserLoadServiceImpl;
@@ -34,8 +33,7 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(
             HttpSecurity httpSecurity,
-            UserLoadServiceImpl userLoadServiceImpl,
-            OAuth2LoginSuccessHandler oAuth2LoginSuccessHandler
+            UserLoadServiceImpl userLoadServiceImpl
     ) throws Exception {
 
         httpSecurity
@@ -44,8 +42,6 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
                                 "/api/auth/**",
-                                "/oauth2/**",
-                                "/login/oauth2/**",
                                 "/error",
                                 "/swagger-ui/**",
                                 "/v3/api-docs/**",
@@ -54,24 +50,22 @@ public class SecurityConfig {
                         .requestMatchers("/api/**").authenticated()
                         .anyRequest().permitAll()
                 )
-                // OAuth2 Login (Google/Kakao)
-                .oauth2Login(oauth -> oauth
-                        .successHandler(oAuth2LoginSuccessHandler)
-                )
+                // REST 방식
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 );
 
         jwtAutoConfigurerFactory.create(userLoadServiceImpl)
                 .pathConfigure(it -> {
-                    //auth는 JWT 인증 제외 (로그인/회원가입/카카오로그인 등)
+                    // auth는 JWT 인증 제외 (로그인/회원가입/소셜로그인 등)
                     it.exclude("/api/auth/**", ApiPathPattern.METHODS.GET);
                     it.exclude("/api/auth/**", ApiPathPattern.METHODS.POST);
                     it.exclude("/api/auth/**", ApiPathPattern.METHODS.PUT);
                     it.exclude("/api/auth/**", ApiPathPattern.METHODS.PATCH);
                     it.exclude("/api/auth/**", ApiPathPattern.METHODS.DELETE);
                     it.exclude("/api/auth/**", ApiPathPattern.METHODS.OPTIONS);
-                    //기존 유지
+
+                    // 기존 유지
                     it.include("/api/**", ApiPathPattern.METHODS.GET);
                     it.include("/api/**", ApiPathPattern.METHODS.POST);
                     it.include("/api/**", ApiPathPattern.METHODS.PUT);
