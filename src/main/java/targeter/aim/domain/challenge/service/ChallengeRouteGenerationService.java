@@ -21,7 +21,7 @@ public class ChallengeRouteGenerationService {
     private static final int MAX_TITLE_LENGTH = 100;
     private static final int MAX_CONTENT_LENGTH = 500;
 
-    public RoutePayload generateRoute(ChallengeDto.ProgressCreateRequest req) {
+    public RoutePayload generateRoute(ChallengeDto.ChallengeCreateRequest req) {
         // 1. AI 호출 (Retry 최대 3회 수행)
         RoutePayload payload = retry(() ->
                 routeGenerator.generate(

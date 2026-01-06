@@ -56,6 +56,9 @@ public enum ErrorCode {
     // Tier
     TIER_NOT_FOUND(404, "해당 티어를 찾을 수 없습니다."),
 
+    // Challenge
+    CHALLENGE_NOT_FOUND(404, "존재하지 않는 챌린지입니다."),
+
     // Other
     INTERNAL_SERVER_ERROR(500, "오류가 발생했습니다.");
 
