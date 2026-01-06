@@ -18,6 +18,7 @@ import targeter.aim.domain.user.entity.User;
 import targeter.aim.domain.user.repository.UserRepository;
 import targeter.aim.domain.challenge.repository.ChallengeRepository;
 import targeter.aim.domain.challenge.repository.WeeklyProgressRepository;
+import targeter.aim.domain.challenge.dto.ChallengeDto;
 import targeter.aim.system.exception.model.ErrorCode;
 import targeter.aim.system.exception.model.RestException;
 import targeter.aim.system.security.model.UserDetails;
@@ -42,6 +43,7 @@ public class ChallengeService {
 
     private final ChallengeRoutePersistService persistService;
     private final ChallengeRouteGenerationService generationService;
+
 
     @Transactional(readOnly = true)
     public ChallengeDto.ChallengePageResponse getVsChallenges(
@@ -177,3 +179,4 @@ public class ChallengeService {
                 .build();
     }
 }
+
