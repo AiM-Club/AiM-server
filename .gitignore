@@ -43,3 +43,4 @@ out/
 !.env.example
 !.env.sample
 .db
+upload/

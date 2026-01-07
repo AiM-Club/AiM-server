@@ -12,12 +12,15 @@ import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestClientResponseException;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.multipart.MultipartFile;
 import targeter.aim.domain.auth.dto.AuthDto;
 import targeter.aim.domain.auth.token.entity.RefreshToken;
 import targeter.aim.domain.auth.token.entity.dto.RefreshTokenDto;
 import targeter.aim.domain.auth.token.repository.RefreshTokenCacheRepository;
 import targeter.aim.domain.auth.token.repository.RefreshTokenRepository;
 import targeter.aim.domain.auth.token.validator.RefreshTokenValidator;
+import targeter.aim.domain.file.entity.ProfileImage;
+import targeter.aim.domain.file.handler.FileHandler;
 import targeter.aim.domain.user.dto.UserDto;
 import targeter.aim.domain.user.entity.SocialLogin;
 import targeter.aim.domain.user.entity.Tier;
@@ -45,6 +48,7 @@ public class AuthService {
     private final RefreshTokenRepository refreshTokenRepository;
     private final RefreshTokenCacheRepository refreshTokenCacheRepository;
     private final RefreshTokenValidator refreshTokenValidator;
+    private final FileHandler fileHandler;
 
     private final RestTemplate restTemplate = new RestTemplate();
 
@@ -83,7 +87,19 @@ public class AuthService {
         toSave.setTier(bronze);
 
         User saved = userRepository.save(toSave);
+        saveProfileImage(request.getProfileImage(), saved);
+
         return UserDto.UserResponse.from(saved);
+    }
+
+    private void saveProfileImage(MultipartFile file, User user) {
+        if(file != null && !file.isEmpty()) {
+            ProfileImage profileImage = ProfileImage.from(file);
+            if(profileImage == null) return;
+            user.setProfileImage(profileImage);
+            profileImage.setUser(user);
+            fileHandler.saveFile(file, profileImage);
+        }
     }
 
     @Transactional
