@@ -12,6 +12,7 @@ import targeter.aim.domain.challenge.repository.ChallengeMemberRepository;
 import targeter.aim.domain.challenge.repository.ChallengeRepository;
 import targeter.aim.domain.challenge.repository.WeeklyCommentRepository;
 import targeter.aim.domain.challenge.repository.WeeklyProgressRepository;
+import targeter.aim.domain.file.entity.AttachedFile;
 import targeter.aim.domain.file.entity.ChallengeImage;
 import targeter.aim.domain.file.entity.ProfileImage;
 import targeter.aim.domain.file.repository.AttachedFileRepository;
@@ -199,6 +200,11 @@ public class ChallengeRoutePersistService {
                         .opponent(opponentDto)
                         .build();
 
+        String authFile = (myWeek == null) ? null
+                : attachedFileRepository.findWeeklyAuthFileByWeeklyProgressId(myWeek.getId())
+                .map(AttachedFile::getFilePath)
+                .orElse(null);
+
         ChallengeDto.VsChallengeDetailResponse.CurrentWeekDetail currentWeekDetail =
                 ChallengeDto.VsChallengeDetailResponse.CurrentWeekDetail.builder()
                         .weekNumber(currentWeek)
@@ -206,7 +212,7 @@ public class ChallengeRoutePersistService {
                         .aiTitle(myWeek == null ? null : myWeek.getTitle())
                         .aiContent(myWeek == null ? null : myWeek.getContent())
                         .recordTime(formatSeconds(myWeek == null ? null : myWeek.getStopwatchTimeSeconds()))
-                        .authFile(null)
+                        .authFile(authFile)
                         .isFinished(myWeek != null && Boolean.TRUE.equals(myWeek.getIsComplete()))
                         .build();
 
