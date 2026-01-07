@@ -2,6 +2,7 @@ package targeter.aim.domain.challenge.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Pageable;
@@ -23,6 +24,7 @@ import targeter.aim.system.security.model.UserDetails;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/challenges")
+@Tag(name = "Challenge", description = "챌린지 관련 API")
 public class ChallengeController {
 
     private final ChallengeService challengeService;
