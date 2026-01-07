@@ -12,6 +12,8 @@ public interface WeeklyProgressRepository extends JpaRepository<WeeklyProgress, 
 
     Optional<WeeklyProgress> findByChallengeAndUserAndWeekNumber(Challenge challenge, User user, Integer weekNumber);
 
+    Optional<WeeklyProgress> findByChallengeAndWeekNumber(Challenge challenge, Integer weekNumber);
+
     long countByChallengeAndUserAndIsCompleteTrue(Challenge challenge, User user);
 
     List<WeeklyProgress> findAllByChallengeAndUser(Challenge challenge, User user);

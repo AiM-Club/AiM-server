@@ -61,6 +61,7 @@ public class UserDto {
                     .nickname(user.getNickname())
                     .birthday(user.getBirthday())
                     .gender(user.getGender())
+                    .profileImage(FileDto.FileResponse.from(user.getProfileImage()))
                     .socialLogin(user.getSocialLogin() == null ? null : user.getSocialLogin())
                     .isNewUser(isNewUser)
                     .createdAt(user.getCreatedAt())
