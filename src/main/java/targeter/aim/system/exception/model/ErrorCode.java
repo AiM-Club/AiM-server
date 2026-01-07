@@ -26,6 +26,7 @@ public enum ErrorCode {
     FILE_METADATA_BUT_DISK_NOT_FOUND(404, "파일 메타데이터는 존재하지만 디스크에서 파일을 찾을 수 없습니다."),
     FILE_NOT_READABLE(400, "파일을 읽을 수 없습니다."),
     FILE_ACCESS_DENIED(403, "파일 접근 권한이 없습니다."),
+    FILE_ALREADY_EXIST(400, "파일이 이미 존재합니다."),
 
     // Auth - Validation
     AUTH_ID_REQUIRED(400, "아이디는 필수 입력값입니다."),
