@@ -49,6 +49,12 @@ public enum ErrorCode {
     DUPLICATE_EMAIL_PROVIDER(409, "이미 존재하는 이메일입니다. 다른 로그인 방식으로 가입된 계정입니다."),
     AUTH_LOGIN_REQUIRED(401, "로그인이 필요합니다."),
 
+
+    // Auth - Kakao
+    AUTH_KAKAO_CODE_INVALID(401, "카카오 인가 코드가 유효하지 않습니다."),
+    AUTH_KAKAO_TOKEN_REQUEST_FAILED(401, "카카오 토큰 요청에 실패했습니다."),
+    AUTH_KAKAO_USERINFO_REQUEST_FAILED(401, "카카오 사용자 정보 조회에 실패했습니다."),
+
     // User
     USER_ALREADY_LOGIN_ID_EXISTS(409, "중복되는 아이디입니다."),
     USER_NOT_FOUND(404, "존재하지 않는 사용자입니다."),

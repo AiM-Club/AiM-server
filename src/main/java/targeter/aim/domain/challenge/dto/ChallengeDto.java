@@ -147,10 +147,10 @@ public class ChallengeDto {
         @Schema(description = "AI 요청사항", example = "4주동안 빠르게 다이어트할 수 있는 방법을 알려줘. 금식은 최대한 자제할거야.")
         private String userRequest;
 
-        @Schema(description = "챌린지 모드", example = "SOLO", allowableValues = { "SOLO", "VS" })
+        @Schema(description = "챌린지 모드", example = "SOLO", allowableValues = {"SOLO", "VS"})
         private ChallengeMode mode;
 
-        @Schema(description = "공개 여부", example = "PUBLIC", allowableValues = { "PUBLIC", "PRIVATE" })
+        @Schema(description = "공개 여부", example = "PUBLIC", allowableValues = {"PUBLIC", "PRIVATE"})
         private ChallengeVisibility visibility;
     }
 
