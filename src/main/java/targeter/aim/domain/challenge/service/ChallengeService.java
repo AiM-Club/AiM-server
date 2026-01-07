@@ -16,9 +16,6 @@ import targeter.aim.domain.label.repository.FieldRepository;
 import targeter.aim.domain.label.repository.TagRepository;
 import targeter.aim.domain.user.entity.User;
 import targeter.aim.domain.user.repository.UserRepository;
-import targeter.aim.domain.challenge.repository.ChallengeRepository;
-import targeter.aim.domain.challenge.repository.WeeklyProgressRepository;
-import targeter.aim.domain.challenge.dto.ChallengeDto;
 import targeter.aim.system.exception.model.ErrorCode;
 import targeter.aim.system.exception.model.RestException;
 import targeter.aim.system.security.model.UserDetails;
@@ -178,5 +175,18 @@ public class ChallengeService {
                 .currentWeekDetails(currentWeek)
                 .build();
     }
-}
 
+    // VS 챌린지 상세 조회 (ChallengeController에서 호출)
+    @Transactional(readOnly = true)
+    public ChallengeDto.VsChallengeDetailResponse getVsChallengeDetail(
+            Long challengeId,
+            UserDetails userDetails,
+            String filterType,
+            String sort,
+            String order,
+            Integer page,
+            Integer size
+    ) {
+        return persistService.getVsChallengeDetail(challengeId, userDetails, filterType, sort, order, page, size);
+    }
+}

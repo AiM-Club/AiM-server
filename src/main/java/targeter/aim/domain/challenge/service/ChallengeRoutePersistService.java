@@ -162,46 +162,56 @@ public class ChallengeRoutePersistService {
                 .map(ChallengeImage::getFilePath)
                 .orElse(null);
 
+        String category = challenge.getFields().stream()
+                .map(Field::getName)
+                .findFirst()
+                .orElse(null);
+
+        String job = Arrays.stream(Optional.ofNullable(challenge.getJob()).orElse("").split(","))
+                .map(String::trim)
+                .filter(s -> !s.isEmpty())
+                .findFirst()
+                .orElse(null);
+
         ChallengeDto.VsChallengeDetailResponse.ChallengeInfo challengeInfo =
                 ChallengeDto.VsChallengeDetailResponse.ChallengeInfo.builder()
                         .thumbnail(thumbnail)
                         .title(challenge.getName())
                         .tags(challenge.getTags().stream().map(Tag::getName).toList())
-                        .fields(challenge.getFields().stream().map(Field::getName).toList())
-                        .job(challenge.getJob())
-                        .startDate(challenge.getStartedAt().toString())
+                        .category(category)
+                        .job(job)
+                        .startDate(challenge.getStartedAt() == null ? null : challenge.getStartedAt().toString())
                         .totalWeeks(totalWeeks)
-                        .state(challenge.getStatus().name())
+                        .state(challenge.getStatus() == null ? null : challenge.getStatus().name())
                         .build();
 
-        ChallengeDto.VsChallengeDetailResponse.Participant meDto =
-                ChallengeDto.VsChallengeDetailResponse.Participant.builder()
+        ChallengeDto.VsChallengeDetailResponse.Me meDto =
+                ChallengeDto.VsChallengeDetailResponse.Me.builder()
                         .profileImage(getProfileImagePath(me))
-                        .nickname("ME")
+                        .nickname(me.getNickname())
                         .progressRate(currentWeek + "/" + totalWeeks)
                         .successRate(mySuccessRate)
                         .isSuccess(mySuccessRate >= 70)
-                        .isRealTimeActive(false)
                         .build();
 
-        ChallengeDto.VsChallengeDetailResponse.Participant opponentDto =
-                ChallengeDto.VsChallengeDetailResponse.Participant.builder()
+        ChallengeDto.VsChallengeDetailResponse.Opponent opponentDto =
+                ChallengeDto.VsChallengeDetailResponse.Opponent.builder()
                         .profileImage(opponent == null ? null : getProfileImagePath(opponent))
                         .nickname(opponent == null ? null : opponent.getNickname())
                         .progressRate(currentWeek + "/" + totalWeeks)
                         .successRate(opponentSuccessRate)
-                        .isSuccess(opponentSuccessRate >= 70)
                         .isRealTimeActive(opponentRealTime)
                         .build();
 
         ChallengeDto.VsChallengeDetailResponse.Participants participants =
                 ChallengeDto.VsChallengeDetailResponse.Participants.builder()
                         .me(meDto)
-                        .opponent(opponentDto)
+                        .opponent(opponent == null ? null : opponentDto)
                         .build();
 
-        String authFile = (myWeek == null) ? null
-                : attachedFileRepository.findWeeklyAuthFileByWeeklyProgressId(myWeek.getId())
+        String authFile = (myWeek == null || myWeek.getCertifiedFileUuid() == null)
+                ? null
+                : attachedFileRepository.findByUuid(myWeek.getCertifiedFileUuid())
                 .map(AttachedFile::getFilePath)
                 .orElse(null);
 
@@ -216,7 +226,7 @@ public class ChallengeRoutePersistService {
                         .isFinished(myWeek != null && Boolean.TRUE.equals(myWeek.getIsComplete()))
                         .build();
 
-        List<ChallengeDto.VsChallengeDetailResponse.CommentNode> comments = buildCommentTree(myWeek);
+        List<ChallengeDto.VsChallengeDetailResponse.CommentNode> comments = buildCommentTreeForSpec(myWeek);
 
         return ChallengeDto.VsChallengeDetailResponse.builder()
                 .challengeInfo(challengeInfo)
@@ -265,7 +275,7 @@ public class ChallengeRoutePersistService {
         return String.format("%02d:%02d:%02d", h, m, s);
     }
 
-    private List<ChallengeDto.VsChallengeDetailResponse.CommentNode> buildCommentTree(WeeklyProgress myWeek) {
+    private List<ChallengeDto.VsChallengeDetailResponse.CommentNode> buildCommentTreeForSpec(WeeklyProgress myWeek) {
         if (myWeek == null) return List.of();
 
         List<WeeklyComment> comments = weeklyCommentRepository

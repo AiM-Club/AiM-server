@@ -19,15 +19,4 @@ public interface AttachedFileRepository extends JpaRepository<AttachedFile, Stri
         where ci.challenge.id = :challengeId
     """)
     Optional<ChallengeImage> findChallengeImageByChallengeId(Long challengeId); //챌린지 이미지가 여러 개라면 Optional 대신 List<ChallengeImage>로 추후변경
-
-    @Query("""
-        select af
-        from AttachedFile af
-        where af.uuid = (
-            select w.uuid
-            from WeeklyAuthFile w
-            where w.weeklyProgress.id = :weeklyProgressId
-        )
-    """)
-    Optional<AttachedFile> findWeeklyAuthFileByWeeklyProgressId(Long weeklyProgressId);
 }

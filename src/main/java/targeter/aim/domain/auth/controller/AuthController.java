@@ -12,8 +12,6 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import targeter.aim.domain.auth.dto.AuthDto;
 import targeter.aim.domain.auth.service.AuthService;
-import targeter.aim.domain.challenge.dto.ChallengeDto;
-import targeter.aim.domain.challenge.service.ChallengeRoutePersistService;
 import targeter.aim.domain.user.dto.UserDto;
 import targeter.aim.system.security.annotation.NoJwtAuth;
 import targeter.aim.system.security.model.UserDetails;
@@ -26,7 +24,6 @@ import targeter.aim.system.security.utility.validator.ValidatorUtil;
 public class AuthController {
 
     private final AuthService authService;
-    private final ChallengeRoutePersistService challengeRoutePersistService;
 
     @NoJwtAuth("회원가입은 인증이 필요하지 않음")
     @PostMapping("/auth/register")
@@ -87,32 +84,5 @@ public class AuthController {
     ) {
         authService.logout(userDetails, request);
         return ResponseEntity.ok("Logout successful.");
-    }
-
-    @GetMapping("/challenge/vs/{challengeId}")
-    @Operation(
-            summary = "VS 챌린지 상세 조회",
-            description = "특정 VS 챌린지의 상세 정보와 현재 주차 진행 현황, 상대방 상태를 조회합니다.",
-            tags = {"Challenge"}
-    )
-    @ApiResponse(responseCode = "200", description = "VS 챌린지 상세 조회 성공")
-    public ChallengeDto.VsChallengeDetailResponse getVsChallengeDetail(
-            @PathVariable Long challengeId,
-            @RequestParam(value = "filterType", required = false, defaultValue = "ALL") String filterType,
-            @RequestParam(value = "sort", required = false, defaultValue = "created_at") String sort,
-            @RequestParam(value = "order", required = false, defaultValue = "desc") String order,
-            @RequestParam(value = "page", required = false, defaultValue = "0") Integer page,
-            @RequestParam(value = "size", required = false, defaultValue = "16") Integer size,
-            @Parameter(hidden = true) @AuthenticationPrincipal UserDetails userDetails
-    ) {
-        return challengeRoutePersistService.getVsChallengeDetail(
-                challengeId,
-                userDetails,
-                filterType,
-                sort,
-                order,
-                page,
-                size
-        );
     }
 }
