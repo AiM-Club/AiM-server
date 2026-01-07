@@ -22,7 +22,7 @@ import java.util.UUID;
 public class BadgeImage extends AttachedFile {
 
     @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "tier_id", nullable = false)
+    @JoinColumn(name = "tier_id")
     private Tier tier;
 
     public static BadgeImage from(MultipartFile file, Tier tier) {

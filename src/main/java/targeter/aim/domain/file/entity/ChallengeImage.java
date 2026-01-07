@@ -22,7 +22,7 @@ import java.util.UUID;
 public class ChallengeImage extends AttachedFile {
 
     @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "challenge_id", nullable = false)
+    @JoinColumn(name = "challenge_id")
     private Challenge challenge;
 
     public static ChallengeImage from(MultipartFile file, Challenge challenge) {
