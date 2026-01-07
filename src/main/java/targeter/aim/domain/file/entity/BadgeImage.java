@@ -25,14 +25,15 @@ public class BadgeImage extends AttachedFile {
     @JoinColumn(name = "tier_id", nullable = false)
     private Tier tier;
 
-    public static BadgeImage from(MultipartFile file, Tier tier, String filePath) {
+    public static BadgeImage from(MultipartFile file, Tier tier) {
         throwIfNotAImageFile(file);
 
-        String fileName = file.getOriginalFilename();
+        String uuId = UUID.randomUUID().toString();
+        String filePath = "badge/" + uuId;
 
         return BadgeImage.builder()
                 .uuid(UUID.randomUUID().toString())
-                .fileName(fileName)
+                .fileName(safeFilename(file.getOriginalFilename()))
                 .handlingType(HandlingType.IMAGE)
                 .tier(tier)
                 .size(file.getSize())
@@ -41,19 +42,33 @@ public class BadgeImage extends AttachedFile {
     }
 
     private static void throwIfNotAImageFile(MultipartFile file) {
+        if (file == null || file.isEmpty()) {
+            throw new RestException(ErrorCode.FILE_NOT_IMAGE);
+        }
+
+        String contentType = file.getContentType();
+        if (contentType == null || !contentType.toLowerCase().startsWith("image/")) {
+            throw new RestException(ErrorCode.FILE_NOT_IMAGE);
+        }
+
         String fileName = file.getOriginalFilename();
-        if (fileName == null || fileName.isBlank()) {
+        String extension = extractExt(fileName);
+        if(extension == null || !List.of("JPG", "JPEG", "PNG", "WEBP").contains(extension.toUpperCase())) {
             throw new RestException(ErrorCode.FILE_NOT_IMAGE);
         }
+    }
 
-        String[] splitted = fileName.split("\\.");
-        if (splitted.length < 2) {
-            throw new RestException(ErrorCode.FILE_NOT_IMAGE);
-        }
+    private static String extractExt(String fileName) {
+        if(fileName == null) return null;
+        int idx = fileName.lastIndexOf('.');
+        if(idx < 0 || idx == fileName.length() - 1) return null;
+        return fileName.substring(idx + 1).toUpperCase();
+    }
 
-        String extension = splitted[splitted.length - 1];
-        if (!List.of("JPG", "JPEG", "PNG").contains(extension.toUpperCase())) {
-            throw new RestException(ErrorCode.FILE_NOT_IMAGE);
-        }
+    private static String safeFilename(String fileName) {
+        if(fileName == null || fileName.isBlank()) return "file";
+        return fileName.replace("\r", "_")
+                .replace("\n", "_")
+                .replace(" ", "_");
     }
 }
