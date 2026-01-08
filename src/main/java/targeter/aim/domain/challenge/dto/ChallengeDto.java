@@ -24,7 +24,7 @@ public class ChallengeDto {
         @Schema(
                 description = "탭 필터 (전체 / 내 챌린지 / 초대)",
                 example = "ALL",
-                allowableValues = {"ALL", "MY", "INVITE"}
+                allowableValues = {"ALL", "MY"}
         )
         private String filterType = "ALL";
 
@@ -44,8 +44,11 @@ public class ChallengeDto {
     @Schema(description = "챌린지 작성자 정보")
     public static class UserResponse {
         private Long userId;
+
         private String nickname;
+
         private String badge;
+
         private FileDto.FileResponse profileImage;
     }
 
@@ -57,16 +60,27 @@ public class ChallengeDto {
     @Schema(description = "챌린지 목록 응답")
     public static class ChallengeListResponse {
         private UserResponse user;
+
         private LocalDate startDate;
+
         private String duration;
+
         private String name;
+
         private List<String> fields;
+
         private List<String> tags;
+
         private String job;
+
         private Boolean liked;
+
         private Integer likeCount;
+
         private LocalDateTime createdAt;
+
         private LocalDateTime lastModifiedAt;
+
         private ChallengeStatus status;
     }
 
@@ -76,8 +90,11 @@ public class ChallengeDto {
     @Schema(description = "페이지네이션 정보")
     public static class PageInfo {
         private int size;
+
         private int number;
+
         private long totalElements;
+
         private int totalPages;
     }
 
@@ -142,8 +159,11 @@ public class ChallengeDto {
     @NoArgsConstructor
     @Builder
     public static class ChallengeDetailsResponse {
-        private ChallengeInfo challengeInfo;        // 전체 챌린지 정보
+
+        private ChallengeInfo challengeInfo;// 전체 챌린지 정보
+
         private Participants participants;          // 참여자 정보 (vs에는 me,opponent / solo에는 me)
+
         private CurrentWeekDetails currentWeekDetails;  // 이번주 챌린지 내용 상세 정보
 
         @Data
@@ -152,12 +172,19 @@ public class ChallengeDto {
         @Builder
         public static class ChallengeInfo {
             private FileDto.FileResponse challengeThumbnail;
+
             private String title;
+
             private List<String> tags;
+
             private List<String> fields;
+
             private List<String> jobs;
+
             private LocalDate startedAt;
+
             private Integer durationWeek;
+
             private ChallengeStatus status;
         }
 
@@ -167,6 +194,7 @@ public class ChallengeDto {
         @Builder
         public static class Participants {
             private ParticipantDetails me;
+
             private ParticipantDetails opponent;
         }
 
@@ -176,10 +204,15 @@ public class ChallengeDto {
         @Builder
         public static class ParticipantDetails {
             private FileDto.FileResponse profileImage;
+
             private String nickname;
+
             private String progressRate;
+
             private Integer successRate;
+
             private Boolean isSuccess;
+
             private Boolean isRealTimeActive;
         }
 
@@ -189,12 +222,17 @@ public class ChallengeDto {
         @Builder
         public static class CurrentWeekDetails {
             private Integer weekNumber;
+
             private String period;
+
             private String weekTitle;
+
             private String weekContent;
+
             private String recordTime;
-            private FileDto.FileResponse certifiedFile;
+
             private Boolean isFinished;
+
             private List<CommentDetails> comments;
         }
 
@@ -204,9 +242,13 @@ public class ChallengeDto {
         @Builder
         public static class CommentDetails {
             private Long commentId;
+
             private String writer;
+
             private String content;
+
             private LocalDateTime createdAt;
+
             private List<CommentDetails> replyComments;
         }
     }
@@ -220,8 +262,11 @@ public class ChallengeDto {
     public static class VsChallengeDetailResponse {
 
         private ChallengeInfo challengeInfo;
+
         private Participants participants;
+
         private CurrentWeekDetail currentWeekDetail;
+
         private List<CommentNode> comments;
 
         @Data
@@ -230,12 +275,19 @@ public class ChallengeDto {
         @Builder
         public static class ChallengeInfo {
             private String thumbnail;   // url_to_image
+
             private String title;       // 챌린지 이름
+
             private List<String> tags;  // 1~3개
+
             private String category;    // 홈 카테고리(서버에서는 fields 중 1개를 대표로 내려줌)
+
             private String job;         // 유저 작성 직무
+
             private String startDate;   // yyyy-MM-dd
+
             private Integer totalWeeks; // 총 기간
+
             private String state;       // IN_PROGRESS 등
         }
 
@@ -254,9 +306,13 @@ public class ChallengeDto {
         @Builder
         public static class Me {
             private String profileImage; // url_to_profile
+
             private String nickname;
+
             private String progressRate; // current/total
+
             private Integer successRate; // %
+
             private Boolean isSuccess;   // 70% 이상 여부
         }
 
@@ -266,9 +322,13 @@ public class ChallengeDto {
         @Builder
         public static class Opponent {
             private String profileImage;     // url_to_profile
+
             private String nickname;
+
             private String progressRate;     // current/total
+
             private Integer successRate;     // %
+
             private Boolean isRealTimeActive; // 실시간 현황
         }
 
@@ -278,11 +338,15 @@ public class ChallengeDto {
         @Builder
         public static class CurrentWeekDetail {
             private Integer weekNumber;
+
             private String period;     // yyyy-MM-dd ~ yyyy-MM-dd
+
             private String aiTitle;
+
             private String aiContent;
+
             private String recordTime; // HH:mm:ss
-            private String authFile;   // url_to_auth_file
+
             private Boolean isFinished;
         }
 
@@ -292,9 +356,13 @@ public class ChallengeDto {
         @Builder
         public static class CommentNode {
             private Long commentId;
+
             private String writer;
+
             private String content;
+
             private String createdAt; // ISO Datetime string
+
             private List<CommentNode> children;
         }
     }

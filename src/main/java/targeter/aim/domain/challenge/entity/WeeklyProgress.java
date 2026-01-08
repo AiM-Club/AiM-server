@@ -44,8 +44,5 @@ public class WeeklyProgress extends TimeStampedEntity {
     @Column(name = "is_complete", nullable = false)
     private Boolean isComplete;
 
-    //  인증파일은 단일 uuid로 최소 구현
-    @Column(name = "certified_file_uuid", length = 36)
-    private String certifiedFileUuid;
 
 }

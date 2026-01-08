@@ -19,14 +19,14 @@ import targeter.aim.system.security.utility.validator.ValidatorUtil;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api")
+@RequestMapping("/api/auth")
 @Tag(name = "Auth", description = "인증/인가 API")
 public class AuthController {
 
     private final AuthService authService;
 
     @NoJwtAuth("회원가입은 인증이 필요하지 않음")
-    @PostMapping("/auth/register")
+    @PostMapping("/register")
     @Operation(summary = "회원가입", description = "새로운 사용자를 등록합니다.")
     @ApiResponse(responseCode = "200", description = "회원가입 성공")
     public UserDto.UserResponse signUp(@ModelAttribute @Valid AuthDto.SignUpRequest request) {
@@ -34,7 +34,7 @@ public class AuthController {
     }
 
     @NoJwtAuth("로그인은 인증이 필요하지 않음")
-    @PostMapping("/auth/login")
+    @PostMapping("/login")
     @Operation(summary = "로그인", description = "아이디와 비밀번호로 로그인하여 JWT 토큰을 발급받습니다.")
     @ApiResponse(responseCode = "200", description = "로그인 성공")
     public AuthDto.SignInResponse signIn(@RequestBody @Valid AuthDto.SignInRequest request) {
@@ -42,7 +42,7 @@ public class AuthController {
     }
 
     @NoJwtAuth("구글 로그인은 인증이 필요하지 않음")
-    @PostMapping("/auth/login/google")
+    @PostMapping("/login/google")
     @Operation(summary = "구글 로그인", description = "인가 코드를 구글에 전달해 토큰 교환 후 서비스 JWT를 발급합니다.")
     @ApiResponse(responseCode = "200", description = "구글 로그인 성공")
     public AuthDto.SocialSignInResponse loginGoogle(@RequestBody @Valid AuthDto.GoogleLoginRequest request) {
@@ -50,7 +50,7 @@ public class AuthController {
     }
 
     @NoJwtAuth("카카오 로그인은 인증이 필요하지 않음")
-    @PostMapping("/auth/login/kakao")
+    @PostMapping("/login/kakao")
     @Operation(summary = "카카오 로그인", description = "카카오 인가 코드로 로그인/회원가입을 처리하고 JWT 토큰을 발급합니다.")
     @ApiResponse(responseCode = "200", description = "카카오 로그인 성공")
     public AuthDto.AuthResponse loginWithKakao(@RequestBody @Valid AuthDto.KakaoLoginRequest request) {
@@ -58,7 +58,7 @@ public class AuthController {
     }
 
     @NoJwtAuth("아이디 검증은 인증이 필요하지 않음")
-    @GetMapping("/auth/id-exist")
+    @GetMapping("/id-exist")
     @Operation(summary = "아이디 중복 검사", description = "입력된 아이디의 중복 여부를 확인합니다.")
     @ApiResponse(responseCode = "200", description = "아이디 중복 검사 성공")
     public AuthDto.IdExistResponse checkId(@RequestParam("id") String loginId) {
@@ -67,7 +67,7 @@ public class AuthController {
     }
 
     @NoJwtAuth("닉네임 검증은 인증이 필요하지 않음")
-    @GetMapping("/auth/nickname-exist")
+    @GetMapping("/nickname-exist")
     @Operation(summary = "닉네임 중복 검사", description = "입력된 닉네임의 중복 여부를 확인합니다.")
     @ApiResponse(responseCode = "200", description = "닉네임 중복 검사 성공")
     public AuthDto.NicknameExistResponse checkNickname(@RequestParam("nickname") String nickname) {
@@ -75,7 +75,7 @@ public class AuthController {
         return authService.checkNickname(nickname);
     }
 
-    @PostMapping("/auth/logout")
+    @PostMapping("/logout")
     @Operation(summary = "로그아웃", description = "현재 사용자의 Refresh Token을 삭제하며 로그아웃 처리합니다.")
     @ApiResponse(responseCode = "200", description = "로그아웃 성공")
     public ResponseEntity<String> logout(
