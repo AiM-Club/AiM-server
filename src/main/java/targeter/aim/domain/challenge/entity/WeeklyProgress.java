@@ -44,4 +44,5 @@ public class WeeklyProgress extends TimeStampedEntity {
     @Column(name = "is_complete", nullable = false)
     private Boolean isComplete;
 
+
 }

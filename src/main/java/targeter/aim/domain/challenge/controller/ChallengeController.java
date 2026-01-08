@@ -9,13 +9,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.ModelAttribute;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.ResponseStatus;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import targeter.aim.domain.challenge.dto.ChallengeDto;
 import targeter.aim.domain.challenge.service.ChallengeService;
 import targeter.aim.system.security.annotation.NoJwtAuth;
@@ -55,5 +49,33 @@ public class ChallengeController {
             @AuthenticationPrincipal UserDetails userDetails
     ) {
         return challengeService.createChallenge(userDetails, request);
+    }
+
+    @GetMapping("/vs/{challengeId}")
+    @Operation(
+            summary = "VS 챌린지 상세 조회",
+            description = "특정 VS 챌린지의 상세 정보와 현재 주차 진행 현황, 상대방 상태를 조회합니다."
+    )
+    @ApiResponse(responseCode = "200", description = "VS 챌린지 상세 조회 성공")
+    @ApiResponse(responseCode = "403", description = "PRIVATE 챌린지에 대한 권한 없음")
+    @ApiResponse(responseCode = "404", description = "존재하지 않는 challengeId")
+    public ChallengeDto.VsChallengeDetailResponse getVsChallengeDetail(
+            @PathVariable Long challengeId,
+            @RequestParam(value = "filterType", required = false, defaultValue = "ALL") String filterType,
+            @RequestParam(value = "sort", required = false, defaultValue = "created_at") String sort,
+            @RequestParam(value = "order", required = false, defaultValue = "desc") String order,
+            @RequestParam(value = "page", required = false, defaultValue = "0") Integer page,
+            @RequestParam(value = "size", required = false, defaultValue = "16") Integer size,
+            @AuthenticationPrincipal UserDetails userDetails
+    ) {
+        return challengeService.getVsChallengeDetail(
+                challengeId,
+                userDetails,
+                filterType,
+                sort,
+                order,
+                page,
+                size
+        );
     }
 }

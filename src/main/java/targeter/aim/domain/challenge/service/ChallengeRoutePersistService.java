@@ -36,7 +36,7 @@ public class ChallengeRoutePersistService {
         // 2. 멱등성
         Optional<Challenge> existing = challengeRepository.findByHostAndNameAndStartedAt(host, req.getName(), req.getStartedAt());
 
-        if(existing.isPresent()) {
+        if (existing.isPresent()) {
             log.warn("Challenge with id {} already exists", existing.get().getId());
             return existing.get().getId();
         }
@@ -63,7 +63,7 @@ public class ChallengeRoutePersistService {
         challengeMemberRepository.save(hostMember);
 
         // 5. WeeklyProgress 저장
-        for(RoutePayload.Week week : payload.getWeeks()) {
+        for (RoutePayload.Week week : payload.getWeeks()) {
             WeeklyProgress progress = WeeklyProgress.builder()
                     .challenge(savedChallenge)
                     .user(host)

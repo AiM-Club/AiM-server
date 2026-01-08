@@ -7,7 +7,8 @@ import targeter.aim.domain.file.entity.AttachedFile;
 import java.util.Optional;
 
 @Repository
-public interface AttachedFileRepository extends JpaRepository<AttachedFile, String> {
+public interface AttachedFileRepository extends JpaRepository<AttachedFile, String>, AttachedFileQueryRepository {
 
     Optional<AttachedFile> findByUuid(String uuid);
+
 }
