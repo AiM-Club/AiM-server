@@ -22,6 +22,7 @@ import targeter.aim.system.security.utility.validator.ValidatorUtil;
 @RequestMapping("/api/auth")
 @Tag(name = "Auth", description = "인증/인가 API")
 public class AuthController {
+
     private final AuthService authService;
 
     @NoJwtAuth("회원가입은 인증이 필요하지 않음")
