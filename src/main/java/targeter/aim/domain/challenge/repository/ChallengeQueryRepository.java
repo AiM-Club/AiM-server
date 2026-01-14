@@ -14,6 +14,7 @@ import org.springframework.stereotype.Repository;
 import targeter.aim.domain.challenge.dto.ChallengeDto;
 import targeter.aim.domain.challenge.entity.Challenge;
 import targeter.aim.domain.challenge.entity.ChallengeMode;
+import targeter.aim.domain.challenge.entity.ChallengeOrderType;
 import targeter.aim.domain.challenge.entity.ChallengeStatus;
 import targeter.aim.domain.file.dto.FileDto;
 import targeter.aim.domain.file.entity.ProfileImage;
@@ -45,12 +46,59 @@ public class ChallengeQueryRepository {
             ChallengeFilterType filterType,
             ChallengeSortType sortType
     ) {
+        return paginateByTypeAndKeyword(
+                userDetails,
+                pageable,
+                filterType,
+                sortType,
+                ChallengeOrderType.desc,
+                null
+        );
+    }
 
-        if (sortType == ChallengeSortType.ONGOING || sortType == ChallengeSortType.FINISHED) {
-            List<Tuple> tuples = buildBaseQuery(userDetails, filterType).fetch();
+    public Page<ChallengeDto.ChallengeListResponse> paginateByTypeAndKeyword(
+            UserDetails userDetails,
+            Pageable pageable,
+            ChallengeFilterType filterType,
+            ChallengeSortType sortType,
+            ChallengeOrderType orderType,
+            String keyword
+    ) {
+        // MY 탭 + 비로그인 → 빈 결과 (테스트/로컬 기준)
+        if (filterType == ChallengeFilterType.MY && userDetails == null) {
+            return new PageImpl<>(List.of(), pageable, 0);
+        }
+
+        boolean hasKeyword = keyword != null && !keyword.isBlank();
+
+        // END_DATE / ONGOING / FINISHED → 메모리 정렬
+        if (sortType == ChallengeSortType.END_DATE
+                || sortType == ChallengeSortType.ONGOING
+                || sortType == ChallengeSortType.FINISHED) {
+
+            List<Tuple> tuples = buildBaseQuery(
+                    userDetails,
+                    filterType,
+                    hasKeyword ? keyword : null
+            ).fetch();
 
             List<ChallengeDto.ChallengeListResponse> all = enrichDetails(tuples);
 
+            // END_DATE 정렬
+            if (sortType == ChallengeSortType.END_DATE) {
+                Comparator<ChallengeDto.ChallengeListResponse> cmp =
+                        Comparator.comparing(this::endDate);
+                if (orderType == ChallengeOrderType.desc) {
+                    cmp = cmp.reversed();
+                }
+
+                List<ChallengeDto.ChallengeListResponse> sorted =
+                        all.stream().sorted(cmp).toList();
+
+                return slice(sorted, pageable);
+            }
+
+            // ONGOING / FINISHED
             List<ChallengeDto.ChallengeListResponse> inProgress = all.stream()
                     .filter(dto -> dto.getStatus() == ChallengeStatus.IN_PROGRESS)
                     .sorted(Comparator.comparing(this::endDate))
@@ -61,37 +109,58 @@ public class ChallengeQueryRepository {
                     .sorted(Comparator.comparing(this::endDate).reversed())
                     .toList();
 
-            List<ChallengeDto.ChallengeListResponse> sorted = (sortType == ChallengeSortType.ONGOING)
-                    ? Stream.concat(inProgress.stream(), completed.stream()).toList()
-                    : Stream.concat(completed.stream(), inProgress.stream()).toList();
+            List<ChallengeDto.ChallengeListResponse> sorted =
+                    (sortType == ChallengeSortType.ONGOING)
+                            ? Stream.concat(inProgress.stream(), completed.stream()).toList()
+                            : Stream.concat(completed.stream(), inProgress.stream()).toList();
 
-            int start = (int) pageable.getOffset();
-            int end = Math.min(start + pageable.getPageSize(), sorted.size());
-
-            return new PageImpl<>(
-                    start >= sorted.size() ? List.of() : sorted.subList(start, end),
-                    pageable,
-                    sorted.size()
-            );
+            return slice(sorted, pageable);
         }
 
-        JPAQuery<Tuple> contentQuery = buildBaseQuery(userDetails, filterType);
-        applySorting(contentQuery, sortType);
+        // 일반 정렬(QueryDSL)
+        JPAQuery<Tuple> contentQuery = buildBaseQuery(
+                userDetails,
+                filterType,
+                hasKeyword ? keyword : null
+        );
+        applySorting(contentQuery, sortType, orderType);
 
         List<Tuple> tuples = contentQuery
                 .offset(pageable.getOffset())
                 .limit(pageable.getPageSize())
                 .fetch();
 
-        Long total = buildCountQuery(userDetails, filterType).fetchOne();
-        List<ChallengeDto.ChallengeListResponse> content = enrichDetails(tuples);
+        Long total = buildCountQuery(
+                userDetails,
+                filterType,
+                hasKeyword ? keyword : null
+        ).fetchOne();
 
-        return new PageImpl<>(content, pageable, total == null ? 0 : total);
+        return new PageImpl<>(
+                enrichDetails(tuples),
+                pageable,
+                total == null ? 0 : total
+        );
+    }
+
+    private PageImpl<ChallengeDto.ChallengeListResponse> slice(
+            List<ChallengeDto.ChallengeListResponse> list,
+            Pageable pageable
+    ) {
+        int start = (int) pageable.getOffset();
+        int end = Math.min(start + pageable.getPageSize(), list.size());
+
+        return new PageImpl<>(
+                start >= list.size() ? List.of() : list.subList(start, end),
+                pageable,
+                list.size()
+        );
     }
 
     private JPAQuery<Tuple> buildBaseQuery(
             UserDetails userDetails,
-            ChallengeFilterType filterType
+            ChallengeFilterType filterType,
+            String keyword
     ) {
         JPAQuery<Tuple> query = queryFactory
                 .select(
@@ -99,9 +168,10 @@ public class ChallengeQueryRepository {
                         userDetails != null
                                 ? JPAExpressions.selectOne()
                                 .from(challengeLiked)
-                                .where(challengeLiked.challenge.eq(challenge)
-                                        .and(challengeLiked.user.id.eq(userDetails.getUser().getId())))
-                                .exists()
+                                .where(
+                                        challengeLiked.challenge.eq(challenge)
+                                                .and(challengeLiked.user.id.eq(userDetails.getUser().getId()))
+                                ).exists()
                                 : Expressions.FALSE,
                         JPAExpressions.select(challengeLiked.count())
                                 .from(challengeLiked)
@@ -115,19 +185,37 @@ public class ChallengeQueryRepository {
 
         applyFilterType(query, userDetails, filterType);
 
+        if (keyword != null) {
+            query.where(challenge.name.containsIgnoreCase(keyword));
+        }
+
         return query;
     }
 
-    private JPAQuery<Long> buildCountQuery(UserDetails userDetails, ChallengeFilterType filterType) {
+    private JPAQuery<Long> buildCountQuery(
+            UserDetails userDetails,
+            ChallengeFilterType filterType,
+            String keyword
+    ) {
         JPAQuery<Long> query = queryFactory
                 .select(challenge.count())
                 .from(challenge)
                 .where(challenge.mode.eq(ChallengeMode.VS));
+
         applyFilterType(query, userDetails, filterType);
+
+        if (keyword != null) {
+            query.where(challenge.name.containsIgnoreCase(keyword));
+        }
+
         return query;
     }
 
-    private void applyFilterType(JPAQuery<?> query, UserDetails userDetails, ChallengeFilterType filterType) {
+    private void applyFilterType(
+            JPAQuery<?> query,
+            UserDetails userDetails,
+            ChallengeFilterType filterType
+    ) {
         if (filterType == ChallengeFilterType.MY) {
             query.join(challengeMember)
                     .on(challengeMember.id.challenge.eq(challenge))
@@ -135,20 +223,51 @@ public class ChallengeQueryRepository {
         }
     }
 
-    private void applySorting(JPAQuery<?> query, ChallengeSortType sortType) {
+    private void applySorting(
+            JPAQuery<?> query,
+            ChallengeSortType sortType,
+            ChallengeOrderType orderType
+    ) {
+        boolean asc = (orderType == ChallengeOrderType.asc);
+
         switch (sortType) {
-            case LATEST -> query.orderBy(challenge.createdAt.desc());
-            case OLDEST -> query.orderBy(challenge.createdAt.asc());
-            case TITLE -> query.orderBy(challenge.name.asc());
-            case ONGOING -> query.orderBy(new CaseBuilder().when(challenge.status.eq(ChallengeStatus.IN_PROGRESS)).then(1).otherwise(2).asc());
-            case FINISHED -> query.orderBy(new CaseBuilder().when(challenge.status.eq(ChallengeStatus.COMPLETED)).then(1).otherwise(2).asc());
+            case CREATED_AT ->
+                    query.orderBy(asc ? challenge.createdAt.asc() : challenge.createdAt.desc());
+
+            case TITLE ->
+                    query.orderBy(
+                            asc ? challenge.name.asc() : challenge.name.desc(),
+                            challenge.createdAt.desc()
+                    );
+
+            case ONGOING ->
+                    query.orderBy(
+                            new CaseBuilder()
+                                    .when(challenge.status.eq(ChallengeStatus.IN_PROGRESS)).then(1)
+                                    .otherwise(2)
+                                    .asc()
+                    );
+
+            case FINISHED ->
+                    query.orderBy(
+                            new CaseBuilder()
+                                    .when(challenge.status.eq(ChallengeStatus.COMPLETED)).then(1)
+                                    .otherwise(2)
+                                    .asc()
+                    );
+
+            case END_DATE -> {
+                // 메모리 정렬 처리
+            }
         }
     }
 
     private List<ChallengeDto.ChallengeListResponse> enrichDetails(List<Tuple> tuples) {
         if (tuples.isEmpty()) return List.of();
 
-        List<Long> challengeIds = tuples.stream().map(t -> t.get(0, Challenge.class).getId()).toList();
+        List<Long> challengeIds = tuples.stream()
+                .map(t -> t.get(0, Challenge.class).getId())
+                .toList();
 
         Map<Long, List<String>> fieldMap = fetchFields(challengeIds);
         Map<Long, List<String>> tagMap = fetchTags(challengeIds);
@@ -187,7 +306,9 @@ public class ChallengeQueryRepository {
     }
 
     private ChallengeDto.ChallengeListResponse mapToDto(
-            Tuple tuple, Map<Long, List<String>> fieldMap, Map<Long, List<String>> tagMap
+            Tuple tuple,
+            Map<Long, List<String>> fieldMap,
+            Map<Long, List<String>> tagMap
     ) {
         Challenge c = tuple.get(0, Challenge.class);
         User host = c.getHost();
@@ -198,7 +319,9 @@ public class ChallengeQueryRepository {
                         .userId(host.getId())
                         .nickname(host.getNickname())
                         .badge(host.getTier().getName())
-                        .profileImage(profileImage != null ? FileDto.FileResponse.from(profileImage) : null)
+                        .profileImage(profileImage != null
+                                ? FileDto.FileResponse.from(profileImage)
+                                : null)
                         .build())
                 .startDate(c.getStartedAt())
                 .duration(c.getDurationWeek() + "주")
@@ -208,13 +331,16 @@ public class ChallengeQueryRepository {
                 .tags(tagMap.getOrDefault(c.getId(), List.of()))
                 .job(c.getJob())
                 .liked(Boolean.TRUE.equals(tuple.get(1, Boolean.class)))
-                .likeCount(tuple.get(2, Long.class) != null ? tuple.get(2, Long.class).intValue() : 0)
+                .likeCount(tuple.get(2, Long.class) == null
+                        ? 0
+                        : tuple.get(2, Long.class).intValue())
                 .createdAt(c.getCreatedAt())
                 .lastModifiedAt(c.getLastModifiedAt())
                 .build();
     }
 
     private LocalDate endDate(ChallengeDto.ChallengeListResponse dto) {
-        return dto.getStartDate().plusWeeks(Integer.parseInt(dto.getDuration().replace("주", "")));
+        return dto.getStartDate()
+                .plusWeeks(Integer.parseInt(dto.getDuration().replace("주", "")));
     }
 }

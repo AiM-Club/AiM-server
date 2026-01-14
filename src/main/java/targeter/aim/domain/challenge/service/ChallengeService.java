@@ -54,25 +54,77 @@ public class ChallengeService {
             UserDetails userDetails,
             Pageable pageable
     ) {
-        ChallengeFilterType filterType =
-                ChallengeFilterType.valueOf(condition.getFilterType());
+        ChallengeFilterType filterType = parseFilterType(condition.getFilterType());
+        ChallengeOrderType orderType = parseOrderType(condition.getOrder());
+        ChallengeSortType sortType = parseSortType(condition.getSort());
 
-        ChallengeSortType sortType =
-                ChallengeSortType.valueOf(condition.getSort());
+        if (sortType == ChallengeSortType.LATEST) {
+            sortType = ChallengeSortType.CREATED_AT;
+            orderType = ChallengeOrderType.desc;
+        } else if (sortType == ChallengeSortType.OLDEST) {
+            sortType = ChallengeSortType.CREATED_AT;
+            orderType = ChallengeOrderType.asc;
+        }
 
         // MY 탭은 로그인 필요
         if (filterType == ChallengeFilterType.MY && userDetails == null) {
             throw new RestException(ErrorCode.AUTH_LOGIN_REQUIRED);
         }
 
-        var page = challengeQueryRepository.paginateByType(
+        String keyword = normalizeKeyword(condition.getKeyword());
+
+        var page = challengeQueryRepository.paginateByTypeAndKeyword(
                 userDetails,
                 pageable,
                 filterType,
-                sortType
+                sortType,
+                orderType,
+                keyword
         );
 
         return ChallengeDto.ChallengePageResponse.from(page);
+    }
+
+    private String normalizeKeyword(String keyword) {
+        if (keyword == null) return null;
+        String k = keyword.trim();
+        return k.isEmpty() ? null : k;
+    }
+
+    private ChallengeFilterType parseFilterType(String raw) {
+        try {
+            return ChallengeFilterType.valueOf(raw == null ? "ALL" : raw);
+        } catch (IllegalArgumentException e) {
+            throw new RestException(ErrorCode.GLOBAL_BAD_REQUEST);
+        }
+    }
+
+    private ChallengeSortType parseSortType(String raw) {
+        String s = (raw == null) ? "created_at" : raw.trim().toLowerCase();
+
+        try {
+            return switch (s) {
+                case "created_at" -> ChallengeSortType.CREATED_AT;
+                case "end_date" -> ChallengeSortType.END_DATE;
+                case "title" -> ChallengeSortType.TITLE;
+                case "ongoing" -> ChallengeSortType.ONGOING;
+                case "finished" -> ChallengeSortType.FINISHED;
+                case "latest" -> ChallengeSortType.LATEST;
+                case "oldest" -> ChallengeSortType.OLDEST;
+
+                default -> throw new IllegalArgumentException();
+            };
+        } catch (IllegalArgumentException e) {
+            throw new RestException(ErrorCode.GLOBAL_BAD_REQUEST);
+        }
+    }
+
+    private ChallengeOrderType parseOrderType(String raw) {
+        try {
+            return ChallengeOrderType.valueOf((raw == null ? "desc" : raw).toLowerCase());
+        } catch (IllegalArgumentException e) {
+            throw new RestException(ErrorCode.GLOBAL_BAD_REQUEST);
+        }
     }
 
     @Transactional
@@ -100,9 +152,9 @@ public class ChallengeService {
 
     private void updateChallengeLabels(Challenge challenge, List<String> tagNames, List<String> fieldNames) {
         // Tag 처리
-        if(tagNames != null) {
+        if (tagNames != null) {
             Set<Tag> tags = new HashSet<>();
-            for (String name: tagNames) {
+            for (String name : tagNames) {
                 String normalizedName = name.trim();
                 Tag tag = tagRepository.findByName(normalizedName)
                         .orElseGet(() -> tagRepository.save(Tag.builder().name(normalizedName).build()));
@@ -112,9 +164,9 @@ public class ChallengeService {
         }
 
         // field 처리
-        if(fieldNames != null) {
+        if (fieldNames != null) {
             Set<Field> fields = new HashSet<>();
-            for (String name: fieldNames) {
+            for (String name : fieldNames) {
                 String normalizedName = name.trim();
                 Field field = fieldRepository.findByName(normalizedName)
                         .orElseGet(() -> fieldRepository.save(Field.builder().name(normalizedName).build()));

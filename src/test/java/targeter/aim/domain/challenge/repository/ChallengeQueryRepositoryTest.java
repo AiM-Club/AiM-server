@@ -194,7 +194,7 @@ class ChallengeQueryRepositoryTest {
                         null, // 비로그인
                         pageable,
                         ChallengeFilterType.ALL,
-                        ChallengeSortType.LATEST
+                        ChallengeSortType.CREATED_AT
                 );
 
         // then
@@ -213,7 +213,7 @@ class ChallengeQueryRepositoryTest {
                         new UserDetails(user1),
                         pageable,
                         ChallengeFilterType.MY,
-                        ChallengeSortType.LATEST
+                        ChallengeSortType.CREATED_AT
                 );
 
         // then
@@ -242,7 +242,7 @@ class ChallengeQueryRepositoryTest {
                         null,
                         pageable,
                         ChallengeFilterType.ALL,
-                        ChallengeSortType.LATEST
+                        ChallengeSortType.CREATED_AT
                 );
 
         // then
@@ -397,7 +397,7 @@ class ChallengeQueryRepositoryTest {
                         null,
                         pageable,
                         ChallengeFilterType.ALL,
-                        ChallengeSortType.LATEST
+                        ChallengeSortType.CREATED_AT
                 );
 
         // then

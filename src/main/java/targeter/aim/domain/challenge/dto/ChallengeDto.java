@@ -31,10 +31,21 @@ public class ChallengeDto {
         @Builder.Default
         @Schema(
                 description = "정렬 기준",
-                example = "LATEST",
-                allowableValues = {"LATEST", "OLDEST", "TITLE", "ONGOING", "FINISHED"}
+                example = "created_at",
+                allowableValues = {"created_at", "end_date", "title", "ONGOING", "FINISHED"}
         )
-        private String sort = "LATEST";
+        private String sort = "created_at";
+
+        @Builder.Default
+        @Schema(
+                description = "정렬 방향",
+                example = "desc",
+                allowableValues = {"asc", "desc"}
+        )
+        private String order = "desc";
+
+        @Schema(description = "검색 키워드", example = "다이어트")
+        private String keyword;
     }
 
     @Data
