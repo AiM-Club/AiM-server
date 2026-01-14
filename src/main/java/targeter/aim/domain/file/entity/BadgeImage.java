@@ -32,7 +32,7 @@ public class BadgeImage extends AttachedFile {
         String filePath = "badge/" + uuId;
 
         return BadgeImage.builder()
-                .uuid(UUID.randomUUID().toString())
+                .uuid(uuId)
                 .fileName(safeFilename(file.getOriginalFilename()))
                 .handlingType(HandlingType.IMAGE)
                 .tier(tier)

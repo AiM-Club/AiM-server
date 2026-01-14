@@ -32,7 +32,7 @@ public class ChallengeImage extends AttachedFile {
         String filePath = "challenge/" + uuId;
 
         return ChallengeImage.builder()
-                .uuid(UUID.randomUUID().toString())
+                .uuid(uuId)
                 .fileName(safeFilename(file.getOriginalFilename()))
                 .handlingType(HandlingType.IMAGE)
                 .challenge(challenge)
