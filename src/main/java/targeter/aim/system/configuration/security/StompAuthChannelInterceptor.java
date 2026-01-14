@@ -21,13 +21,12 @@ public class StompAuthChannelInterceptor implements ChannelInterceptor {
     @Override
     public Message<?> preSend(Message<?> message, MessageChannel channel) {
 
-        StompHeaderAccessor accessor = StompHeaderAccessor.wrap(message);
-        accessor.setLeaveMutable(true);
+        StompHeaderAccessor accessor =
+                StompHeaderAccessor.getAccessor(message, StompHeaderAccessor.class);
 
-        StompCommand command = accessor.getCommand();
-        if (command == null) return message;
+        if (accessor == null) return message;
 
-        if (command == StompCommand.CONNECT) {
+        if (StompCommand.CONNECT.equals(accessor.getCommand())) {
 
             String authHeader = accessor.getFirstNativeHeader("Authorization");
             if (authHeader == null || !authHeader.startsWith("Bearer ")) {
@@ -44,12 +43,8 @@ public class StompAuthChannelInterceptor implements ChannelInterceptor {
             User user = userRepository.findById(userId)
                     .orElseThrow(() -> new IllegalStateException("사용자를 찾을 수 없습니다."));
 
-            // Channel principal (선택)
             accessor.setUser(new StompUserPrincipal(user.getId()));
-
             accessor.getSessionAttributes().put("userId", user.getId());
-
-            return message;
         }
 
         return message;
