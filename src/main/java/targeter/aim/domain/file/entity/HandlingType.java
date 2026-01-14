@@ -4,4 +4,3 @@ public enum HandlingType {
     DOWNLOADABLE,
     IMAGE
 }
-

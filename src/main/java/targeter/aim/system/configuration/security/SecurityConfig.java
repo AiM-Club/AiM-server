@@ -19,6 +19,7 @@ import targeter.aim.system.security.service.UserLoadServiceImpl;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Configuration
 @EnableWebSecurity
@@ -82,7 +83,11 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigSrc() {
         CorsConfiguration corsConfiguration = new CorsConfiguration();
         corsConfiguration.setAllowCredentials(true);
-        corsConfiguration.setAllowedOrigins(List.of(allowedOrigins));
+        List<String> origins = Arrays.stream(allowedOrigins)
+                .map(String::trim)
+                .filter(s -> !s.isBlank())
+                .collect(Collectors.toList());
+        corsConfiguration.setAllowedOrigins(origins);
         corsConfiguration.setAllowedMethods(
                 Arrays.asList("HEAD", "GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS")
         );
