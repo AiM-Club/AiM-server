@@ -44,5 +44,13 @@ public class WeeklyProgress extends TimeStampedEntity {
     @Column(name = "is_complete", nullable = false)
     private Boolean isComplete;
 
+    public void complete() {
+        this.isComplete = true;
+    }
+
+    public boolean isComplete() {
+        return Boolean.TRUE.equals(this.isComplete);
+    }
+
 
 }
