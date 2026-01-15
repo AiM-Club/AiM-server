@@ -61,8 +61,7 @@ public class User extends TimeStampedEntity {
     @JoinColumn(nullable = false, name = "tier_id")
     private Tier tier;
 
-    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
-    @JoinColumn(name = "profile_image_id")
+    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private ProfileImage profileImage;
 
     @ManyToMany

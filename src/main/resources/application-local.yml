@@ -17,6 +17,7 @@ spring:
     properties: # property 사용 설정
       hibernate: # hibernate property 설정
         format_sql: true
+        default_batch_fetch_size: 100
 
   security:
     oauth2:
