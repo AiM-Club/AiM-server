@@ -40,6 +40,7 @@ import java.util.Optional;
 @Service
 @RequiredArgsConstructor
 public class AuthService {
+
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final TierRepository tierRepository;
@@ -93,9 +94,9 @@ public class AuthService {
     }
 
     private void saveProfileImage(MultipartFile file, User user) {
-        if(file != null && !file.isEmpty()) {
+        if (file != null && !file.isEmpty()) {
             ProfileImage profileImage = ProfileImage.from(file);
-            if(profileImage == null) return;
+            if (profileImage == null) return;
             user.setProfileImage(profileImage);
             profileImage.setUser(user);
             fileHandler.saveFile(file, profileImage);

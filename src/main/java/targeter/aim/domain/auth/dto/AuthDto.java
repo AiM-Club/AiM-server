@@ -32,7 +32,7 @@ public class AuthDto {
         private String code;
 
         @NotBlank(message = "redirectUri를 입력해주세요.")
-        @Schema(description = "구글 콘솔에 등록된 Redirect URI (검증용)", example = "http://localhost:8080/login/oauth2/code/google")
+        @Schema(description = "구글 콘솔에 등록된 Redirect URI (검증용)", example = "http://localhost:5173/oauth/google/callback")
         private String redirectUri;
     }
 
@@ -100,6 +100,7 @@ public class AuthDto {
         private String password;
     }
 
+    //로그인 응답 DTO
     @Data
     @AllArgsConstructor
     @NoArgsConstructor
@@ -160,6 +161,7 @@ public class AuthDto {
         }
     }
 
+    //중복검사DTO
     @Data
     @AllArgsConstructor
     @NoArgsConstructor
@@ -187,7 +189,7 @@ public class AuthDto {
         private String code;
 
         @NotBlank(message = "redirectUri를 입력해주세요.")
-        @Schema(description = "카카오 developers에 등록된 Redirect URI (검증용)", example = "http://localhost:8080/oauth/kakao/callback")
+        @Schema(description = "카카오 developers에 등록된 Redirect URI (검증용)", example = "http://localhost:5173/oauth/kakao/callback")
         private String redirectUri;
     }
 
