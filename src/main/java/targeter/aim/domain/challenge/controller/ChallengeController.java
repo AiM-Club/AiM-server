@@ -61,21 +61,8 @@ public class ChallengeController {
     @ApiResponse(responseCode = "404", description = "존재하지 않는 challengeId")
     public ChallengeDto.VsChallengeDetailResponse getVsChallengeDetail(
             @PathVariable Long challengeId,
-            @RequestParam(value = "filterType", required = false, defaultValue = "ALL") String filterType,
-            @RequestParam(value = "sort", required = false, defaultValue = "created_at") String sort,
-            @RequestParam(value = "order", required = false, defaultValue = "desc") String order,
-            @RequestParam(value = "page", required = false, defaultValue = "0") Integer page,
-            @RequestParam(value = "size", required = false, defaultValue = "16") Integer size,
             @AuthenticationPrincipal UserDetails userDetails
     ) {
-        return challengeService.getVsChallengeDetail(
-                challengeId,
-                userDetails,
-                filterType,
-                sort,
-                order,
-                page,
-                size
-        );
+        return challengeService.getVsChallengeDetail(challengeId, userDetails);
     }
 }

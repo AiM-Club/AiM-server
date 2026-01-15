@@ -22,7 +22,7 @@ public class ChallengeDto {
 
         @Builder.Default
         @Schema(
-                description = "탭 필터 (전체 / 내 챌린지 / 초대)",
+                description = "탭 필터 (전체 / 내 챌린지)",
                 example = "ALL",
                 allowableValues = {"ALL", "MY"}
         )
@@ -30,21 +30,20 @@ public class ChallengeDto {
 
         @Builder.Default
         @Schema(
-                description = "정렬 기준",
-                example = "created_at",
-                allowableValues = {"created_at", "end_date", "title", "ONGOING", "FINISHED"}
+                description = """
+                    정렬 기준
+                    - LATEST   : 최신순
+                    - OLDEST   : 오래된순
+                    - TITLE    : 가나다순
+                    - ONGOING  : 진행 중 (종료일 기준 오름차순)
+                    - FINISHED : 진행 완료 (종료일 기준 내림차순)
+                    """,
+                example = "LATEST",
+                allowableValues = {"LATEST", "OLDEST", "TITLE", "ONGOING", "FINISHED"}
         )
-        private String sort = "created_at";
+        private String sort = "LATEST";
 
-        @Builder.Default
-        @Schema(
-                description = "정렬 방향",
-                example = "desc",
-                allowableValues = {"asc", "desc"}
-        )
-        private String order = "desc";
-
-        @Schema(description = "검색 키워드", example = "다이어트")
+        @Schema(description = "검색 키워드 (제목 기준 포함 검색)", example = "개발")
         private String keyword;
     }
 

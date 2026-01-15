@@ -80,7 +80,7 @@ public class ChallengeServiceTest {
                 eq(userDetails),
                 any(Pageable.class),
                 eq(ChallengeFilterType.MY),
-                eq(ChallengeSortType.CREATED_AT)
+                eq(ChallengeSortType.LATEST)
         )).thenReturn(
                 new PageImpl<>(List.of(), PageRequest.of(0, 16), 0)
         );
@@ -105,7 +105,7 @@ public class ChallengeServiceTest {
                 isNull(),
                 any(Pageable.class),
                 eq(ChallengeFilterType.ALL),
-                eq(ChallengeSortType.CREATED_AT)
+                eq(ChallengeSortType.LATEST)
         )).thenReturn(
                 new PageImpl<>(List.of(), PageRequest.of(0, 16), 0)
         );

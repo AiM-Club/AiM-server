@@ -47,6 +47,7 @@ public class ChallengeService {
     private final ChallengeRoutePersistService persistService;
     private final ChallengeRouteGenerationService generationService;
 
+    // 챌린지 목록 조회
 
     @Transactional(readOnly = true)
     public ChallengeDto.ChallengePageResponse getVsChallenges(
@@ -55,16 +56,7 @@ public class ChallengeService {
             Pageable pageable
     ) {
         ChallengeFilterType filterType = parseFilterType(condition.getFilterType());
-        ChallengeOrderType orderType = parseOrderType(condition.getOrder());
         ChallengeSortType sortType = parseSortType(condition.getSort());
-
-        if (sortType == ChallengeSortType.LATEST) {
-            sortType = ChallengeSortType.CREATED_AT;
-            orderType = ChallengeOrderType.desc;
-        } else if (sortType == ChallengeSortType.OLDEST) {
-            sortType = ChallengeSortType.CREATED_AT;
-            orderType = ChallengeOrderType.asc;
-        }
 
         // MY 탭은 로그인 필요
         if (filterType == ChallengeFilterType.MY && userDetails == null) {
@@ -78,7 +70,6 @@ public class ChallengeService {
                 pageable,
                 filterType,
                 sortType,
-                orderType,
                 keyword
         );
 
@@ -100,150 +91,107 @@ public class ChallengeService {
     }
 
     private ChallengeSortType parseSortType(String raw) {
-        String s = (raw == null) ? "created_at" : raw.trim().toLowerCase();
-
         try {
-            return switch (s) {
-                case "created_at" -> ChallengeSortType.CREATED_AT;
-                case "end_date" -> ChallengeSortType.END_DATE;
-                case "title" -> ChallengeSortType.TITLE;
-                case "ongoing" -> ChallengeSortType.ONGOING;
-                case "finished" -> ChallengeSortType.FINISHED;
-                case "latest" -> ChallengeSortType.LATEST;
-                case "oldest" -> ChallengeSortType.OLDEST;
-
-                default -> throw new IllegalArgumentException();
-            };
+            return ChallengeSortType.valueOf(raw == null ? "LATEST" : raw.trim().toUpperCase());
         } catch (IllegalArgumentException e) {
             throw new RestException(ErrorCode.GLOBAL_BAD_REQUEST);
         }
     }
 
-    private ChallengeOrderType parseOrderType(String raw) {
-        try {
-            return ChallengeOrderType.valueOf((raw == null ? "desc" : raw).toLowerCase());
-        } catch (IllegalArgumentException e) {
-            throw new RestException(ErrorCode.GLOBAL_BAD_REQUEST);
-        }
-    }
+    //챌린지 생성
 
     @Transactional
-    public ChallengeDto.ChallengeDetailsResponse createChallenge(UserDetails userDetails, ChallengeDto.ChallengeCreateRequest request) {
-
+    public ChallengeDto.ChallengeDetailsResponse createChallenge(
+            UserDetails userDetails,
+            ChallengeDto.ChallengeCreateRequest request
+    ) {
         User user = userDetails.getUser();
+
         // 1. 주차별 계획(Payload) 생성
         RoutePayload routePayload = generationService.generateRoute(request);
 
         // 2. 생성된 데이터 저장
         Long challengeId = persistService.persistAtomic(user.getId(), request, routePayload);
 
-        // 4. 생성된 챌린지 조회 및 추가 정보
+        // 3. 생성된 챌린지 조회
         Challenge challenge = challengeRepository.findById(challengeId)
                 .orElseThrow(() -> new RestException(ErrorCode.CHALLENGE_NOT_FOUND));
 
         challenge.setMode(request.getMode());
         challenge.setVisibility(request.getVisibility());
 
-        // 5. 태그 / 분야 연관관계 매핑
+        // 4. 태그 / 분야 연관관계 매핑
         updateChallengeLabels(challenge, request.getTags(), request.getFields());
 
-        return toChallengeDetailsResponse(challenge, user.getId());
+        return toChallengeDetailsResponse(challenge);
     }
 
     private void updateChallengeLabels(Challenge challenge, List<String> tagNames, List<String> fieldNames) {
-        // Tag 처리
         if (tagNames != null) {
-            Set<Tag> tags = new HashSet<>();
-            for (String name : tagNames) {
-                String normalizedName = name.trim();
-                Tag tag = tagRepository.findByName(normalizedName)
-                        .orElseGet(() -> tagRepository.save(Tag.builder().name(normalizedName).build()));
-                tags.add(tag);
-            }
+            Set<Tag> tags = tagNames.stream()
+                    .map(String::trim)
+                    .map(name -> tagRepository.findByName(name)
+                            .orElseGet(() -> tagRepository.save(Tag.builder().name(name).build())))
+                    .collect(Collectors.toSet());
             challenge.setTags(tags);
         }
 
-        // field 처리
         if (fieldNames != null) {
-            Set<Field> fields = new HashSet<>();
-            for (String name : fieldNames) {
-                String normalizedName = name.trim();
-                Field field = fieldRepository.findByName(normalizedName)
-                        .orElseGet(() -> fieldRepository.save(Field.builder().name(normalizedName).build()));
-                fields.add(field);
-            }
+            Set<Field> fields = fieldNames.stream()
+                    .map(String::trim)
+                    .map(name -> fieldRepository.findByName(name)
+                            .orElseGet(() -> fieldRepository.save(Field.builder().name(name).build())))
+                    .collect(Collectors.toSet());
             challenge.setFields(fields);
         }
     }
 
-    private ChallengeDto.ChallengeDetailsResponse toChallengeDetailsResponse(Challenge challenge, Long currentUserId) {
+    private ChallengeDto.ChallengeDetailsResponse toChallengeDetailsResponse(Challenge challenge) {
         User host = challenge.getHost();
 
-        // 1. ChallengeInfo
-        ChallengeDto.ChallengeDetailsResponse.ChallengeInfo info = ChallengeDto.ChallengeDetailsResponse.ChallengeInfo.builder()
-                .challengeThumbnail(null)
-                .title(challenge.getName())
-                .tags(challenge.getTags().stream().map(Tag::getName).collect(Collectors.toList()))
-                .fields(challenge.getFields().stream().map(Field::getName).collect(Collectors.toList()))
-                .jobs(List.of(challenge.getJob().split(",")))
-                .startedAt(challenge.getStartedAt())
-                .durationWeek(challenge.getDurationWeek())
-                .status(challenge.getStatus())
-                .build();
+        ChallengeDto.ChallengeDetailsResponse.ChallengeInfo info =
+                ChallengeDto.ChallengeDetailsResponse.ChallengeInfo.builder()
+                        .challengeThumbnail(null)
+                        .title(challenge.getName())
+                        .tags(challenge.getTags().stream().map(Tag::getName).toList())
+                        .fields(challenge.getFields().stream().map(Field::getName).toList())
+                        .jobs(List.of(challenge.getJob().split(",")))
+                        .startedAt(challenge.getStartedAt())
+                        .durationWeek(challenge.getDurationWeek())
+                        .status(challenge.getStatus())
+                        .build();
 
-        // 2. Participants
-        ChallengeDto.ChallengeDetailsResponse.ParticipantDetails me = ChallengeDto.ChallengeDetailsResponse.ParticipantDetails.builder()
-                .profileImage(null)
-                .nickname(host.getNickname())
-                .progressRate("0%")
-                .successRate(0)
-                .isSuccess(false)
-                .isRealTimeActive(false)
-                .build();
+        ChallengeDto.ChallengeDetailsResponse.ParticipantDetails me =
+                ChallengeDto.ChallengeDetailsResponse.ParticipantDetails.builder()
+                        .nickname(host.getNickname())
+                        .progressRate("0/0")
+                        .successRate(0)
+                        .isSuccess(false)
+                        .isRealTimeActive(false)
+                        .build();
 
-        ChallengeDto.ChallengeDetailsResponse.Participants participants = ChallengeDto.ChallengeDetailsResponse.Participants.builder()
-                .me(me)
-                .opponent(null)
-                .build();
-
-        // 3. CurrentWeekDetails
-        WeeklyProgress week1Progress = weeklyProgressRepository.findByChallengeAndWeekNumber(challenge, 1)
-                .orElse(WeeklyProgress.builder() // 예외 방지용 더미
-                        .weekNumber(1)
-                        .title("생성 중...")
-                        .content("데이터를 불러오는 중입니다.")
-                        .isComplete(false)
-                        .stopwatchTimeSeconds(0)
-                        .build());
-
-        ChallengeDto.ChallengeDetailsResponse.CurrentWeekDetails currentWeek = ChallengeDto.ChallengeDetailsResponse.CurrentWeekDetails.builder()
-                .weekNumber(week1Progress.getWeekNumber())
-                .period(null) // TODO: 날짜 계산 로직 필요 (start date 기준 1주차 기간)
-                .weekTitle(week1Progress.getTitle())
-                .weekContent(week1Progress.getContent())
-                .recordTime(String.valueOf(week1Progress.getStopwatchTimeSeconds())) // 포맷팅 필요 시 수정
-                .isFinished(week1Progress.getIsComplete())
-                .comments(Collections.emptyList()) // 생성 시 댓글 없음
-                .build();
+        ChallengeDto.ChallengeDetailsResponse.Participants participants =
+                ChallengeDto.ChallengeDetailsResponse.Participants.builder()
+                        .me(me)
+                        .build();
 
         return ChallengeDto.ChallengeDetailsResponse.builder()
                 .challengeInfo(info)
                 .participants(participants)
-                .currentWeekDetails(currentWeek)
+                .currentWeekDetails(null)
                 .build();
     }
 
-    // VS 챌린지 상세 조회 (ChallengeController에서 호출)
+    //VS 챌린지 상세 조회
+
     @Transactional(readOnly = true)
     public ChallengeDto.VsChallengeDetailResponse getVsChallengeDetail(
             Long challengeId,
-            UserDetails userDetails,
-            String filterType,
-            String sort,
-            String order,
-            Integer page,
-            Integer size
+            UserDetails userDetails
     ) {
+        if (userDetails == null) {
+            throw new RestException(ErrorCode.AUTH_LOGIN_REQUIRED);
+        }
         Long loginUserId = userDetails.getUser().getId();
 
         Challenge challenge = challengeRepository.findById(challengeId)
@@ -274,36 +222,12 @@ public class ChallengeService {
         int totalWeeks = challenge.getDurationWeek();
         int currentWeek = calcCurrentWeek(challenge.getStartedAt(), totalWeeks);
 
-        WeeklyProgress myWeek = weeklyProgressRepository
-                .findByChallengeAndUserAndWeekNumber(challenge, me, currentWeek)
-                .orElse(null);
-
-        WeeklyProgress opponentWeek = (opponent == null) ? null :
-                weeklyProgressRepository.findByChallengeAndUserAndWeekNumber(challenge, opponent, currentWeek)
+        WeeklyProgress myWeek =
+                weeklyProgressRepository.findByChallengeAndUserAndWeekNumber(challenge, me, currentWeek)
                         .orElse(null);
-
-        long myCompleted = weeklyProgressRepository.countByChallengeAndUserAndIsCompleteTrue(challenge, me);
-        long opponentCompleted = (opponent == null) ? 0 :
-                weeklyProgressRepository.countByChallengeAndUserAndIsCompleteTrue(challenge, opponent);
-
-        int mySuccessRate = calcSuccessRate(myCompleted, currentWeek);
-        int opponentSuccessRate = calcSuccessRate(opponentCompleted, currentWeek);
-
-        boolean opponentRealTime = isRealTimeActive(opponentWeek);
 
         String thumbnail = attachedFileRepository.findChallengeImageByChallengeId(challengeId)
                 .map(ChallengeImage::getFilePath)
-                .orElse(null);
-
-        String category = challenge.getFields().stream()
-                .map(Field::getName)
-                .findFirst()
-                .orElse(null);
-
-        String job = Arrays.stream(Optional.ofNullable(challenge.getJob()).orElse("").split(","))
-                .map(String::trim)
-                .filter(s -> !s.isEmpty())
-                .findFirst()
                 .orElse(null);
 
         ChallengeDto.VsChallengeDetailResponse.ChallengeInfo challengeInfo =
@@ -311,137 +235,33 @@ public class ChallengeService {
                         .thumbnail(thumbnail)
                         .title(challenge.getName())
                         .tags(challenge.getTags().stream().map(Tag::getName).toList())
-                        .category(category)
-                        .job(job)
-                        .startDate(challenge.getStartedAt() == null ? null : challenge.getStartedAt().toString())
+                        .category(challenge.getFields().stream().map(Field::getName).findFirst().orElse(null))
+                        .job(challenge.getJob())
+                        .startDate(challenge.getStartedAt().toString())
                         .totalWeeks(totalWeeks)
-                        .state(challenge.getStatus() == null ? null : challenge.getStatus().name())
+                        .state(challenge.getStatus().name())
                         .build();
-
-        ChallengeDto.VsChallengeDetailResponse.Me meDto =
-                ChallengeDto.VsChallengeDetailResponse.Me.builder()
-                        .profileImage(getProfileImagePath(me))
-                        .nickname(me.getNickname())
-                        .progressRate(currentWeek + "/" + totalWeeks)
-                        .successRate(mySuccessRate)
-                        .isSuccess(mySuccessRate >= 70)
-                        .build();
-
-        ChallengeDto.VsChallengeDetailResponse.Opponent opponentDto =
-                ChallengeDto.VsChallengeDetailResponse.Opponent.builder()
-                        .profileImage(opponent == null ? null : getProfileImagePath(opponent))
-                        .nickname(opponent == null ? null : opponent.getNickname())
-                        .progressRate(currentWeek + "/" + totalWeeks)
-                        .successRate(opponentSuccessRate)
-                        .isRealTimeActive(opponentRealTime)
-                        .build();
-
-        ChallengeDto.VsChallengeDetailResponse.Participants participants =
-                ChallengeDto.VsChallengeDetailResponse.Participants.builder()
-                        .me(meDto)
-                        .opponent(opponent == null ? null : opponentDto)
-                        .build();
-
-        ChallengeDto.VsChallengeDetailResponse.CurrentWeekDetail currentWeekDetail =
-                ChallengeDto.VsChallengeDetailResponse.CurrentWeekDetail.builder()
-                        .weekNumber(currentWeek)
-                        .period(calcPeriod(challenge.getStartedAt(), currentWeek))
-                        .aiTitle(myWeek == null ? null : myWeek.getTitle())
-                        .aiContent(myWeek == null ? null : myWeek.getContent())
-                        .recordTime(formatSeconds(myWeek == null ? null : myWeek.getStopwatchTimeSeconds()))
-                        .isFinished(myWeek != null && Boolean.TRUE.equals(myWeek.getIsComplete()))
-                        .build();
-
-        List<ChallengeDto.VsChallengeDetailResponse.CommentNode> comments = buildCommentTreeForSpec(myWeek);
 
         return ChallengeDto.VsChallengeDetailResponse.builder()
                 .challengeInfo(challengeInfo)
-                .participants(participants)
-                .currentWeekDetail(currentWeekDetail)
-                .comments(comments)
                 .build();
     }
 
+    // 공통 계산 메서드
+
     private int calcCurrentWeek(LocalDate startedAt, int totalWeeks) {
-        LocalDate today = LocalDate.now();
-        long days = Duration.between(startedAt.atStartOfDay(), today.atStartOfDay()).toDays();
+        long days = Duration.between(startedAt.atStartOfDay(), LocalDate.now().atStartOfDay()).toDays();
         int week = (int) (days / 7) + 1;
-        if (week < 1) week = 1;
-        if (week > totalWeeks) week = totalWeeks;
-        return week;
-    }
-
-    private String calcPeriod(LocalDate startedAt, int weekNumber) {
-        LocalDate weekStart = startedAt.plusDays((long) (weekNumber - 1) * 7);
-        LocalDate weekEnd = weekStart.plusDays(6);
-        return weekStart + " ~ " + weekEnd;
-    }
-
-    private int calcSuccessRate(long completedWeeks, int currentWeek) {
-        if (currentWeek <= 0) return 0;
-        double rate = (double) completedWeeks / (double) currentWeek * 100.0;
-        return (int) Math.round(rate);
+        return Math.min(Math.max(week, 1), totalWeeks);
     }
 
     private boolean isRealTimeActive(WeeklyProgress wp) {
-        if (wp == null || wp.getLastModifiedAt() == null) return false;
-        return Duration.between(wp.getLastModifiedAt(), LocalDateTime.now()).getSeconds() <= 30;
+        return wp != null && wp.getLastModifiedAt() != null &&
+                Duration.between(wp.getLastModifiedAt(), LocalDateTime.now()).getSeconds() <= 30;
     }
 
     private String getProfileImagePath(User user) {
         ProfileImage img = user.getProfileImage();
         return img == null ? null : img.getFilePath();
-    }
-
-    private String formatSeconds(Integer seconds) {
-        if (seconds == null || seconds < 0) return "00:00:00";
-        int h = seconds / 3600;
-        int m = (seconds % 3600) / 60;
-        int s = seconds % 60;
-        return String.format("%02d:%02d:%02d", h, m, s);
-    }
-
-    private List<ChallengeDto.VsChallengeDetailResponse.CommentNode> buildCommentTreeForSpec(WeeklyProgress myWeek) {
-        if (myWeek == null) return List.of();
-
-        List<WeeklyComment> comments = weeklyCommentRepository
-                .findAllByWeeklyProgress_IdOrderByCreatedAtAsc(myWeek.getId());
-
-        Map<Long, ChallengeDto.VsChallengeDetailResponse.CommentNode> nodeMap = new LinkedHashMap<>();
-        Map<Long, List<Long>> childrenMap = new LinkedHashMap<>();
-
-        for (WeeklyComment c : comments) {
-            nodeMap.put(
-                    c.getId(),
-                    ChallengeDto.VsChallengeDetailResponse.CommentNode.builder()
-                            .commentId(c.getId())
-                            .writer(c.getUser().getNickname())
-                            .content(c.getContent())
-                            .createdAt(c.getCreatedAt() == null ? null : c.getCreatedAt().toString())
-                            .children(new ArrayList<>())
-                            .build()
-            );
-
-            if (c.getParentComment() != null) {
-                childrenMap.computeIfAbsent(c.getParentComment().getId(), k -> new ArrayList<>()).add(c.getId());
-            }
-        }
-
-        for (Map.Entry<Long, List<Long>> e : childrenMap.entrySet()) {
-            Long parentId = e.getKey();
-            ChallengeDto.VsChallengeDetailResponse.CommentNode parent = nodeMap.get(parentId);
-            if (parent == null) continue;
-
-            for (Long childId : e.getValue()) {
-                ChallengeDto.VsChallengeDetailResponse.CommentNode child = nodeMap.get(childId);
-                if (child != null) parent.getChildren().add(child);
-            }
-        }
-
-        return comments.stream()
-                .filter(c -> c.getParentComment() == null)
-                .map(c -> nodeMap.get(c.getId()))
-                .filter(Objects::nonNull)
-                .toList();
     }
 }
