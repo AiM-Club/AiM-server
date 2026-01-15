@@ -1,5 +1,6 @@
 package targeter.aim.system.configuration.security;
 
+import org.springframework.http.HttpMethod;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -48,6 +49,8 @@ public class SecurityConfig {
                                 "/v3/api-docs/**",
                                 "/h2-console/**"
                         ).permitAll()
+                        // 비로그인 허용 VS 챌린지 목록 조회(ALL)만
+                        .requestMatchers(HttpMethod.GET, "/api/challenges").permitAll()
                         .requestMatchers("/api/**").authenticated()
                         .anyRequest().permitAll()
                 )
