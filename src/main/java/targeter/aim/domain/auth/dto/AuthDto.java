@@ -99,6 +99,7 @@ public class AuthDto {
         @Schema(description = "아이디", example = "password123!")
         private String password;
     }
+
     //로그인 응답 DTO
     @Data
     @AllArgsConstructor
@@ -159,6 +160,7 @@ public class AuthDto {
                     .build();
         }
     }
+
     //중복검사DTO
     @Data
     @AllArgsConstructor

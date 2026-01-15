@@ -80,8 +80,7 @@ public class SecurityConfig {
                     it.exclude("/api/auth/**", ApiPathPattern.METHODS.PATCH);
                     it.exclude("/api/auth/**", ApiPathPattern.METHODS.DELETE);
                     it.exclude("/api/auth/**", ApiPathPattern.METHODS.OPTIONS);
-
-                    // 그 외 API는 JWT 적용
+                    //기존 유지
                     it.include("/api/**", ApiPathPattern.METHODS.GET);
                     it.include("/api/**", ApiPathPattern.METHODS.POST);
                     it.include("/api/**", ApiPathPattern.METHODS.PUT);
