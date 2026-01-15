@@ -151,7 +151,7 @@ public class AuthDto {
         private String code;
 
         @NotBlank(message = "redirectUri를 입력해주세요.")
-        @Schema(description = "카카오 developers에 등록된 Redirect URI (검증용)", example = "http://localhost:8080/oauth/kakao/callback")
+        @Schema(description = "카카오 developers에 등록된 Redirect URI (검증용)", example = "http://localhost:5173/oauth/kakao/callback")
         private String redirectUri;
     }
 
