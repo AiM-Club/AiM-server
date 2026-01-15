@@ -29,8 +29,10 @@ import targeter.aim.domain.user.repository.TierRepository;
 import targeter.aim.domain.user.repository.UserRepository;
 import targeter.aim.system.exception.model.ErrorCode;
 import targeter.aim.system.exception.model.RestException;
+import targeter.aim.system.security.model.AuthDetails;
 import targeter.aim.system.security.model.JwtDto;
 import targeter.aim.system.security.model.UserDetails;
+import targeter.aim.system.security.service.UserLoadService;
 import targeter.aim.system.security.utility.jwt.JwtTokenProvider;
 import targeter.aim.system.security.utility.jwt.JwtTokenResolver;
 
@@ -42,13 +44,16 @@ import java.util.Optional;
 public class AuthService {
 
     private final UserRepository userRepository;
-    private final PasswordEncoder passwordEncoder;
     private final TierRepository tierRepository;
+
     private final JwtTokenProvider jwtTokenProvider;
     private final JwtTokenResolver jwtTokenResolver;
     private final RefreshTokenRepository refreshTokenRepository;
     private final RefreshTokenCacheRepository refreshTokenCacheRepository;
     private final RefreshTokenValidator refreshTokenValidator;
+    private final UserLoadService userLoadService;
+    private final PasswordEncoder passwordEncoder;
+
     private final FileHandler fileHandler;
 
     @Transactional
@@ -100,6 +105,17 @@ public class AuthService {
         );
     }
 
+    private void saveRefreshToken(UserDetails userDetails, JwtDto.TokenPair tokenPair) {
+        String refreshUuid = tokenPair.getRefreshToken().getTokenString();
+        RefreshToken refreshToken = RefreshTokenDto.toEntity(
+                refreshUuid,
+                userDetails.getKey(),
+                tokenPair.getRefreshToken().getExpireAt());
+
+        refreshTokenRepository.save(refreshToken);
+        refreshTokenCacheRepository.cacheRefreshUuid(refreshUuid, userDetails.getKey());
+    }
+
     @Transactional(readOnly = true)
     public AuthDto.IdExistResponse checkId(String loginId) {
         boolean exists = userRepository.existsByLoginId(loginId);
@@ -113,6 +129,31 @@ public class AuthService {
     }
 
     @Transactional
+    public JwtDto.TokenInfo recreateToken(AuthDto.RecreateRequest request) {
+        String refreshTokenUuid = request.getRefreshToken();
+        String id = jwtTokenResolver.resolveTokenFromString(refreshTokenUuid).getSubject();
+
+        refreshTokenValidator.validateOrThrow(id, refreshTokenUuid);
+        refreshTokenRepository.deleteByUuid(refreshTokenUuid);
+        refreshTokenCacheRepository.evictRefreshUuid(refreshTokenUuid);
+
+        AuthDetails authDetails = userLoadService.loadUserByKey(id)
+                .orElseThrow(() -> new RestException(ErrorCode.AUTH_USER_NOT_FOUND));
+        JwtDto.TokenPair tokenPair = jwtTokenProvider.createTokenPair(authDetails);
+
+        String newRefreshUuid = tokenPair.getRefreshToken().getTokenString();
+        RefreshToken newRefreshToken = RefreshTokenDto.toEntity(
+                newRefreshUuid,
+                authDetails.getKey(),
+                tokenPair.getRefreshToken().getExpireAt());
+
+        refreshTokenRepository.save(newRefreshToken);
+        refreshTokenCacheRepository.cacheRefreshUuid(newRefreshUuid, authDetails.getKey());
+
+        return JwtDto.TokenInfo.of(tokenPair);
+    }
+
+    @Transactional
     public void logout(UserDetails userDetails, HttpServletRequest request) {
         String accessToken = getAccessTokenFromRequest(request);
         String refreshUuid = jwtTokenResolver.resolveTokenFromString(accessToken).getRefreshUuid();
@@ -120,24 +161,6 @@ public class AuthService {
         refreshTokenValidator.validateOrThrow(userDetails.getKey(), refreshUuid);
         refreshTokenRepository.deleteByUuid(refreshUuid);
         refreshTokenCacheRepository.evictRefreshUuid(refreshUuid);
-    }
-
-    private void saveRefreshToken(UserDetails userDetails, JwtDto.TokenPair tokenPair) {
-        String accessTokenString = tokenPair.getAccessToken().getTokenString();
-        String refreshUuid = jwtTokenResolver.resolveTokenFromString(accessTokenString).getRefreshUuid();
-
-        if (refreshUuid == null || refreshUuid.isBlank()) {
-            throw new RestException(ErrorCode.GLOBAL_BAD_REQUEST);
-        }
-
-        RefreshToken refreshToken = RefreshTokenDto.toEntity(
-                refreshUuid,
-                userDetails.getKey(),
-                tokenPair.getRefreshToken().getExpireAt()
-        );
-
-        refreshTokenRepository.save(refreshToken);
-        refreshTokenCacheRepository.cacheRefreshUuid(refreshUuid, userDetails.getKey());
     }
 
     private String getAccessTokenFromRequest(HttpServletRequest request) {

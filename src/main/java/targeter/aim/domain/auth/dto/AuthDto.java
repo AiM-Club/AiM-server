@@ -134,4 +134,15 @@ public class AuthDto {
                     .build();
         }
     }
+
+    @Data
+    @AllArgsConstructor
+    @NoArgsConstructor
+    @Builder
+    @Schema(description = "토큰 재발행 DTO", requiredProperties = {"refreshToken"})
+    public static class RecreateRequest {
+        @NotBlank(message = "Refresh Token을 입력해주세요.")
+        @Schema(description = "재발행할 Refresh Token", example = "refreshTokenString")
+        private String refreshToken;
+    }
 }

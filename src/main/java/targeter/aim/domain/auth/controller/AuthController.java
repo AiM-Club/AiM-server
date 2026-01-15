@@ -14,6 +14,7 @@ import targeter.aim.domain.auth.dto.AuthDto;
 import targeter.aim.domain.auth.service.AuthService;
 import targeter.aim.domain.user.dto.UserDto;
 import targeter.aim.system.security.annotation.NoJwtAuth;
+import targeter.aim.system.security.model.JwtDto;
 import targeter.aim.system.security.model.UserDetails;
 import targeter.aim.system.security.utility.validator.ValidatorUtil;
 
@@ -57,6 +58,14 @@ public class AuthController {
     public AuthDto.NicknameExistResponse checkNickname(@RequestParam("nickname") String nickname) {
         ValidatorUtil.validateNickname(nickname);
         return authService.checkNickname(nickname);
+    }
+
+    @NoJwtAuth("토큰 갱신은 만료된 토큰으로 새 토큰을 발급받는 과정이므로 JWT 인증이 필요하지 않음")
+    @PostMapping("/token/refresh")
+    @Operation(summary = "토큰 재발행", description = "새로운 Access/Refresh Token을 재발급받습니다.")
+    @ApiResponse(responseCode = "200", description = "토큰 재발행 성공")
+    public JwtDto.TokenInfo refreshToken(@RequestBody @Valid AuthDto.RecreateRequest request) {
+        return authService.recreateToken(request);
     }
 
     @PostMapping("/logout")
