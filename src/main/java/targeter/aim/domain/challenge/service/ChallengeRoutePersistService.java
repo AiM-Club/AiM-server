@@ -28,7 +28,7 @@ public class ChallengeRoutePersistService {
 
     // 상위 트랜잭션과 독립적으로 실행
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public Long persistAtomic(Long userId, ChallengeDto.ProgressCreateRequest req, RoutePayload payload) {
+    public Long persistAtomic(Long userId, ChallengeDto.ChallengeCreateRequest req, RoutePayload payload) {
         // 1. Host 유저 조회
         User host = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
@@ -36,7 +36,7 @@ public class ChallengeRoutePersistService {
         // 2. 멱등성
         Optional<Challenge> existing = challengeRepository.findByHostAndNameAndStartedAt(host, req.getName(), req.getStartedAt());
 
-        if(existing.isPresent()) {
+        if (existing.isPresent()) {
             log.warn("Challenge with id {} already exists", existing.get().getId());
             return existing.get().getId();
         }
@@ -48,9 +48,9 @@ public class ChallengeRoutePersistService {
                 .job(String.join(",", req.getJobs()))
                 .startedAt(req.getStartedAt())
                 .durationWeek(req.getDuration())
+                .status(ChallengeStatus.IN_PROGRESS)
                 .mode(req.getMode())
                 .visibility(req.getVisibility())
-                .status(ChallengeStatus.IN_PROGRESS)
                 .build();
 
         Challenge savedChallenge = challengeRepository.save(challenge);
@@ -63,7 +63,7 @@ public class ChallengeRoutePersistService {
         challengeMemberRepository.save(hostMember);
 
         // 5. WeeklyProgress 저장
-        for(RoutePayload.Week week : payload.getWeeks()) {
+        for (RoutePayload.Week week : payload.getWeeks()) {
             WeeklyProgress progress = WeeklyProgress.builder()
                     .challenge(savedChallenge)
                     .user(host)

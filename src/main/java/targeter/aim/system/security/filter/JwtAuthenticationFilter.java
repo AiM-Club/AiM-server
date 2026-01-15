@@ -85,10 +85,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             }
             return;
         }
-
         // Refresh UUID 검증
-        refreshTokenValidator.validateOrThrow(userDetails.get().getKey(), parsedTokenData.getRefreshUuid());
-
         SecurityContextHolder.getContext()
                 .setAuthentication(
                         new UsernamePasswordAuthenticationToken(
@@ -103,31 +100,26 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         } else {
             handlerExceptionResolver.resolveException(
                     request, response, null,
-                    new JwtAuthenticationException("Authentication failed", 401, e));
+                    new JwtAuthenticationException("Authentication failed", 401, e)
+            );
         }
     }
 
     private boolean isMatchingURI(String servletPath, String method) {
         ApiPathPattern.METHODS apiMethod = ApiPathPattern.METHODS.parse(method);
-
-        if (apiMethod == null) {
-            return false;
-        }
+        if (apiMethod == null) return false;
 
         boolean isAllowed = allowedPatterns.stream()
-                .anyMatch(pattern -> antPathMatcher.match(pattern.getPattern(), servletPath) && pattern.getMethod() == apiMethod);
+                .anyMatch(p -> antPathMatcher.match(p.getPattern(), servletPath) && p.getMethod() == apiMethod);
 
         boolean isIgnored = ignorePatterns.stream()
-                .anyMatch(pattern -> antPathMatcher.match(pattern.getPattern(), servletPath) && pattern.getMethod() == apiMethod);
-
+                .anyMatch(p -> antPathMatcher.match(p.getPattern(), servletPath) && p.getMethod() == apiMethod);
         // 어노테이션을 통해 제외된 경로 확인
         boolean isExcluded = jwtAuthPathInitializer.getExcludePaths().stream()
-                .anyMatch(pattern -> antPathMatcher.match(pattern.getPattern(), servletPath) && pattern.getMethod() == apiMethod);
-
+                .anyMatch(p -> antPathMatcher.match(p.getPattern(), servletPath) && p.getMethod() == apiMethod);
         // 충돌 경로는 인증을 수행해야 함
         boolean isConflicting = jwtAuthPathInitializer.getConflictPaths().stream()
-                .anyMatch(pattern -> antPathMatcher.match(pattern.getPattern(), servletPath) && pattern.getMethod() == apiMethod);
-
+                .anyMatch(p -> antPathMatcher.match(p.getPattern(), servletPath) && p.getMethod() == apiMethod);
 
         return isAllowed && !isIgnored && (!isExcluded || isConflicting);
     }

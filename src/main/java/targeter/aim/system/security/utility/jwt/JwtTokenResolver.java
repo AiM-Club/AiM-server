@@ -4,16 +4,14 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.Jws;
 import io.jsonwebtoken.Jwts;
-import jakarta.servlet.http.HttpServletRequest;
-import lombok.RequiredArgsConstructor;
-
 import java.security.Key;
 import io.jsonwebtoken.security.SignatureException;
+import jakarta.servlet.http.HttpServletRequest;
+import lombok.RequiredArgsConstructor;
 import targeter.aim.system.security.exception.JwtInvalidTokenException;
 import targeter.aim.system.security.exception.JwtParseException;
 import targeter.aim.system.security.exception.JwtTokenExpiredException;
 import targeter.aim.system.security.model.JwtDto;
-
 import java.time.ZoneId;
 import java.util.Optional;
 
@@ -23,12 +21,12 @@ public class JwtTokenResolver {
 
     public Optional<String> parseTokenFromRequest(HttpServletRequest request) {
         Optional<String> bearerToken;
+        String headerValue;
         try {
             bearerToken = Optional.ofNullable(request.getHeader("Authorization"));
         }catch (Exception ignored) {
             bearerToken = Optional.empty();
         }
-
         return bearerToken
                 .filter(token -> token.startsWith("Bearer"))
                 .map(token -> token.substring(7));

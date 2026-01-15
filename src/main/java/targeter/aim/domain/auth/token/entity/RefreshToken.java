@@ -1,5 +1,6 @@
 package targeter.aim.domain.auth.token.entity;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
@@ -17,9 +18,13 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @Table(name = "REFRESH_TOKEN")
 public class RefreshToken {
+
     @Id
+    @Column(length = 64)
     private String uuid;
 
+    @Column(length = 50)
     private String userKey;
+
     private LocalDateTime expiryDate;
 }

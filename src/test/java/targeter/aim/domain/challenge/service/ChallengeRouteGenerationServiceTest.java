@@ -35,7 +35,7 @@ class ChallengeRouteGenerationServiceTest {
     void generateRoute_Success() {
         // given
         int duration = 4;
-        ChallengeDto.ProgressCreateRequest request = createRequest(duration);
+        ChallengeDto.ChallengeCreateRequest request = createRequest(duration);
 
         // AI 응답 Mock
         RoutePayload mockPayload = new RoutePayload();
@@ -69,7 +69,7 @@ class ChallengeRouteGenerationServiceTest {
     void generateRoute_Retry_Success() {
         // given
         int duration = 2;
-        ChallengeDto.ProgressCreateRequest request = createRequest(duration);
+        ChallengeDto.ChallengeCreateRequest request = createRequest(duration);
 
         RoutePayload successPayload = new RoutePayload();
         // 모든 Week에 데이터가 채워져 있어야 함 -> 여기가 수정됨!
@@ -98,7 +98,7 @@ class ChallengeRouteGenerationServiceTest {
     @DisplayName("실패: 주차(Week) 개수가 다르면 예외 발생")
     void generateRoute_Fail_Validation_Size() {
         // given
-        ChallengeDto.ProgressCreateRequest request = createRequest(4); // 4주 요청
+        ChallengeDto.ChallengeCreateRequest request = createRequest(4); // 4주 요청
 
         RoutePayload invalidPayload = new RoutePayload();
         // 1주치만 옴 -> 개수 불일치
@@ -117,7 +117,7 @@ class ChallengeRouteGenerationServiceTest {
     @DisplayName("실패: 내용이 비어있는 주차가 있으면 예외 발생")
     void generateRoute_Fail_Validation_EmptyContent() {
         // given
-        ChallengeDto.ProgressCreateRequest request = createRequest(1);
+        ChallengeDto.ChallengeCreateRequest request = createRequest(1);
 
         RoutePayload invalidPayload = new RoutePayload();
         RoutePayload.Week emptyWeek = new RoutePayload.Week(); // title, content가 null
@@ -135,8 +135,8 @@ class ChallengeRouteGenerationServiceTest {
 
     // --- Helper Methods ---
 
-    private ChallengeDto.ProgressCreateRequest createRequest(int duration) {
-        return ChallengeDto.ProgressCreateRequest.builder()
+    private ChallengeDto.ChallengeCreateRequest createRequest(int duration) {
+        return ChallengeDto.ChallengeCreateRequest.builder()
                 .name("Test")
                 .startedAt(LocalDate.now())
                 .duration(duration)

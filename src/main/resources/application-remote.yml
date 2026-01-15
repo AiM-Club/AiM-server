@@ -9,10 +9,15 @@ spring:
     username: ${DB_USERNAME}
     password: ${DB_PASSWORD}
 
+  # jpa설정
   jpa:
     hibernate:
       ddl-auto: update
+      properties:
+        hibernate:
+          default_batch_fetch_size: 100
 
+  # 로그 레벨 설정
   security:
     oauth2:
       client:
@@ -39,7 +44,7 @@ spring:
 
 logging:
   level:
-    org.hibernate.SQL: off
+    org.hibernate.SQL: off  # 실제 들어가는 파라미터값 찍어주는 설정
     org.hibernate.type: off
 
 jwt:

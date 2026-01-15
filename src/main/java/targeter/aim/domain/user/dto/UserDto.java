@@ -3,7 +3,6 @@ package targeter.aim.domain.user.dto;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 import targeter.aim.domain.file.dto.FileDto;
-import targeter.aim.domain.file.entity.ProfileImage;
 import targeter.aim.domain.user.entity.Gender;
 import targeter.aim.domain.user.entity.SocialLogin;
 import targeter.aim.domain.user.entity.User;
@@ -20,13 +19,16 @@ public class UserDto {
         @Schema(description = "아이디", example = "user1234")
         private String loginId;
 
+        @Schema(description = "이메일", example = "user@gmail.com")
+        private String email;
+
         @Schema(description = "사용자 닉네임", example = "nickname")
         private String nickname;
 
-        @Schema(description = "사용자 생일", example = "YYYY-MM-DD")
+        @Schema(description = "사용자 생일", example = "YYYY-MM-DD", nullable = true)
         private LocalDate birthday;
 
-        @Schema(description = "사용자 성별", example = "MALE | FEMAIL | OTHER")
+        @Schema(description = "사용자 성별", example = "MALE | FEMALE | OTHER", nullable = true)
         private Gender gender;
 
         @Schema(
@@ -36,6 +38,9 @@ public class UserDto {
                 nullable = true
         )
         private SocialLogin socialLogin;
+
+        @Schema(description = "신규 소셜유저 여부(추가 정보 입력 필요)", example = "true")
+        private Boolean isNewUser;
 
         @Schema(description = "사용자 프로필 이미지")
         private FileDto.FileResponse profileImage;
@@ -47,16 +52,21 @@ public class UserDto {
         private LocalDateTime lastModifiedAt;
 
         public static UserResponse from(User user) {
+            boolean isNewUser = user.isSocialUser()
+                    && (user.getBirthday() == null || user.getGender() == null);
+
             return UserResponse.builder()
                     .loginId(user.getLoginId())
+                    .email(user.getEmail())
                     .nickname(user.getNickname())
                     .birthday(user.getBirthday())
                     .gender(user.getGender())
+                    .profileImage(FileDto.FileResponse.from(user.getProfileImage()))
                     .socialLogin(user.getSocialLogin() == null ? null : user.getSocialLogin())
+                    .isNewUser(isNewUser)
                     .createdAt(user.getCreatedAt())
                     .lastModifiedAt(user.getLastModifiedAt())
                     .build();
         }
     }
-
 }

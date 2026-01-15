@@ -25,7 +25,22 @@ public class AuthDto {
     @AllArgsConstructor
     @NoArgsConstructor
     @Builder
-    @Schema(description = "회원가입 요청 DTO",  requiredProperties = {"login_id", "nickname", "password", "birthday", "gender"})
+    @Schema(description = "구글 로그인 요청 DTO")
+    public static class GoogleLoginRequest {
+        @NotBlank(message = "인가 코드를 입력해주세요.")
+        @Schema(description = "Google 인증 서버로부터 받은 인가 코드", example = "4/0AfJohX...")
+        private String code;
+
+        @NotBlank(message = "redirectUri를 입력해주세요.")
+        @Schema(description = "구글 콘솔에 등록된 Redirect URI (검증용)", example = "http://localhost:5173/oauth/google/callback")
+        private String redirectUri;
+    }
+
+    @Data
+    @AllArgsConstructor
+    @NoArgsConstructor
+    @Builder
+    @Schema(description = "회원가입 요청 DTO", requiredProperties = {"login_id", "nickname", "password", "birthday", "gender"})
     public static class SignUpRequest {
         @NotBlank(message = "아이디를 입력해주세요.")
         @Schema(description = "아이디", example = "user1234")
@@ -40,7 +55,7 @@ public class AuthDto {
 
         @NotBlank(message = "비밀번호를 입력해주세요.")
         @Schema(description = "비밀번호", example = "password123!")
-        @Pattern(regexp = "^(?=.*[a-z])(?=.*[0-9])(?=.*[!@#$%^&*?_])[a-z0-9!@#$%^&*?_]{8,16}$",  message = "비밀번호는 영문 소문자, 숫자, 특수문자를 각각 1자 이상 포함하며 8~16자여야 합니다.")
+        @Pattern(regexp = "^(?=.*[a-z])(?=.*[0-9])(?=.*[!@#$%^&*?_])[a-z0-9!@#$%^&*?_]{8,16}$", message = "비밀번호는 영문 소문자, 숫자, 특수문자를 각각 1자 이상 포함하며 8~16자여야 합니다.")
         private String password;
 
         @NotNull(message = "생년월일을 입력해주세요.")
@@ -80,11 +95,12 @@ public class AuthDto {
         private String loginId;
 
         @NotBlank(message = "비밀번호를 입력해주세요.")
-        @Pattern(regexp = "^(?=.*[a-z])(?=.*[0-9])(?=.*[!@#$%^&*?_])[a-z0-9!@#$%^&*?_]{8,16}$",  message = "비밀번호는 영문 소문자, 숫자, 특수문자를 각각 1자 이상 포함하며 8~16자여야 합니다.")
+        @Pattern(regexp = "^(?=.*[a-z])(?=.*[0-9])(?=.*[!@#$%^&*?_])[a-z0-9!@#$%^&*?_]{8,16}$", message = "비밀번호는 영문 소문자, 숫자, 특수문자를 각각 1자 이상 포함하며 8~16자여야 합니다.")
         @Schema(description = "아이디", example = "password123!")
         private String password;
     }
-//로그인 응답 DTO
+
+    //로그인 응답 DTO
     @Data
     @AllArgsConstructor
     @NoArgsConstructor
@@ -97,13 +113,34 @@ public class AuthDto {
         @Schema(description = "발급된 토큰 정보", implementation = JwtDto.TokenInfo.class)
         private JwtDto.TokenInfo token;
 
-        public static SignInResponse of(
-                UserDto.UserResponse user,
-                JwtDto.TokenInfo token
-        ) {
+        public static SignInResponse of(UserDto.UserResponse user, JwtDto.TokenInfo token) {
             return SignInResponse.builder()
                     .user(user)
                     .token(token)
+                    .build();
+        }
+    }
+
+    @Data
+    @AllArgsConstructor
+    @NoArgsConstructor
+    @Builder
+    @Schema(description = "소셜 로그인 응답 DTO")
+    public static class SocialSignInResponse {
+        @Schema(description = "로그인한 사용자 정보", implementation = UserDto.UserResponse.class)
+        private UserDto.UserResponse user;
+
+        @Schema(description = "발급된 토큰 정보", implementation = JwtDto.TokenInfo.class)
+        private JwtDto.TokenInfo token;
+
+        @Schema(description = "신규 소셜유저 여부(추가 정보 입력 필요)", example = "true")
+        private Boolean isNewUser;
+
+        public static SocialSignInResponse of(UserDto.UserResponse user, JwtDto.TokenInfo token, Boolean isNewUser) {
+            return SocialSignInResponse.builder()
+                    .user(user)
+                    .token(token)
+                    .isNewUser(isNewUser)
                     .build();
         }
     }
@@ -123,7 +160,8 @@ public class AuthDto {
                     .build();
         }
     }
-//중복검사DTO
+
+    //중복검사DTO
     @Data
     @AllArgsConstructor
     @NoArgsConstructor

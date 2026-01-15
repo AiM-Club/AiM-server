@@ -12,12 +12,15 @@ import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestClientResponseException;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.multipart.MultipartFile;
 import targeter.aim.domain.auth.dto.AuthDto;
 import targeter.aim.domain.auth.token.entity.RefreshToken;
 import targeter.aim.domain.auth.token.entity.dto.RefreshTokenDto;
 import targeter.aim.domain.auth.token.repository.RefreshTokenCacheRepository;
 import targeter.aim.domain.auth.token.repository.RefreshTokenRepository;
 import targeter.aim.domain.auth.token.validator.RefreshTokenValidator;
+import targeter.aim.domain.file.entity.ProfileImage;
+import targeter.aim.domain.file.handler.FileHandler;
 import targeter.aim.domain.user.dto.UserDto;
 import targeter.aim.domain.user.entity.SocialLogin;
 import targeter.aim.domain.user.entity.Tier;
@@ -37,6 +40,7 @@ import java.util.Optional;
 @Service
 @RequiredArgsConstructor
 public class AuthService {
+
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final TierRepository tierRepository;
@@ -45,6 +49,7 @@ public class AuthService {
     private final RefreshTokenRepository refreshTokenRepository;
     private final RefreshTokenCacheRepository refreshTokenCacheRepository;
     private final RefreshTokenValidator refreshTokenValidator;
+    private final FileHandler fileHandler;
 
     private final RestTemplate restTemplate = new RestTemplate();
 
@@ -72,17 +77,30 @@ public class AuthService {
     @Transactional
     public UserDto.UserResponse signUp(AuthDto.SignUpRequest request) {
         boolean isExisting = userRepository.existsByLoginId(request.getLoginId());
-        if (isExisting){
+        if (isExisting) {
             throw new RestException(ErrorCode.USER_ALREADY_LOGIN_ID_EXISTS);
         }
+
         User toSave = request.toEntity(passwordEncoder);
+
         Tier bronze = tierRepository.findByName("BRONZE")
                 .orElseThrow(() -> new RestException(ErrorCode.TIER_NOT_FOUND));
         toSave.setTier(bronze);
 
         User saved = userRepository.save(toSave);
+        saveProfileImage(request.getProfileImage(), saved);
 
         return UserDto.UserResponse.from(saved);
+    }
+
+    private void saveProfileImage(MultipartFile file, User user) {
+        if (file != null && !file.isEmpty()) {
+            ProfileImage profileImage = ProfileImage.from(file);
+            if (profileImage == null) return;
+            user.setProfileImage(profileImage);
+            profileImage.setUser(user);
+            fileHandler.saveFile(file, profileImage);
+        }
     }
 
     @Transactional
@@ -90,15 +108,19 @@ public class AuthService {
         var found = userRepository.findByLoginId(request.getLoginId())
                 .orElseThrow(() -> new RestException(ErrorCode.USER_NOT_FOUND));
 
-        if (!passwordEncoder.matches(request.getPassword(), found.getPassword()))
+        if (!passwordEncoder.matches(request.getPassword(), found.getPassword())) {
             throw new RestException(ErrorCode.AUTH_PASSWORD_NOT_MATCH);
+        }
 
         var userDetails = UserDetails.from(found);
         var tokenPair = jwtTokenProvider.createTokenPair(userDetails);
 
         saveRefreshToken(userDetails, tokenPair);
 
-        return AuthDto.SignInResponse.of(UserDto.UserResponse.from(found), JwtDto.TokenInfo.of(tokenPair));
+        return AuthDto.SignInResponse.of(
+                UserDto.UserResponse.from(found),
+                JwtDto.TokenInfo.of(tokenPair)
+        );
     }
 
     @Transactional
@@ -242,11 +264,6 @@ public class AuthService {
         refreshTokenValidator.validateOrThrow(userDetails.getKey(), refreshUuid);
         refreshTokenRepository.deleteByUuid(refreshUuid);
         refreshTokenCacheRepository.evictRefreshUuid(refreshUuid);
-    }
-
-    private String getAccessTokenFromRequest(HttpServletRequest request) {
-        return jwtTokenResolver.parseTokenFromRequest(request)
-                .orElseThrow(() -> new RestException(ErrorCode.AUTH_TOKEN_MISSING));
     }
 
     @Transactional
@@ -395,5 +412,10 @@ public class AuthService {
             }
         }
         return candidate;
+    }
+
+    private String getAccessTokenFromRequest(HttpServletRequest request) {
+        return jwtTokenResolver.parseTokenFromRequest(request)
+                .orElseThrow(() -> new RestException(ErrorCode.AUTH_TOKEN_MISSING));
     }
 }

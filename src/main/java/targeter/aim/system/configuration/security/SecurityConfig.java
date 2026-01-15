@@ -1,5 +1,6 @@
 package targeter.aim.system.configuration.security;
 
+import org.springframework.http.HttpMethod;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -18,6 +19,8 @@ import targeter.aim.system.security.model.ApiPathPattern;
 import targeter.aim.system.security.service.UserLoadServiceImpl;
 
 import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Configuration
 @EnableWebSecurity
@@ -30,32 +33,35 @@ public class SecurityConfig {
     private String[] allowedOrigins;
 
     @Bean
-    SecurityFilterChain securityFilterChain(
+    public SecurityFilterChain securityFilterChain(
             HttpSecurity httpSecurity,
             UserLoadServiceImpl userLoadServiceImpl
     ) throws Exception {
 
         httpSecurity
-                .cors(cors -> cors.configurationSource(corsConfigSrc()))
                 .csrf(csrf -> csrf.disable())
+                .cors(cors -> cors.configurationSource(corsConfigSrc()))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
                                 "/api/auth/**",
-                                "/oauth2/**",
-                                "/login/oauth2/**",
                                 "/error",
                                 "/swagger-ui/**",
                                 "/v3/api-docs/**",
                                 "/h2-console/**"
                         ).permitAll()
+                        // 비로그인 허용 VS 챌린지 목록 조회(ALL)만
+                        .requestMatchers(HttpMethod.GET, "/api/challenges").permitAll()
                         .requestMatchers("/api/**").authenticated()
                         .anyRequest().permitAll()
                 )
-                .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
+                // REST 방식
+                .sessionManagement(session ->
+                        session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+                );
 
         jwtAutoConfigurerFactory.create(userLoadServiceImpl)
                 .pathConfigure(it -> {
-                    //auth는 JWT 인증 제외 (로그인/회원가입/카카오로그인 등)
+                    // auth는 JWT 인증 제외 (로그인/회원가입/소셜로그인 등)
                     it.exclude("/api/auth/**", ApiPathPattern.METHODS.GET);
                     it.exclude("/api/auth/**", ApiPathPattern.METHODS.POST);
                     it.exclude("/api/auth/**", ApiPathPattern.METHODS.PUT);
@@ -79,14 +85,17 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigSrc() {
         CorsConfiguration corsConfiguration = new CorsConfiguration();
         corsConfiguration.setAllowCredentials(true);
-
-        corsConfiguration.setAllowedOrigins(Arrays.asList(allowedOrigins));
-        corsConfiguration.setAllowedMethods(Arrays.asList(
-                "HEAD", "GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"
-        ));
-        corsConfiguration.setAllowedHeaders(Arrays.asList(
-                "Authorization", "Cache-Control", "Content-Type"
-        ));
+        List<String> origins = Arrays.stream(allowedOrigins)
+                .map(String::trim)
+                .filter(s -> !s.isBlank())
+                .collect(Collectors.toList());
+        corsConfiguration.setAllowedOrigins(origins);
+        corsConfiguration.setAllowedMethods(
+                Arrays.asList("HEAD", "GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS")
+        );
+        corsConfiguration.setAllowedHeaders(
+                Arrays.asList("Authorization", "Cache-Control", "Content-Type")
+        );
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", corsConfiguration);

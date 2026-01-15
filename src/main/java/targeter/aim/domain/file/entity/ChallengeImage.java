@@ -22,17 +22,18 @@ import java.util.UUID;
 public class ChallengeImage extends AttachedFile {
 
     @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "challenge_id", nullable = false)
+    @JoinColumn(name = "challenge_id")
     private Challenge challenge;
 
-    public static ChallengeImage from(MultipartFile file, Challenge challenge, String filePath) {
+    public static ChallengeImage from(MultipartFile file, Challenge challenge) {
         throwIfNotAImageFile(file);
 
-        String fileName = file.getOriginalFilename();
+        String uuId = UUID.randomUUID().toString();
+        String filePath = "challenge/" + uuId;
 
         return ChallengeImage.builder()
                 .uuid(UUID.randomUUID().toString())
-                .fileName(fileName)
+                .fileName(safeFilename(file.getOriginalFilename()))
                 .handlingType(HandlingType.IMAGE)
                 .challenge(challenge)
                 .size(file.getSize())
@@ -41,19 +42,33 @@ public class ChallengeImage extends AttachedFile {
     }
 
     private static void throwIfNotAImageFile(MultipartFile file) {
+        if (file == null || file.isEmpty()) {
+            throw new RestException(ErrorCode.FILE_NOT_IMAGE);
+        }
+
+        String contentType = file.getContentType();
+        if (contentType == null || !contentType.toLowerCase().startsWith("image/")) {
+            throw new RestException(ErrorCode.FILE_NOT_IMAGE);
+        }
+
         String fileName = file.getOriginalFilename();
-        if (fileName == null || fileName.isBlank()) {
+        String extension = extractExt(fileName);
+        if(extension == null || !List.of("JPG", "JPEG", "PNG", "WEBP").contains(extension.toUpperCase())) {
             throw new RestException(ErrorCode.FILE_NOT_IMAGE);
         }
+    }
 
-        String[] splitted = fileName.split("\\.");
-        if (splitted.length < 2) {
-            throw new RestException(ErrorCode.FILE_NOT_IMAGE);
-        }
+    private static String extractExt(String fileName) {
+        if(fileName == null) return null;
+        int idx = fileName.lastIndexOf('.');
+        if(idx < 0 || idx == fileName.length() - 1) return null;
+        return fileName.substring(idx + 1).toUpperCase();
+    }
 
-        String extension = splitted[splitted.length - 1];
-        if (!List.of("JPG", "JPEG", "PNG").contains(extension.toUpperCase())) {
-            throw new RestException(ErrorCode.FILE_NOT_IMAGE);
-        }
+    private static String safeFilename(String fileName) {
+        if(fileName == null || fileName.isBlank()) return "file";
+        return fileName.replace("\r", "_")
+                .replace("\n", "_")
+                .replace(" ", "_");
     }
 }
