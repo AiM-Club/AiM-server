@@ -8,8 +8,8 @@ import org.springframework.security.oauth2.client.authentication.OAuth2Authentic
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.stereotype.Component;
-import targeter.aim.domain.auth.dto.AuthDto;
-import targeter.aim.domain.auth.service.AuthService;
+import targeter.aim.domain.auth.dto.OAuth2Dto;
+import targeter.aim.domain.auth.service.OAuth2Service;
 import targeter.aim.system.exception.model.ErrorCode;
 import targeter.aim.system.exception.model.RestException;
 
@@ -22,9 +22,9 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
 
-    private final AuthService authService;
+    private final OAuth2Service authService;
 
-    private static final String FRONT_CALLBACK_URL = "http://localhost:8080/oauth/callback";//추후 프론트 연동
+    private static final String FRONT_CALLBACK_URL = "http://localhost:5173/oauth/callback";//추후 프론트 연동
 
     @Override
     public void onAuthenticationSuccess(
@@ -51,7 +51,7 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
             throw new RestException(ErrorCode.GLOBAL_BAD_REQUEST);
         }
 
-        AuthDto.SocialSignInResponse signIn = authService.issueTokenByGoogle(email, sub);
+        OAuth2Dto.SocialSignInResponse signIn = authService.issueTokenByGoogle(email, sub);
 
         String redirectUrl = FRONT_CALLBACK_URL
                 + "?accessToken=" + URLEncoder.encode(signIn.getToken().getAccessToken(), StandardCharsets.UTF_8)

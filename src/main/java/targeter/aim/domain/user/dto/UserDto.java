@@ -33,8 +33,7 @@ public class UserDto {
 
         @Schema(
                 description = "소셜 로그인 방식 (일반 회원가입 시 null)",
-                example = "KAKAO",
-                allowableValues = {"KAKAO", "GOOGLE"},
+                example = "KAKAO | GOOGLE",
                 nullable = true
         )
         private SocialLogin socialLogin;
