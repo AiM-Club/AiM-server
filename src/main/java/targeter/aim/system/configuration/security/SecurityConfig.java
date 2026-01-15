@@ -1,10 +1,10 @@
 package targeter.aim.system.configuration.security;
 
-import org.springframework.http.HttpMethod;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -54,11 +54,13 @@ public class SecurityConfig {
                         .requestMatchers("/api/**").authenticated()
                         .anyRequest().permitAll()
                 )
-                // REST 방식
+
+                // 세션 미사용
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 );
 
+        // JWT Filter 설정
         jwtAutoConfigurerFactory.create(userLoadServiceImpl)
                 .pathConfigure(it -> {
                     // auth는 JWT 인증 제외 (로그인/회원가입/소셜로그인 등)

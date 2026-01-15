@@ -23,20 +23,6 @@ public class ChallengeController {
 
     private final ChallengeService challengeService;
 
-    @NoJwtAuth
-    @GetMapping
-    @Operation(
-            summary = "VS 챌린지 목록 조회",
-            description = "VS 챌린지 목록을 탭(ALL/MY)과 정렬 조건에 따라 페이지네이션 조회합니다."
-    )
-    public ChallengeDto.ChallengePageResponse getVsChallenges(
-            @ModelAttribute @ParameterObject ChallengeDto.ListSearchCondition condition,
-            @PageableDefault(size = 16) @ParameterObject Pageable pageable,
-            @AuthenticationPrincipal UserDetails userDetails
-    ) {
-        return challengeService.getVsChallenges(condition, userDetails, pageable);
-    }
-
     @PostMapping
     @Operation(
             summary = "챌린지 생성",
@@ -49,6 +35,20 @@ public class ChallengeController {
             @AuthenticationPrincipal UserDetails userDetails
     ) {
         return challengeService.createChallenge(userDetails, request);
+    }
+
+    @NoJwtAuth
+    @GetMapping("/vs")
+    @Operation(
+            summary = "VS 챌린지 목록 조회",
+            description = "VS 챌린지 목록을 탭(ALL/MY)과 정렬 조건에 따라 페이지네이션 조회합니다."
+    )
+    public ChallengeDto.ChallengePageResponse getVsChallenges(
+            @ModelAttribute @ParameterObject ChallengeDto.ListSearchCondition condition,
+            @PageableDefault(size = 16) @ParameterObject Pageable pageable,
+            @AuthenticationPrincipal UserDetails userDetails
+    ) {
+        return challengeService.getVsChallenges(condition, userDetails, pageable);
     }
 
     @GetMapping("/vs/{challengeId}")
