@@ -48,7 +48,7 @@ public class ChallengeService {
     private final ChallengeRouteGenerationService generationService;
 
     @Transactional
-    public ChallengeDto.ChallengeDetailsResponse createChallenge(
+    public ChallengeDto.ChallengeCreateResponse createChallenge(
             UserDetails userDetails,
             ChallengeDto.ChallengeCreateRequest request
     ) {
@@ -70,7 +70,7 @@ public class ChallengeService {
         // 4. 태그 / 분야 연관관계 매핑
         updateChallengeLabels(challenge, request.getTags(), request.getFields());
 
-        return toChallengeDetailsResponse(challenge);
+        return ChallengeDto.ChallengeCreateResponse.from(challenge.getId());
     }
 
     @Transactional(readOnly = true)
@@ -140,42 +140,6 @@ public class ChallengeService {
                     .collect(Collectors.toSet());
             challenge.setFields(fields);
         }
-    }
-
-    private ChallengeDto.ChallengeDetailsResponse toChallengeDetailsResponse(Challenge challenge) {
-        User host = challenge.getHost();
-
-        ChallengeDto.ChallengeDetailsResponse.ChallengeInfo info =
-                ChallengeDto.ChallengeDetailsResponse.ChallengeInfo.builder()
-                        .challengeThumbnail(null)
-                        .title(challenge.getName())
-                        .tags(challenge.getTags().stream().map(Tag::getName).toList())
-                        .fields(challenge.getFields().stream().map(Field::getName).toList())
-                        .jobs(List.of(challenge.getJob().split(",")))
-                        .startedAt(challenge.getStartedAt())
-                        .durationWeek(challenge.getDurationWeek())
-                        .status(challenge.getStatus())
-                        .build();
-
-        ChallengeDto.ChallengeDetailsResponse.ParticipantDetails me =
-                ChallengeDto.ChallengeDetailsResponse.ParticipantDetails.builder()
-                        .nickname(host.getNickname())
-                        .progressRate("0/0")
-                        .successRate(0)
-                        .isSuccess(false)
-                        .isRealTimeActive(false)
-                        .build();
-
-        ChallengeDto.ChallengeDetailsResponse.Participants participants =
-                ChallengeDto.ChallengeDetailsResponse.Participants.builder()
-                        .me(me)
-                        .build();
-
-        return ChallengeDto.ChallengeDetailsResponse.builder()
-                .challengeInfo(info)
-                .participants(participants)
-                .currentWeekDetails(null)
-                .build();
     }
 
     //VS 챌린지 상세 조회

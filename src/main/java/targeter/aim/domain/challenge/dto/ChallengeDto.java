@@ -163,103 +163,19 @@ public class ChallengeDto {
         private ChallengeVisibility visibility;
     }
 
-    // 챌린지 생성 테스트 용도, 추후 챌린지 상세보기 개발 시 수정
     @Data
     @AllArgsConstructor
     @NoArgsConstructor
     @Builder
-    public static class ChallengeDetailsResponse {
+    @Schema(description = "챌린지 생성 응답 DTO")
+    public static class ChallengeCreateResponse {
+        @Schema(description = "생성된 챌린지 id", example = "1")
+        private Long challengeId;
 
-        private ChallengeInfo challengeInfo;// 전체 챌린지 정보
-
-        private Participants participants;          // 참여자 정보 (vs에는 me,opponent / solo에는 me)
-
-        private CurrentWeekDetails currentWeekDetails;  // 이번주 챌린지 내용 상세 정보
-
-        @Data
-        @AllArgsConstructor
-        @NoArgsConstructor
-        @Builder
-        public static class ChallengeInfo {
-            private FileDto.FileResponse challengeThumbnail;
-
-            private String title;
-
-            private List<String> tags;
-
-            private List<String> fields;
-
-            private List<String> jobs;
-
-            private LocalDate startedAt;
-
-            private Integer durationWeek;
-
-            private ChallengeStatus status;
-        }
-
-        @Data
-        @AllArgsConstructor
-        @NoArgsConstructor
-        @Builder
-        public static class Participants {
-            private ParticipantDetails me;
-
-            private ParticipantDetails opponent;
-        }
-
-        @Data
-        @AllArgsConstructor
-        @NoArgsConstructor
-        @Builder
-        public static class ParticipantDetails {
-            private FileDto.FileResponse profileImage;
-
-            private String nickname;
-
-            private String progressRate;
-
-            private Integer successRate;
-
-            private Boolean isSuccess;
-
-            private Boolean isRealTimeActive;
-        }
-
-        @Data
-        @AllArgsConstructor
-        @NoArgsConstructor
-        @Builder
-        public static class CurrentWeekDetails {
-            private Integer weekNumber;
-
-            private String period;
-
-            private String weekTitle;
-
-            private String weekContent;
-
-            private String recordTime;
-
-            private Boolean isFinished;
-
-            private List<CommentDetails> comments;
-        }
-
-        @Data
-        @AllArgsConstructor
-        @NoArgsConstructor
-        @Builder
-        public static class CommentDetails {
-            private Long commentId;
-
-            private String writer;
-
-            private String content;
-
-            private LocalDateTime createdAt;
-
-            private List<CommentDetails> replyComments;
+        public static ChallengeCreateResponse from(Long id) {
+            return ChallengeCreateResponse.builder()
+                    .challengeId(id)
+                    .build();
         }
     }
 

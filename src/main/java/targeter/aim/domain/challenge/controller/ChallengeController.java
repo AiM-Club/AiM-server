@@ -30,7 +30,7 @@ public class ChallengeController {
     )
     @ApiResponse(responseCode = "201", description = "챌린지 생성 성공")
     @ResponseStatus(HttpStatus.CREATED)
-    public ChallengeDto.ChallengeDetailsResponse createChallenge(
+    public ChallengeDto.ChallengeCreateResponse createChallenge(
             @RequestBody ChallengeDto.ChallengeCreateRequest request,
             @AuthenticationPrincipal UserDetails userDetails
     ) {
