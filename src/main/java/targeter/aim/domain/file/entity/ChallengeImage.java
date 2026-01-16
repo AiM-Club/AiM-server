@@ -53,7 +53,7 @@ public class ChallengeImage extends AttachedFile {
 
         String fileName = file.getOriginalFilename();
         String extension = extractExt(fileName);
-        if(extension == null || !List.of("JPG", "JPEG", "PNG", "WEBP").contains(extension.toUpperCase())) {
+        if(extension == null || !List.of("JPG", "JPEG", "PNG", "PDF").contains(extension.toUpperCase())) {
             throw new RestException(ErrorCode.FILE_NOT_IMAGE);
         }
     }
