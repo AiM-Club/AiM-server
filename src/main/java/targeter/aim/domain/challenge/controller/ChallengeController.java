@@ -23,8 +23,22 @@ public class ChallengeController {
 
     private final ChallengeService challengeService;
 
+    @PostMapping
+    @Operation(
+            summary = "챌린지 생성",
+            description = "새로운 챌린지를 생성합니다."
+    )
+    @ApiResponse(responseCode = "201", description = "챌린지 생성 성공")
+    @ResponseStatus(HttpStatus.CREATED)
+    public ChallengeDto.ChallengeCreateResponse createChallenge(
+            @RequestBody ChallengeDto.ChallengeCreateRequest request,
+            @AuthenticationPrincipal UserDetails userDetails
+    ) {
+        return challengeService.createChallenge(userDetails, request);
+    }
+
     @NoJwtAuth
-    @GetMapping
+    @GetMapping("/vs")
     @Operation(
             summary = "VS 챌린지 목록 조회",
             description = "VS 챌린지 목록을 탭(ALL/MY)과 정렬 조건에 따라 페이지네이션 조회합니다."
@@ -37,32 +51,28 @@ public class ChallengeController {
         return challengeService.getVsChallenges(condition, userDetails, pageable);
     }
 
-    @PostMapping
+    @NoJwtAuth("VS 챌린지 상세 조회는 인증을 필요로 하지 않음")
+    @GetMapping("/vs/{challengeId}/overview")
     @Operation(
-            summary = "챌린지 생성",
-            description = "새로운 챌린지를 생성합니다."
+            summary = "VS 챌린지 상세 Overview 조회",
+            description = "특정 VS 챌린지의 상세 정보와 우세현황 및 챌린지 멤버 정보를 조회합니다."
     )
-    @ApiResponse(responseCode = "201", description = "챌린지 생성 성공")
-    @ResponseStatus(HttpStatus.CREATED)
-    public ChallengeDto.ChallengeDetailsResponse createChallenge(
-            @RequestBody ChallengeDto.ChallengeCreateRequest request,
-            @AuthenticationPrincipal UserDetails userDetails
-    ) {
-        return challengeService.createChallenge(userDetails, request);
-    }
-
-    @GetMapping("/vs/{challengeId}")
-    @Operation(
-            summary = "VS 챌린지 상세 조회",
-            description = "특정 VS 챌린지의 상세 정보와 현재 주차 진행 현황, 상대방 상태를 조회합니다."
-    )
-    @ApiResponse(responseCode = "200", description = "VS 챌린지 상세 조회 성공")
-    @ApiResponse(responseCode = "403", description = "PRIVATE 챌린지에 대한 권한 없음")
-    @ApiResponse(responseCode = "404", description = "존재하지 않는 challengeId")
-    public ChallengeDto.VsChallengeDetailResponse getVsChallengeDetail(
+    public ChallengeDto.VsChallengeOverviewResponse getVsChallengeOverview(
             @PathVariable Long challengeId,
             @AuthenticationPrincipal UserDetails userDetails
     ) {
-        return challengeService.getVsChallengeDetail(challengeId, userDetails);
+        return challengeService.getVsChallengeOverview(challengeId, userDetails);
+    }
+
+    @GetMapping("/vs/{challengeId}/weeks")
+    @Operation(
+            summary = "VS 챌린지 주차별 내용 리스트 조회",
+            description = "특정 VS 챌린지의 주차별 내용을 리스트 형태로 전체 조회합니다."
+    )
+    public ChallengeDto.WeekProgressListResponse getWeeklyProgressList(
+            @PathVariable Long challengeId,
+            @AuthenticationPrincipal UserDetails userDetails
+    ) {
+        return challengeService.getVsWeeklyProgressList(challengeId, userDetails);
     }
 }

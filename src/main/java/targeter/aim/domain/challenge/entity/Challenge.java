@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 import targeter.aim.common.auditor.TimeStampedEntity;
+import targeter.aim.domain.file.entity.ChallengeImage;
 import targeter.aim.domain.label.entity.Field;
 import targeter.aim.domain.label.entity.Tag;
 import targeter.aim.domain.user.entity.User;
@@ -54,6 +55,9 @@ public class Challenge extends TimeStampedEntity {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private ChallengeVisibility visibility;
+
+    @OneToOne(mappedBy = "challenge", cascade = CascadeType.ALL, orphanRemoval = true)
+    private ChallengeImage challengeImage;
 
     @ManyToMany
     @JoinTable(

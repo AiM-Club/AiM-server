@@ -5,6 +5,7 @@ import lombok.*;
 import targeter.aim.domain.file.dto.FileDto;
 import targeter.aim.domain.user.entity.Gender;
 import targeter.aim.domain.user.entity.SocialLogin;
+import targeter.aim.domain.user.entity.Tier;
 import targeter.aim.domain.user.entity.User;
 
 import java.time.LocalDate;
@@ -31,10 +32,12 @@ public class UserDto {
         @Schema(description = "사용자 성별", example = "MALE | FEMALE | OTHER", nullable = true)
         private Gender gender;
 
+        @Schema(description = "사용자 티어")
+        private TierDto.TierResponse tier;
+
         @Schema(
                 description = "소셜 로그인 방식 (일반 회원가입 시 null)",
-                example = "KAKAO",
-                allowableValues = {"KAKAO", "GOOGLE"},
+                example = "KAKAO | GOOGLE",
                 nullable = true
         )
         private SocialLogin socialLogin;
@@ -61,6 +64,7 @@ public class UserDto {
                     .nickname(user.getNickname())
                     .birthday(user.getBirthday())
                     .gender(user.getGender())
+                    .tier(TierDto.TierResponse.from(user.getTier()))
                     .profileImage(FileDto.FileResponse.from(user.getProfileImage()))
                     .socialLogin(user.getSocialLogin() == null ? null : user.getSocialLogin())
                     .isNewUser(isNewUser)

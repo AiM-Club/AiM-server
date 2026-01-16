@@ -20,10 +20,8 @@ import java.time.LocalDateTime;
 public class RefreshToken {
 
     @Id
-    @Column(length = 64)
     private String uuid;
 
-    @Column(length = 50)
     private String userKey;
 
     private LocalDateTime expiryDate;

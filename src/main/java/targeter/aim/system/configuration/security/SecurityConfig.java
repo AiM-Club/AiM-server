@@ -39,15 +39,9 @@ public class SecurityConfig {
     ) throws Exception {
 
         httpSecurity
-                // CSRF 비활성화 (JWT 기반)
                 .csrf(csrf -> csrf.disable())
-
-                // CORS 설정
                 .cors(cors -> cors.configurationSource(corsConfigSrc()))
-
-                // 인가 정책
                 .authorizeHttpRequests(auth -> auth
-                        // 인증 없이 허용
                         .requestMatchers(
                                 "/api/auth/**",
                                 "/error",
@@ -55,13 +49,9 @@ public class SecurityConfig {
                                 "/v3/api-docs/**",
                                 "/h2-console/**"
                         ).permitAll()
-
-                        // 비로그인 허용: 챌린지 목록 조회
-                        .requestMatchers(HttpMethod.GET, "/api/challenges").permitAll()
-
-                        // 나머지 API는 JWT 필요
+                        // 비로그인 허용 VS 챌린지 목록 조회(ALL) 및 상세 조회만
+                        .requestMatchers(HttpMethod.GET, "/api/challenges", "/api/challenges/vs/**").permitAll()
                         .requestMatchers("/api/**").authenticated()
-
                         .anyRequest().permitAll()
                 )
 
@@ -73,14 +63,15 @@ public class SecurityConfig {
         // JWT Filter 설정
         jwtAutoConfigurerFactory.create(userLoadServiceImpl)
                 .pathConfigure(it -> {
-                    // auth 관련 API는 JWT 검사 제외
+                    // auth는 JWT 인증 제외 (로그인/회원가입/소셜로그인 등)
                     it.exclude("/api/auth/**", ApiPathPattern.METHODS.GET);
                     it.exclude("/api/auth/**", ApiPathPattern.METHODS.POST);
                     it.exclude("/api/auth/**", ApiPathPattern.METHODS.PUT);
                     it.exclude("/api/auth/**", ApiPathPattern.METHODS.PATCH);
                     it.exclude("/api/auth/**", ApiPathPattern.METHODS.DELETE);
                     it.exclude("/api/auth/**", ApiPathPattern.METHODS.OPTIONS);
-                    //기존 유지
+
+                    // 기존 유지
                     it.include("/api/**", ApiPathPattern.METHODS.GET);
                     it.include("/api/**", ApiPathPattern.METHODS.POST);
                     it.include("/api/**", ApiPathPattern.METHODS.PUT);
@@ -97,12 +88,10 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigSrc() {
         CorsConfiguration corsConfiguration = new CorsConfiguration();
         corsConfiguration.setAllowCredentials(true);
-
         List<String> origins = Arrays.stream(allowedOrigins)
                 .map(String::trim)
                 .filter(s -> !s.isBlank())
                 .collect(Collectors.toList());
-
         corsConfiguration.setAllowedOrigins(origins);
         corsConfiguration.setAllowedMethods(
                 Arrays.asList("HEAD", "GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS")
