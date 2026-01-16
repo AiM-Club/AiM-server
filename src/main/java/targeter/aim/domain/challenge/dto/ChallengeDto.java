@@ -217,7 +217,7 @@ public class ChallengeDto {
             @Schema(description = "챌린지 썸네일")
             private FileDto.FileResponse thumbnail;
 
-            @Schema(description = "챌린지 이름")
+            @Schema(description = "챌린지 이름", example = "챌린지 제목")
             private String name;
 
             @Schema(description = "분야 목록")
@@ -226,16 +226,16 @@ public class ChallengeDto {
             @Schema(description = "태그 목록")
             private List<TagDto.TagResponse> tags;
 
-            @Schema(description = "직무")
+            @Schema(description = "직무", example = "개발자")
             private String job;
 
-            @Schema(description = "시작 날짜")
+            @Schema(description = "시작 날짜", example = "2026-01-01")
             private LocalDate startDate;
 
-            @Schema(description = "끝나는 날짜")
+            @Schema(description = "끝나는 날짜", example = "2026-01-31")
             private LocalDate endDate;
 
-            @Schema(description = "총 기간(주)")
+            @Schema(description = "총 기간(주)", example = "4")
             private Integer totalWeeks;
 
             public static ChallengeInfo from(Challenge challenge) {
@@ -261,16 +261,16 @@ public class ChallengeDto {
         @NoArgsConstructor
         @Builder
         public static class Dominance {
-            @Schema(description = "상대방의 성공률")
+            @Schema(description = "상대방의 성공률", example = "50")
             private Integer opponentSuccessRate;
 
-            @Schema(description = "내 성공률")
+            @Schema(description = "내 성공률", example = "77")
             private Integer mySuccessRate;
 
-            @Schema(description = "상대방 퍼센트, 막대폭 합 100")
+            @Schema(description = "상대방 퍼센트, 막대폭 합 100", example = "40")
             private Integer opponentPercent;
 
-            @Schema(description = "내 퍼센트, 막대폭 합 100")
+            @Schema(description = "내 퍼센트, 막대폭 합 100", example = "60")
             private Integer myPercent;
 
             public static Dominance of(Integer opponentSuccessRate, Integer mySuccessRate,
@@ -309,22 +309,22 @@ public class ChallengeDto {
         @NoArgsConstructor
         @Builder
         public static class Me {
-            @Schema(description = "유저 아이디(주차별 진행 불러오기 위함)")
+            @Schema(description = "유저 아이디(주차별 진행 불러오기 위함)", example = "1")
             private Long id;
 
             @Schema(description = "프로필 이미지")
             private FileDto.FileResponse profileImage;
 
-            @Schema(description = "사용자 닉네임")
+            @Schema(description = "사용자 닉네임", example = "닉네임")
             private String nickname;
 
-            @Schema(description = "진도율(완료 주차/전체 주자)")
+            @Schema(description = "진도율(완료 주차/전체 주자)", example = "77")
             private Integer progressRate;
 
-            @Schema(description = "성공률(성공한 주차/현재 주차)")
+            @Schema(description = "성공률(성공한 주차/현재 주차)", example = "80")
             private Integer successRate;
 
-            @Schema(description = "성공 여부(successRate가 70 이상이어야 true)")
+            @Schema(description = "성공 여부(successRate가 70 이상이어야 true)", example = "true")
             private Boolean isSuccess;
 
             public static Me from(User user, Integer progressRate, Integer successRate) {
@@ -344,22 +344,22 @@ public class ChallengeDto {
         @NoArgsConstructor
         @Builder
         public static class Opponent {
-            @Schema(description = "유저 아이디(주차별 진행 불러오기 위함)")
+            @Schema(description = "유저 아이디(주차별 진행 불러오기 위함)", example = "1")
             private Long id;
 
             @Schema(description = "프로필 이미지")
             private FileDto.FileResponse profileImage;
 
-            @Schema(description = "사용자 닉네임")
+            @Schema(description = "사용자 닉네임", example = "닉네임")
             private String nickname;
 
-            @Schema(description = "진도율(완료 주차/전체 주자)")
+            @Schema(description = "진도율(완료 주차/전체 주자)", example = "77")
             private Integer progressRate;
 
-            @Schema(description = "성공률(성공한 주차/현재 주차)")
+            @Schema(description = "성공률(성공한 주차/현재 주차)", example = "50")
             private Integer successRate;
 
-            @Schema(description = "성공 여부(successRate가 70 이상이어야 true)")
+            @Schema(description = "성공 여부(successRate가 70 이상이어야 true)", example = "false")
             private Boolean isSuccess;
 
             public static Opponent from(User user, Integer progressRate, Integer successRate) {
@@ -381,10 +381,10 @@ public class ChallengeDto {
     @Builder
     @Schema(description = "챌린지 주차별 내용 조회 응답")
     public static class WeekProgressListResponse {
-        @Schema(description = "총 주차 수(확인용)")
+        @Schema(description = "총 주차 수(확인용)", example = "4")
         private Integer totalWeeks;
 
-        @Schema(description = "현재 주차")
+        @Schema(description = "현재 주차", example = "1")
         private Integer currentWeek;
 
         @Schema(description = "각 주차별 세부 내용 리스트")
@@ -409,25 +409,25 @@ public class ChallengeDto {
         @NoArgsConstructor
         @Builder
         public static class WeeklyProgressDetails {
-            @Schema(description = "주차 번호")
+            @Schema(description = "주차 번호", example = "1")
             private Integer weekNumber;
 
-            @Schema(description = "주차 시작 일")
+            @Schema(description = "주차 시작 일", example = "2026-01-01")
             private LocalDate weekStartDate;
 
-            @Schema(description = "주차 종료 일")
+            @Schema(description = "주차 종료 일", example = "2026-01-06")
             private LocalDate weekEndDate;
 
-            @Schema(description = "주차별 챌린지 제목")
+            @Schema(description = "주차별 챌린지 제목", example = "1주차 : AI가 만든 챌린지 제목")
             private String title;
 
-            @Schema(description = "주차별 챌린지 내용")
+            @Schema(description = "주차별 챌린지 내용", example = "1주차에 진행할 챌린지 내용입니다. AI가 작성합니다.")
             private String content;
 
-            @Schema(description = "스톱워치 기록(초), 만약 api를 다시 불러와도 최근 저장된 시간을 불러옴")
+            @Schema(description = "스톱워치 기록(초), 만약 api를 다시 불러와도 최근 저장된 시간을 불러옴", example = "300")
             private Integer stopwatchTimeSeconds;
 
-            @Schema(description = "주차별 챌린지 완료 여부(true/false)")
+            @Schema(description = "주차별 챌린지 완료 여부(true/false)", example = "false")
             private Boolean isComplete;
 
             public static WeeklyProgressDetails from(WeeklyProgress weeklyProgress, LocalDate challengeStartDate) {
@@ -453,16 +453,16 @@ public class ChallengeDto {
     @Builder
     @Schema(description = "챌린지 주차별 댓글 조회 응답")
     public static class WeeklyCommentResponse {
-        @Schema(description = "댓글 아이디")
+        @Schema(description = "댓글 아이디", example = "1")
         private Long commentId;
 
-        @Schema(description = "댓글/대댓글 깊이(1: 댓글, 2:대댓글)")
+        @Schema(description = "댓글/대댓글 깊이(1: 댓글, 2:대댓글)", example = "1")
         private Integer depth;
 
         @Schema(description = "작성자 정보, 여기서 nickname, profileImage, tier 사용")
         private UserDto.UserResponse writerInfo;
 
-        @Schema(description = "댓글 내용")
+        @Schema(description = "댓글 내용", example = "댓글 내용")
         private String content;
 
         @Schema(description = "첨부된 이미지")
@@ -471,10 +471,10 @@ public class ChallengeDto {
         @Schema(description = "첨부된 파일")
         private List<FileDto.FileResponse> attachedFiles;
 
-        @Schema(description = "댓글 작성 날짜")
+        @Schema(description = "댓글 작성 날짜", example = "ISO DateTime")
         private LocalDateTime createdAt;
 
-        @Schema(description = "최종 수정 날짜")
+        @Schema(description = "최종 수정 날짜", example = "ISO DateTime")
         private LocalDateTime updatedAt;
 
         @Schema(description = "자식 댓글 목록")
