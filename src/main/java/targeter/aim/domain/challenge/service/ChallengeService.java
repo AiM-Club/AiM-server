@@ -47,7 +47,31 @@ public class ChallengeService {
     private final ChallengeRoutePersistService persistService;
     private final ChallengeRouteGenerationService generationService;
 
-    // 챌린지 목록 조회
+    @Transactional
+    public ChallengeDto.ChallengeDetailsResponse createChallenge(
+            UserDetails userDetails,
+            ChallengeDto.ChallengeCreateRequest request
+    ) {
+        User user = userDetails.getUser();
+
+        // 1. 주차별 계획(Payload) 생성
+        RoutePayload routePayload = generationService.generateRoute(request);
+
+        // 2. 생성된 데이터 저장
+        Long challengeId = persistService.persistAtomic(user.getId(), request, routePayload);
+
+        // 3. 생성된 챌린지 조회
+        Challenge challenge = challengeRepository.findById(challengeId)
+                .orElseThrow(() -> new RestException(ErrorCode.CHALLENGE_NOT_FOUND));
+
+        challenge.setMode(request.getMode());
+        challenge.setVisibility(request.getVisibility());
+
+        // 4. 태그 / 분야 연관관계 매핑
+        updateChallengeLabels(challenge, request.getTags(), request.getFields());
+
+        return toChallengeDetailsResponse(challenge);
+    }
 
     @Transactional(readOnly = true)
     public ChallengeDto.ChallengePageResponse getVsChallenges(
@@ -96,34 +120,6 @@ public class ChallengeService {
         } catch (IllegalArgumentException e) {
             throw new RestException(ErrorCode.GLOBAL_BAD_REQUEST);
         }
-    }
-
-    //챌린지 생성
-
-    @Transactional
-    public ChallengeDto.ChallengeDetailsResponse createChallenge(
-            UserDetails userDetails,
-            ChallengeDto.ChallengeCreateRequest request
-    ) {
-        User user = userDetails.getUser();
-
-        // 1. 주차별 계획(Payload) 생성
-        RoutePayload routePayload = generationService.generateRoute(request);
-
-        // 2. 생성된 데이터 저장
-        Long challengeId = persistService.persistAtomic(user.getId(), request, routePayload);
-
-        // 3. 생성된 챌린지 조회
-        Challenge challenge = challengeRepository.findById(challengeId)
-                .orElseThrow(() -> new RestException(ErrorCode.CHALLENGE_NOT_FOUND));
-
-        challenge.setMode(request.getMode());
-        challenge.setVisibility(request.getVisibility());
-
-        // 4. 태그 / 분야 연관관계 매핑
-        updateChallengeLabels(challenge, request.getTags(), request.getFields());
-
-        return toChallengeDetailsResponse(challenge);
     }
 
     private void updateChallengeLabels(Challenge challenge, List<String> tagNames, List<String> fieldNames) {
