@@ -33,16 +33,14 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class ChallengeService {
 
-    private final ChallengeQueryRepository challengeQueryRepository;
     private final ChallengeRepository challengeRepository;
-    private final WeeklyProgressRepository weeklyProgressRepository;
     private final ChallengeMemberRepository challengeMemberRepository;
-    private final WeeklyCommentRepository weeklyCommentRepository;
-    private final AttachedFileRepository attachedFileRepository;
-
     private final UserRepository userRepository;
     private final TagRepository tagRepository;
     private final FieldRepository fieldRepository;
+
+    private final ChallengeQueryRepository challengeQueryRepository;
+    private final WeeklyProgressQueryRepository weeklyProgressQueryRepository;
 
     private final ChallengeRoutePersistService persistService;
     private final ChallengeRouteGenerationService generationService;
@@ -142,10 +140,9 @@ public class ChallengeService {
         }
     }
 
-    //VS 챌린지 상세 조회
-
+    //VS 챌린지 Overview 조회
     @Transactional(readOnly = true)
-    public ChallengeDto.VsChallengeDetailResponse getVsChallengeDetail(
+    public ChallengeDto.VsChallengeOverviewResponse getVsChallengeOverview(
             Long challengeId,
             UserDetails userDetails
     ) {
@@ -182,32 +179,79 @@ public class ChallengeService {
         int totalWeeks = challenge.getDurationWeek();
         int currentWeek = calcCurrentWeek(challenge.getStartedAt(), totalWeeks);
 
-        WeeklyProgress myWeek =
-                weeklyProgressRepository.findByChallengeAndUserAndWeekNumber(challenge, me, currentWeek)
-                        .orElse(null);
+        // 6) userIds 구성 (상대 없으면 나만)
+        List<Long> userIds = (opponent == null)
+                ? List.of(me.getId())
+                : List.of(me.getId(), opponent.getId());
 
-        String thumbnail = attachedFileRepository.findChallengeImageByChallengeId(challengeId)
-                .map(ChallengeImage::getFilePath)
-                .orElse(null);
+        // 7) (진도율) 완료주차/전체주차 %
+        Map<Long, Long> completedTotalMap =
+                safeMap(weeklyProgressQueryRepository.completedCountByUsers(challengeId, userIds, totalWeeks));
 
-        ChallengeDto.VsChallengeDetailResponse.ChallengeInfo challengeInfo =
-                ChallengeDto.VsChallengeDetailResponse.ChallengeInfo.builder()
-                        .thumbnail(thumbnail)
-                        .title(challenge.getName())
-                        .tags(challenge.getTags().stream().map(Tag::getName).toList())
-                        .category(challenge.getFields().stream().map(Field::getName).findFirst().orElse(null))
-                        .job(challenge.getJob())
-                        .startDate(challenge.getStartedAt().toString())
-                        .totalWeeks(totalWeeks)
-                        .state(challenge.getStatus().name())
-                        .build();
+        int myProgressRate = percent(completedTotalMap.getOrDefault(me.getId(), 0L), totalWeeks);
+        int oppoProgressRate = opponent == null ? 0
+                : percent(completedTotalMap.getOrDefault(opponent.getId(), 0L), totalWeeks);
 
-        return ChallengeDto.VsChallengeDetailResponse.builder()
-                .challengeInfo(challengeInfo)
-                .build();
+        // 8) (성공률) 성공주차/현재주차 %
+        //    - 현재주차는 "진행 중인 주차"까지 포함해서 분모로 잡는다 (요구사항/정책에 따라 바꿔도 됨)
+        int successEndWeek = Math.max(currentWeek, 1);
+
+        Map<Long, Long> completedUpToCurrentMap =
+                safeMap(weeklyProgressQueryRepository.completedCountByUsers(challengeId, userIds, successEndWeek));
+
+        int mySuccessRate = percent(completedUpToCurrentMap.getOrDefault(me.getId(), 0L), successEndWeek);
+        int oppoSuccessRate = opponent == null ? 0
+                : percent(completedUpToCurrentMap.getOrDefault(opponent.getId(), 0L), successEndWeek);
+
+        // 9) (우세현황) 지난주차까지 기준 성공률로 막대폭 산정
+        int dominanceEndWeek = Math.max(currentWeek - 1, 0);
+
+        int myDominanceRate = 0;
+        int oppoDominanceRate = 0;
+
+        if (dominanceEndWeek > 0) {
+            Map<Long, Long> completedUpToPrevMap =
+                    safeMap(weeklyProgressQueryRepository.completedCountByUsers(challengeId, userIds, dominanceEndWeek));
+
+            myDominanceRate = percent(completedUpToPrevMap.getOrDefault(me.getId(), 0L), dominanceEndWeek);
+            oppoDominanceRate = opponent == null ? 0
+                    : percent(completedUpToPrevMap.getOrDefault(opponent.getId(), 0L), dominanceEndWeek);
+        }
+
+        int myPercent;
+        int opponentPercent;
+
+        if (opponent == null) {
+            // 상대가 없으면 내 100 / 상대 0 (정책)
+            myPercent = 100;
+            opponentPercent = 0;
+        } else {
+            int sum = myDominanceRate + oppoDominanceRate;
+            if (sum == 0) {
+                myPercent = 50;
+                opponentPercent = 50;
+            } else {
+                myPercent = (int) Math.round((myDominanceRate * 100.0) / sum);
+                opponentPercent = 100 - myPercent;
+            }
+        }
+
+        ChallengeDto.VsChallengeOverviewResponse.Dominance dominance =
+                ChallengeDto.VsChallengeOverviewResponse.Dominance.of(
+                        oppoDominanceRate,
+                        myDominanceRate,
+                        opponentPercent,
+                        myPercent
+                );
+
+        // 10) DTO 반환
+        return ChallengeDto.VsChallengeOverviewResponse.from(
+                challenge,
+                dominance,
+                me, myProgressRate, mySuccessRate,
+                opponent, oppoProgressRate, oppoSuccessRate
+        );
     }
-
-    // 공통 계산 메서드
 
     private int calcCurrentWeek(LocalDate startedAt, int totalWeeks) {
         long days = Duration.between(startedAt.atStartOfDay(), LocalDate.now().atStartOfDay()).toDays();
@@ -215,13 +259,12 @@ public class ChallengeService {
         return Math.min(Math.max(week, 1), totalWeeks);
     }
 
-    private boolean isRealTimeActive(WeeklyProgress wp) {
-        return wp != null && wp.getLastModifiedAt() != null &&
-                Duration.between(wp.getLastModifiedAt(), LocalDateTime.now()).getSeconds() <= 30;
+    private int percent(long numerator, int denominator) {
+        if (denominator <= 0) return 0;
+        return (int) Math.round((numerator * 100.0) / denominator);
     }
 
-    private String getProfileImagePath(User user) {
-        ProfileImage img = user.getProfileImage();
-        return img == null ? null : img.getFilePath();
+    private Map<Long, Long> safeMap(Map<Long, Long> map) {
+        return map == null ? Map.of() : map;
     }
 }

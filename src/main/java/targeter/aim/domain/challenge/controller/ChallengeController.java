@@ -51,18 +51,16 @@ public class ChallengeController {
         return challengeService.getVsChallenges(condition, userDetails, pageable);
     }
 
-    @GetMapping("/vs/{challengeId}")
+    @NoJwtAuth("VS 챌린지 상세 조회는 인증을 필요로 하지 않음")
+    @GetMapping("/vs/{challengeId}/overview")
     @Operation(
-            summary = "VS 챌린지 상세 조회",
-            description = "특정 VS 챌린지의 상세 정보와 현재 주차 진행 현황, 상대방 상태를 조회합니다."
+            summary = "VS 챌린지 상세 Overview 조회",
+            description = "특정 VS 챌린지의 상세 정보와 우세현황 및 챌린지 멤버 정보를 조회합니다."
     )
-    @ApiResponse(responseCode = "200", description = "VS 챌린지 상세 조회 성공")
-    @ApiResponse(responseCode = "403", description = "PRIVATE 챌린지에 대한 권한 없음")
-    @ApiResponse(responseCode = "404", description = "존재하지 않는 challengeId")
-    public ChallengeDto.VsChallengeDetailResponse getVsChallengeDetail(
+    public ChallengeDto.VsChallengeOverviewResponse getVsChallengeOverview(
             @PathVariable Long challengeId,
             @AuthenticationPrincipal UserDetails userDetails
     ) {
-        return challengeService.getVsChallengeDetail(challengeId, userDetails);
+        return challengeService.getVsChallengeOverview(challengeId, userDetails);
     }
 }
