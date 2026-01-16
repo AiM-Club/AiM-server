@@ -63,4 +63,16 @@ public class ChallengeController {
     ) {
         return challengeService.getVsChallengeOverview(challengeId, userDetails);
     }
+
+    @GetMapping("/vs/{challengeId}/weeks")
+    @Operation(
+            summary = "VS 챌린지 주차별 내용 리스트 조회",
+            description = "특정 VS 챌린지의 주차별 내용을 리스트 형태로 전체 조회합니다."
+    )
+    public ChallengeDto.WeekProgressListResponse getWeeklyProgressList(
+            @PathVariable Long challengeId,
+            @AuthenticationPrincipal UserDetails userDetails
+    ) {
+        return challengeService.getVsWeeklyProgressList(challengeId, userDetails);
+    }
 }

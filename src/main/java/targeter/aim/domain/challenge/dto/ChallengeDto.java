@@ -11,6 +11,7 @@ import targeter.aim.domain.user.entity.User;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -389,6 +390,20 @@ public class ChallengeDto {
         @Schema(description = "각 주차별 세부 내용 리스트")
         private List<WeeklyProgressDetails> progressList;
 
+        public static WeekProgressListResponse from(Challenge challenge, Integer currentWeek, List<WeeklyProgress> weeklyProgressList) {
+            return WeekProgressListResponse.builder()
+                    .totalWeeks(challenge.getDurationWeek())
+                    .currentWeek(currentWeek)
+                    .progressList(
+                            weeklyProgressList == null ? List.of()
+                                    :  weeklyProgressList.stream()
+                                    .sorted(Comparator.comparing(WeeklyProgress::getWeekNumber))
+                                    .map(weeklyProgress -> WeeklyProgressDetails.from(weeklyProgress, challenge.getStartedAt()))
+                                    .toList()
+                    )
+                    .build();
+        }
+
         @Data
         @AllArgsConstructor
         @NoArgsConstructor
@@ -414,6 +429,21 @@ public class ChallengeDto {
 
             @Schema(description = "주차별 챌린지 완료 여부(true/false)")
             private Boolean isComplete;
+
+            public static WeeklyProgressDetails from(WeeklyProgress weeklyProgress, LocalDate challengeStartDate) {
+                Integer weekNumber = weeklyProgress.getWeekNumber();
+                LocalDate weekStart = challengeStartDate.plusDays((long) (weekNumber - 1) * 7);
+
+                return WeeklyProgressDetails.builder()
+                        .weekNumber(weekNumber)
+                        .weekStartDate(weekStart)
+                        .weekEndDate(weekStart.plusDays(6))
+                        .title(weeklyProgress.getTitle())
+                        .content(weeklyProgress.getContent())
+                        .stopwatchTimeSeconds(weeklyProgress.getStopwatchTimeSeconds())
+                        .isComplete(weeklyProgress.isComplete())
+                        .build();
+            }
         }
     }
 
