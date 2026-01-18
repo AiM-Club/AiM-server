@@ -35,7 +35,6 @@ public class ChallengeService {
 
     private final ChallengeRepository challengeRepository;
     private final ChallengeMemberRepository challengeMemberRepository;
-    private final WeeklyProgressRepository weeklyProgressRepository;
     private final UserRepository userRepository;
     private final TagRepository tagRepository;
     private final FieldRepository fieldRepository;
@@ -267,27 +266,5 @@ public class ChallengeService {
 
     private Map<Long, Long> safeMap(Map<Long, Long> map) {
         return map == null ? Map.of() : map;
-    }
-
-    // VS챌린지 주차별 상세 내용 조회
-    @Transactional(readOnly = true)
-    public ChallengeDto.WeekProgressListResponse getVsWeeklyProgressList(Long challengeId, UserDetails userDetails) {
-        if (userDetails == null) {
-            throw new RestException(ErrorCode.AUTH_LOGIN_REQUIRED);
-        }
-        User loginUser = userDetails.getUser();
-
-        Challenge challenge = challengeRepository.findById(challengeId)
-                .orElseThrow(() -> new RestException(ErrorCode.GLOBAL_NOT_FOUND));
-
-        if (challenge.getMode() != ChallengeMode.VS) {
-            throw new RestException(ErrorCode.GLOBAL_BAD_REQUEST);
-        }
-
-        List<WeeklyProgress> weeklyProgressList = weeklyProgressRepository.findAllByChallengeAndUser(challenge, loginUser);
-
-        int currentWeek = calcCurrentWeek(challenge.getStartedAt(), challenge.getDurationWeek());
-
-        return ChallengeDto.WeekProgressListResponse.from(challenge, currentWeek, weeklyProgressList);
     }
 }
