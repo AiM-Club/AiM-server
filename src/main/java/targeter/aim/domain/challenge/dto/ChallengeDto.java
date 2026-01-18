@@ -55,6 +55,44 @@ public class ChallengeDto {
     @NoArgsConstructor
     @AllArgsConstructor
     @Builder
+    @Schema(description = "SOLO 챌린지 목록 조회 조건")
+    public static class SoloChallengeListRequest {
+
+        @Builder.Default
+        @Schema(
+                description = "탭 필터 (진행 중 / 진행 완료)",
+                example = "IN_PROGRESS",
+                allowableValues = {"IN_PROGRESS", "COMPLETE"}
+        )
+        private String filterType = "IN_PROGRESS";
+
+        @Builder.Default
+        @Schema(
+                description = """
+                정렬 기준
+                - LATEST : 최신순
+                - OLDEST : 오래된순
+                - TITLE  : 가나다순
+                """,
+                example = "LATEST",
+                allowableValues = {"LATEST", "OLDEST", "TITLE"}
+        )
+        private String sort = "LATEST";
+
+        @Builder.Default
+        @Schema(description = "페이지 번호 (0부터 시작)", example = "0")
+        private Integer page = 0;
+
+        @Builder.Default
+        @Schema(description = "페이지 크기", example = "16")
+        private Integer size = 16;
+    }
+
+
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Builder
     @Schema(description = "챌린지 작성자 정보")
     public static class UserResponse {
         private Long userId;
