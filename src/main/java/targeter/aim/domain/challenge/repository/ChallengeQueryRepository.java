@@ -371,6 +371,7 @@ public class ChallengeQueryRepository {
 
     public Page<ChallengeDto.ChallengeListResponse> paginateSoloChallenges(
             ChallengeDto.SoloChallengeListRequest request,
+            String keyword,
             Pageable pageable
     ) {
         JPAQuery<Tuple> query = queryFactory
@@ -386,9 +387,13 @@ public class ChallengeQueryRepository {
                         challenge.mode.eq(ChallengeMode.SOLO),
                         soloStatusCondition(request.getFilterType())
                 )
-                .leftJoin(challenge.host).fetchJoin()
-                .leftJoin(challenge.host.tier).fetchJoin()
-                .leftJoin(challenge.host.profileImage).fetchJoin();
+                .leftJoin(challenge.host)
+                .leftJoin(challenge.host.tier)
+                .leftJoin(challenge.host.profileImage);
+
+        if (keyword != null) {
+            query.where(keywordCondition(keyword));
+        }
 
         applySoloSorting(query, request.getSort());
 
@@ -397,14 +402,19 @@ public class ChallengeQueryRepository {
                 .limit(pageable.getPageSize())
                 .fetch();
 
-        Long total = queryFactory
+        JPAQuery<Long> countQuery = queryFactory
                 .select(challenge.count())
                 .from(challenge)
                 .where(
                         challenge.mode.eq(ChallengeMode.SOLO),
                         soloStatusCondition(request.getFilterType())
-                )
-                .fetchOne();
+                );
+
+        if (keyword != null) {
+            countQuery.where(keywordCondition(keyword));
+        }
+
+        Long total = countQuery.fetchOne();
 
         return new PageImpl<>(
                 enrichDetails(tuples),
