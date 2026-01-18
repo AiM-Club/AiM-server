@@ -296,6 +296,7 @@ public class ChallengeQueryRepository {
         ProfileImage profileImage = host.getProfileImage();
 
         return ChallengeDto.ChallengeListResponse.builder()
+                .challengeId(c.getId())
                 .user(ChallengeDto.UserResponse.builder()
                         .userId(host.getId())
                         .nickname(host.getNickname())

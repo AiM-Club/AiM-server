@@ -73,6 +73,8 @@ public class ChallengeDto {
     @Builder
     @Schema(description = "챌린지 목록 응답")
     public static class ChallengeListResponse {
+        private Long challengeId;
+
         private UserResponse user;
 
         private LocalDate startDate;
