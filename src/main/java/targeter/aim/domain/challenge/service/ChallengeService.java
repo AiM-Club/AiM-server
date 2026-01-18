@@ -267,4 +267,27 @@ public class ChallengeService {
     private Map<Long, Long> safeMap(Map<Long, Long> map) {
         return map == null ? Map.of() : map;
     }
+
+    @Transactional(readOnly = true)
+    public ChallengeDto.ChallengePageResponse getSoloChallenges(
+            ChallengeDto.SoloChallengeListRequest request,
+            UserDetails userDetails
+    ) {
+        if (userDetails == null) {
+            throw new RestException(ErrorCode.AUTH_LOGIN_REQUIRED);
+        }
+
+        Pageable pageable = org.springframework.data.domain.PageRequest.of(
+                request.getPage(),
+                request.getSize()
+        );
+
+        var page = challengeQueryRepository.paginateSoloChallenges(
+                request,
+                pageable
+        );
+
+        return ChallengeDto.ChallengePageResponse.from(page);
+    }
+
 }
