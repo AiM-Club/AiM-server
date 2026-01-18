@@ -2,7 +2,6 @@ package targeter.aim.domain.challenge.repository;
 
 import com.querydsl.core.Tuple;
 import com.querydsl.core.types.dsl.BooleanExpression;
-import com.querydsl.core.types.dsl.CaseBuilder;
 import com.querydsl.core.types.dsl.Expressions;
 import com.querydsl.jpa.JPAExpressions;
 import com.querydsl.jpa.impl.JPAQuery;
@@ -337,4 +336,81 @@ public class ChallengeQueryRepository {
         return dto.getStartDate()
                 .plusWeeks(Integer.parseInt(dto.getDuration().replace("주", "")));
     }
+
+    private BooleanExpression soloStatusCondition(String filterType) {
+
+        return switch (filterType) {
+            case "IN_PROGRESS" ->
+                    challenge.status.eq(ChallengeStatus.IN_PROGRESS);
+
+            case "COMPLETE" ->
+                    challenge.status.eq(ChallengeStatus.COMPLETED);
+
+            default -> null;
+        };
+    }
+
+    private void applySoloSorting(JPAQuery<?> query, String sort) {
+        switch (sort) {
+            case "LATEST" ->
+                    query.orderBy(challenge.createdAt.desc());
+
+            case "OLDEST" ->
+                    query.orderBy(challenge.createdAt.asc());
+
+            case "TITLE" ->
+                    query.orderBy(
+                            challenge.name.asc(),
+                            challenge.createdAt.desc()
+                    );
+
+            default ->
+                    query.orderBy(challenge.createdAt.desc());
+        }
+    }
+
+    public Page<ChallengeDto.ChallengeListResponse> paginateSoloChallenges(
+            ChallengeDto.SoloChallengeListRequest request,
+            Pageable pageable
+    ) {
+        JPAQuery<Tuple> query = queryFactory
+                .select(
+                        challenge,
+                        Expressions.FALSE,
+                        JPAExpressions.select(challengeLiked.count())
+                                .from(challengeLiked)
+                                .where(challengeLiked.challenge.eq(challenge))
+                )
+                .from(challenge)
+                .where(
+                        challenge.mode.eq(ChallengeMode.SOLO),
+                        soloStatusCondition(request.getFilterType())
+                )
+                .leftJoin(challenge.host).fetchJoin()
+                .leftJoin(challenge.host.tier).fetchJoin()
+                .leftJoin(challenge.host.profileImage).fetchJoin();
+
+        applySoloSorting(query, request.getSort());
+
+        List<Tuple> tuples = query
+                .offset(pageable.getOffset())
+                .limit(pageable.getPageSize())
+                .fetch();
+
+        Long total = queryFactory
+                .select(challenge.count())
+                .from(challenge)
+                .where(
+                        challenge.mode.eq(ChallengeMode.SOLO),
+                        soloStatusCondition(request.getFilterType())
+                )
+                .fetchOne();
+
+        return new PageImpl<>(
+                enrichDetails(tuples),
+                pageable,
+                total == null ? 0 : total
+        );
+    }
+
 }
