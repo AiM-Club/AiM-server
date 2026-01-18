@@ -86,6 +86,9 @@ public class ChallengeDto {
         @Builder.Default
         @Schema(description = "페이지 크기", example = "16")
         private Integer size = 16;
+
+        @Schema(description = "검색 키워드 (제목 기준 포함 검색)", example = "개발")
+        private String keyword;
     }
 
 
