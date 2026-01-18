@@ -282,8 +282,11 @@ public class ChallengeService {
                 request.getSize()
         );
 
+        String keyword = normalizeKeyword(request.getKeyword());
+
         var page = challengeQueryRepository.paginateSoloChallenges(
                 request,
+                keyword,
                 pageable
         );
 
