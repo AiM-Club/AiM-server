@@ -63,4 +63,16 @@ public class ChallengeController {
     ) {
         return challengeService.getVsChallengeOverview(challengeId, userDetails);
     }
+
+    @GetMapping("/solo")
+    @Operation(
+            summary = "SOLO 챌린지 목록 조회",
+            description = "로그인한 사용자가 SOLO 챌린지 목록을 탭(진행 중/진행 완료)과 정렬 조건에 따라 페이지네이션 조회합니다."
+    )
+    public ChallengeDto.ChallengePageResponse getSoloChallenges(
+            @ModelAttribute @ParameterObject ChallengeDto.SoloChallengeListRequest request,
+            @AuthenticationPrincipal UserDetails userDetails
+    ) {
+        return challengeService.getSoloChallenges(request, userDetails);
+    }
 }
