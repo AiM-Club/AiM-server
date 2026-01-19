@@ -417,4 +417,141 @@ public class ChallengeDto {
             }
         }
     }
+
+    @Data
+    @AllArgsConstructor
+    @NoArgsConstructor
+    @Builder
+    @Schema(description = "SOLO 챌린지 상세 Overview 응답 (챌린지 정보 + 주최자 정보)")
+    public static class SoloChallengeOverviewResponse {
+
+        @Schema(description = "챌린지 기본 정보")
+        private ChallengeInfo challengeInfo;
+
+        @Schema(description = "참여자 정보 (본인)")
+        private Me participant;
+
+        public static SoloChallengeOverviewResponse from(
+                Challenge challenge,
+                User user,
+                Integer progressRate,
+                Integer successRate
+        ) {
+            return SoloChallengeOverviewResponse.builder()
+                    .challengeInfo(ChallengeInfo.from(challenge))
+                    .participant(Me.from(user, progressRate, successRate))
+                    .build();
+        }
+
+        @Data
+        @AllArgsConstructor
+        @NoArgsConstructor
+        @Builder
+        public static class ChallengeInfo {
+
+            @Schema(description = "챌린지 썸네일")
+            private FileDto.FileResponse thumbnail;
+
+            @Schema(description = "챌린지 이름", example = "챌린지 제목")
+            private String name;
+
+            @Schema(description = "분야 목록")
+            private List<FieldDto.FieldResponse> fields;
+
+            @Schema(description = "태그 목록")
+            private List<TagDto.TagResponse> tags;
+
+            @Schema(description = "직무", example = "개발자")
+            private String job;
+
+            @Schema(description = "시작 날짜", example = "2026-01-01")
+            private LocalDate startDate;
+
+            @Schema(description = "끝나는 날짜", example = "2026-01-31")
+            private LocalDate endDate;
+
+            @Schema(description = "총 기간(주)", example = "4")
+            private Integer totalWeeks;
+
+            @Schema(description = "챌린지 상태", example = "IN_PROGRESS")
+            private ChallengeStatus state;
+
+            @Schema(description = "공개 여부", example = "PUBLIC")
+            private ChallengeVisibility visibility;
+
+            public static ChallengeInfo from(Challenge challenge) {
+                return ChallengeInfo.builder()
+                        .thumbnail(
+                                challenge.getChallengeImage() == null
+                                        ? null
+                                        : FileDto.FileResponse.from(challenge.getChallengeImage())
+                        )
+                        .name(challenge.getName())
+                        .fields(
+                                challenge.getFields().stream()
+                                        .map(FieldDto.FieldResponse::from)
+                                        .collect(Collectors.toList())
+                        )
+                        .tags(
+                                challenge.getTags().stream()
+                                        .map(TagDto.TagResponse::from)
+                                        .collect(Collectors.toList())
+                        )
+                        .job(challenge.getJob())
+                        .startDate(challenge.getStartedAt())
+                        .endDate(
+                                challenge.getStartedAt()
+                                        .plusWeeks(challenge.getDurationWeek())
+                                        .minusDays(1)
+                        )
+                        .totalWeeks(challenge.getDurationWeek())
+                        .state(challenge.getStatus())
+                        .visibility(challenge.getVisibility())
+                        .build();
+            }
+        }
+
+        @Data
+        @AllArgsConstructor
+        @NoArgsConstructor
+        @Builder
+        public static class Me {
+
+            @Schema(description = "유저 아이디", example = "1")
+            private Long id;
+
+            @Schema(description = "프로필 이미지")
+            private FileDto.FileResponse profileImage;
+
+            @Schema(description = "사용자 닉네임", example = "닉네임")
+            private String nickname;
+
+            @Schema(description = "진도율(완료 주차 / 전체 주차)", example = "77")
+            private Integer progressRate;
+
+            @Schema(description = "성공률(성공한 주차 / 현재 주차)", example = "80")
+            private Integer successRate;
+
+            @Schema(description = "성공 여부(successRate >= 70)", example = "true")
+            private Boolean isSuccess;
+
+            public static Me from(User user, Integer progressRate, Integer successRate) {
+                int safeProgress = progressRate == null ? 0 : progressRate;
+                int safeSuccess = successRate == null ? 0 : successRate;
+
+                return Me.builder()
+                        .id(user.getId())
+                        .profileImage(
+                                user.getProfileImage() == null
+                                        ? null
+                                        : FileDto.FileResponse.from(user.getProfileImage())
+                        )
+                        .nickname(user.getNickname())
+                        .progressRate(safeProgress)
+                        .successRate(safeSuccess)
+                        .isSuccess(safeSuccess >= 70)
+                        .build();
+            }
+        }
+    }
 }
