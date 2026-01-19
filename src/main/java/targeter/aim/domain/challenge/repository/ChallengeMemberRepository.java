@@ -13,4 +13,6 @@ public interface ChallengeMemberRepository extends JpaRepository<ChallengeMember
     List<ChallengeMember> findAllById_Challenge(Challenge challenge);
 
     boolean existsById_ChallengeAndId_User(Challenge challenge, User user);
+
+    void deleteAllById_Challenge(Challenge challenge);
 }

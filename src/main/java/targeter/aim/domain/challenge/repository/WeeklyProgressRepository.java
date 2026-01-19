@@ -17,4 +17,6 @@ public interface WeeklyProgressRepository extends JpaRepository<WeeklyProgress, 
     long countByChallengeAndUserAndIsCompleteTrue(Challenge challenge, User user);
 
     List<WeeklyProgress> findAllByChallengeAndUser(Challenge challenge, User user);
+
+    void deleteAllByChallenge(Challenge challenge);
 }

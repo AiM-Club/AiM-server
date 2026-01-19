@@ -8,6 +8,9 @@ import targeter.aim.domain.file.entity.ChallengeImage;
 import targeter.aim.domain.label.entity.Field;
 import targeter.aim.domain.label.entity.Tag;
 import targeter.aim.domain.user.entity.User;
+import targeter.aim.system.exception.model.ErrorCode;
+import targeter.aim.system.exception.model.RestException;
+import targeter.aim.system.security.model.UserDetails;
 
 import java.time.LocalDate;
 import java.util.HashSet;
@@ -78,4 +81,20 @@ public class Challenge extends TimeStampedEntity {
     @Builder.Default
     @ToString.Exclude
     private Set<Field> fields = new HashSet<>();
+
+    public void canUpdateBy(UserDetails user) {
+        if(this.host.getId().equals(user.getUser().getId())) {
+            return;
+        }
+
+        throw new RestException(ErrorCode.AUTH_FORBIDDEN);
+    }
+
+    public void canDeleteBy(UserDetails user) {
+        if(this.host.getId().equals(user.getUser().getId())) {
+            return;
+        }
+
+        throw new RestException(ErrorCode.AUTH_FORBIDDEN);
+    }
 }

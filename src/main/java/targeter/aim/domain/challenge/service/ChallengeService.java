@@ -5,17 +5,19 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 import targeter.aim.domain.ai.llm.dto.RoutePayload;
 import targeter.aim.domain.challenge.dto.ChallengeDto;
 import targeter.aim.domain.challenge.entity.*;
 import targeter.aim.domain.challenge.repository.*;
 import targeter.aim.domain.file.entity.ChallengeImage;
-import targeter.aim.domain.file.entity.ProfileImage;
-import targeter.aim.domain.file.repository.AttachedFileRepository;
+import targeter.aim.domain.file.handler.FileHandler;
 import targeter.aim.domain.label.entity.Field;
 import targeter.aim.domain.label.entity.Tag;
 import targeter.aim.domain.label.repository.FieldRepository;
 import targeter.aim.domain.label.repository.TagRepository;
+import targeter.aim.domain.label.service.FieldService;
+import targeter.aim.domain.label.service.TagService;
 import targeter.aim.domain.user.entity.User;
 import targeter.aim.domain.user.repository.UserRepository;
 import targeter.aim.system.exception.model.ErrorCode;
@@ -24,7 +26,6 @@ import targeter.aim.system.security.model.UserDetails;
 
 import java.time.Duration;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -35,6 +36,7 @@ public class ChallengeService {
 
     private final ChallengeRepository challengeRepository;
     private final ChallengeMemberRepository challengeMemberRepository;
+    private final WeeklyProgressRepository weeklyProgressRepository;
     private final UserRepository userRepository;
     private final TagRepository tagRepository;
     private final FieldRepository fieldRepository;
@@ -44,13 +46,23 @@ public class ChallengeService {
 
     private final ChallengeRoutePersistService persistService;
     private final ChallengeRouteGenerationService generationService;
+    private final ChallengeCleanupService cleanupService;
+    private final TagService tagService;
+    private final FieldService fieldService;
+    private final FileHandler fileHandler;
 
     @Transactional
-    public ChallengeDto.ChallengeCreateResponse createChallenge(
+    public ChallengeDto.ChallengeIdResponse createChallenge(
             UserDetails userDetails,
             ChallengeDto.ChallengeCreateRequest request
     ) {
         User user = userDetails.getUser();
+
+        challengeRepository.findByHostAndNameAndStartedAtAndModeAndVisibility(
+                user, request.getName(), request.getStartedAt(), request.getMode(), request.getVisibility()
+        ).ifPresent(existing -> {
+            throw new RestException(ErrorCode.CHALLENGE_ALREADY_EXIST);
+        });
 
         // 1. 주차별 계획(Payload) 생성
         RoutePayload routePayload = generationService.generateRoute(request);
@@ -64,11 +76,27 @@ public class ChallengeService {
 
         challenge.setMode(request.getMode());
         challenge.setVisibility(request.getVisibility());
+        try {
+            saveThumbnailImage(request.getThumbnail(), challenge);
+        } catch (Exception e) {
+            cleanupService.deleteChallengeAtomic(challengeId);
+            throw new RestException(ErrorCode.FILE_UPLOAD_FAILED);
+        }
 
         // 4. 태그 / 분야 연관관계 매핑
         updateChallengeLabels(challenge, request.getTags(), request.getFields());
 
-        return ChallengeDto.ChallengeCreateResponse.from(challenge.getId());
+        return ChallengeDto.ChallengeIdResponse.from(challenge);
+    }
+
+    private void saveThumbnailImage(MultipartFile file, Challenge challenge) {
+        if(file != null && !file.isEmpty()) {
+            ChallengeImage thumbnailImage = ChallengeImage.from(file, challenge);
+            if(thumbnailImage == null) throw new RestException(ErrorCode.FILE_UPLOAD_FAILED);
+            challenge.setChallengeImage(thumbnailImage);
+            thumbnailImage.setChallenge(challenge);
+            fileHandler.saveFile(file, thumbnailImage);
+        }
     }
 
     @Transactional(readOnly = true)
@@ -358,4 +386,59 @@ public class ChallengeService {
         );
     }
 
+    @Transactional
+    public ChallengeDto.ChallengeIdResponse updateChallenge(
+            Long challengeId,
+            UserDetails userDetails,
+            ChallengeDto.ChallengeUpdateRequest request
+    ) {
+        Challenge challenge = challengeRepository.findById(challengeId)
+                .orElseThrow(() -> new RestException(ErrorCode.CHALLENGE_NOT_FOUND));
+
+        challenge.canUpdateBy(userDetails);
+
+        // 분야 처리
+        Set<Tag> resolvedTags = null;
+        if(request.getTags() != null) {
+            resolvedTags = tagService.findOrCreateByNames(request.getTags());
+        }
+
+        Set<Field> resolvedFields = null;
+        if(request.getFields() != null) {
+            resolvedFields = fieldService.findFieldByName(request.getFields());
+        }
+
+        request.applyTo(challenge, resolvedTags, resolvedFields);
+
+        if (request.getThumbnail() != null && !request.getThumbnail().isEmpty()) {
+            if (challenge.getChallengeImage() != null) {
+                fileHandler.deleteIfExists(challenge.getChallengeImage());
+            }
+
+            ChallengeImage newImage = ChallengeImage.from(request.getThumbnail(), challenge);
+            fileHandler.saveFile(request.getThumbnail(), newImage);
+            challenge.setChallengeImage(newImage);
+        }
+
+        return ChallengeDto.ChallengeIdResponse.from(challenge);
+    }
+
+    @Transactional
+    public void deleteChallenge(Long challengeId, UserDetails userDetails) {
+        Challenge challenge = challengeRepository.findById(challengeId)
+                .orElseThrow(() -> new RestException(ErrorCode.CHALLENGE_NOT_FOUND));
+
+        challenge.canDeleteBy(userDetails);
+
+        if(challenge.getChallengeImage() != null) {
+            fileHandler.deleteIfExists(challenge.getChallengeImage());
+        }
+        weeklyProgressRepository.deleteAllByChallenge(challenge);
+        challengeMemberRepository.deleteAllById_Challenge(challenge);
+
+        challenge.getTags().clear();
+        challenge.getFields().clear();
+
+        challengeRepository.delete(challenge);
+    }
 }

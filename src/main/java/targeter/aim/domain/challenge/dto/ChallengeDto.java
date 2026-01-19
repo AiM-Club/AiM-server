@@ -2,10 +2,13 @@ package targeter.aim.domain.challenge.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
+import org.springframework.web.multipart.MultipartFile;
 import targeter.aim.domain.challenge.entity.*;
 import targeter.aim.domain.file.dto.FileDto;
 import targeter.aim.domain.label.dto.FieldDto;
 import targeter.aim.domain.label.dto.TagDto;
+import targeter.aim.domain.label.entity.Field;
+import targeter.aim.domain.label.entity.Tag;
 import targeter.aim.domain.user.dto.UserDto;
 import targeter.aim.domain.user.entity.User;
 
@@ -13,6 +16,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 public class ChallengeDto {
@@ -116,6 +120,8 @@ public class ChallengeDto {
     public static class ChallengeListResponse {
         private Long challengeId;
 
+        private FileDto.FileResponse thumbnail;
+
         private UserResponse user;
 
         private LocalDate startDate;
@@ -182,6 +188,9 @@ public class ChallengeDto {
     @Builder
     @Schema(description = "챌린지 생성 요청")
     public static class ChallengeCreateRequest {
+        @Schema(description = "챌린지 썸네일")
+        private MultipartFile thumbnail;
+
         @Schema(description = "챌린지 이름", example = "다이어트 챌린지")
         private String name;
 
@@ -197,8 +206,8 @@ public class ChallengeDto {
         @Schema(description = "분야 목록(1~3개)", example = "[\"IT\", \"경영\"]")
         private List<String> fields;
 
-        @Schema(description = "직무 목록(1~3개)", example = "[\"직업1\"]")
-        private List<String> jobs;
+        @Schema(description = "직무", example = "직무")
+        private String job;
 
         @Schema(description = "AI 요청사항", example = "4주동안 빠르게 다이어트할 수 있는 방법을 알려줘. 금식은 최대한 자제할거야.")
         private String userRequest;
@@ -214,15 +223,81 @@ public class ChallengeDto {
     @AllArgsConstructor
     @NoArgsConstructor
     @Builder
-    @Schema(description = "챌린지 생성 응답 DTO")
-    public static class ChallengeCreateResponse {
-        @Schema(description = "생성된 챌린지 id", example = "1")
+    @Schema(description = "챌린지 아이디 응답 DTO")
+    public static class ChallengeIdResponse {
+        @Schema(description = "챌린지 id", example = "1")
         private Long challengeId;
 
-        public static ChallengeCreateResponse from(Long id) {
-            return ChallengeCreateResponse.builder()
-                    .challengeId(id)
+        public static ChallengeIdResponse from(Challenge challenge) {
+            return ChallengeIdResponse.builder()
+                    .challengeId(challenge.getId())
                     .build();
+        }
+    }
+
+    @Data
+    @AllArgsConstructor
+    @NoArgsConstructor
+    @Builder
+    @Schema(description = "챌린지 수정 요청")
+    public static class ChallengeUpdateRequest {
+        @Schema(description = "챌린지 썸네일")
+        private MultipartFile thumbnail;
+
+        @Schema(description = "챌린지 이름", example = "다이어트 챌린지")
+        private String name;
+
+        @Schema(description = "시작일", example = "2026-01-01")
+        private LocalDate startedAt;
+
+        @Schema(description = "기간(주)", example = "6")
+        private Integer duration;
+
+        @Schema(description = "태그 목록(1~3개)", example = "[\"태그1\", \"태그2\", \"태그3\"]")
+        private List<String> tags;
+
+        @Schema(description = "분야 목록(1~3개)", example = "[\"IT\", \"경영\"]")
+        private List<String> fields;
+
+        @Schema(description = "직무", example = "직무")
+        private String job;
+
+        @Schema(description = "AI 요청사항", example = "4주동안 빠르게 다이어트할 수 있는 방법을 알려줘. 금식은 최대한 자제할거야.")
+        private String userRequest;
+
+        @Schema(description = "챌린지 모드", example = "SOLO", allowableValues = {"SOLO", "VS"})
+        private ChallengeMode mode;
+
+        @Schema(description = "공개 여부", example = "PUBLIC", allowableValues = {"PUBLIC", "PRIVATE"})
+        private ChallengeVisibility visibility;
+
+        public void applyTo(Challenge challenge, Set<Tag> resolvedTags, Set<Field> resolvedFields) {
+            if(name != null) {
+                challenge.setName(name);
+            }
+            if(startedAt != null) {
+                challenge.setStartedAt(startedAt);
+            }
+            if(duration != null) {
+                challenge.setDurationWeek(duration);
+            }
+            if(job != null) {
+                challenge.setJob(job);
+            }
+            if(mode != null) {
+                challenge.setMode(mode);
+            }
+            if(visibility != null) {
+                challenge.setVisibility(visibility);
+            }
+            if(tags != null) {
+                challenge.getTags().clear();
+                if(resolvedTags != null) challenge.getTags().addAll(resolvedTags);
+            }
+            if(fields != null) {
+                challenge.getFields().clear();
+                if(resolvedFields != null) challenge.getFields().addAll(resolvedFields);
+            }
         }
     }
 

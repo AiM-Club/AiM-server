@@ -17,6 +17,7 @@ import targeter.aim.domain.challenge.entity.ChallengeMode;
 import targeter.aim.domain.challenge.entity.ChallengeStatus;
 import targeter.aim.domain.challenge.entity.QChallenge;
 import targeter.aim.domain.file.dto.FileDto;
+import targeter.aim.domain.file.entity.ChallengeImage;
 import targeter.aim.domain.file.entity.ProfileImage;
 import targeter.aim.domain.label.entity.QField;
 import targeter.aim.domain.label.entity.QTag;
@@ -293,9 +294,13 @@ public class ChallengeQueryRepository {
         Challenge c = tuple.get(0, Challenge.class);
         User host = c.getHost();
         ProfileImage profileImage = host.getProfileImage();
+        ChallengeImage challengeImage = c.getChallengeImage();
 
         return ChallengeDto.ChallengeListResponse.builder()
                 .challengeId(c.getId())
+                .thumbnail(challengeImage != null
+                        ? FileDto.FileResponse.from(challengeImage)
+                        : null)
                 .user(ChallengeDto.UserResponse.builder()
                         .userId(host.getId())
                         .nickname(host.getNickname())

@@ -3,11 +3,13 @@ package targeter.aim.domain.challenge.controller;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import targeter.aim.domain.challenge.dto.ChallengeDto;
@@ -23,15 +25,15 @@ public class ChallengeController {
 
     private final ChallengeService challengeService;
 
-    @PostMapping
+    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @Operation(
             summary = "챌린지 생성",
             description = "새로운 챌린지를 생성합니다."
     )
     @ApiResponse(responseCode = "201", description = "챌린지 생성 성공")
     @ResponseStatus(HttpStatus.CREATED)
-    public ChallengeDto.ChallengeCreateResponse createChallenge(
-            @RequestBody ChallengeDto.ChallengeCreateRequest request,
+    public ChallengeDto.ChallengeIdResponse createChallenge(
+            @ModelAttribute @Valid ChallengeDto.ChallengeCreateRequest request,
             @AuthenticationPrincipal UserDetails userDetails
     ) {
         return challengeService.createChallenge(userDetails, request);
@@ -88,4 +90,30 @@ public class ChallengeController {
         return challengeService.getSoloChallengeOverview(challengeId, userDetails);
     }
 
+    @PatchMapping(value = "/{challengeId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @Operation(
+            summary = "챌린지 수정",
+            description = "해당 id의 챌린지를 수정합니다."
+    )
+    public ChallengeDto.ChallengeIdResponse updateChallenge(
+            @PathVariable Long challengeId,
+            @ModelAttribute @Valid @ParameterObject ChallengeDto.ChallengeUpdateRequest request,
+            @AuthenticationPrincipal UserDetails userDetails
+    ) {
+        return challengeService.updateChallenge(challengeId, userDetails, request);
+    }
+
+    @DeleteMapping("/{challengeId}")
+    @Operation(
+            summary = "챌린지 삭제",
+            description = "해당 id의 챌린지를 삭제합니다."
+    )
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    @ApiResponse(responseCode = "204", description = "챌린지 삭제 성공")
+    public void deleteChallenge(
+            @PathVariable Long challengeId,
+            @AuthenticationPrincipal UserDetails userDetails
+    ) {
+        challengeService.deleteChallenge(challengeId, userDetails);
+    }
 }
