@@ -16,6 +16,8 @@ import targeter.aim.domain.label.entity.Field;
 import targeter.aim.domain.label.entity.Tag;
 import targeter.aim.domain.label.repository.FieldRepository;
 import targeter.aim.domain.label.repository.TagRepository;
+import targeter.aim.domain.label.service.FieldService;
+import targeter.aim.domain.label.service.TagService;
 import targeter.aim.domain.user.entity.User;
 import targeter.aim.domain.user.repository.UserRepository;
 import targeter.aim.system.exception.model.ErrorCode;
@@ -45,10 +47,12 @@ public class ChallengeService {
     private final ChallengeRoutePersistService persistService;
     private final ChallengeRouteGenerationService generationService;
     private final ChallengeCleanupService cleanupService;
+    private final TagService tagService;
+    private final FieldService fieldService;
     private final FileHandler fileHandler;
 
     @Transactional
-    public ChallengeDto.ChallengeCreateResponse createChallenge(
+    public ChallengeDto.ChallengeIdResponse createChallenge(
             UserDetails userDetails,
             ChallengeDto.ChallengeCreateRequest request
     ) {
@@ -82,7 +86,7 @@ public class ChallengeService {
         // 4. 태그 / 분야 연관관계 매핑
         updateChallengeLabels(challenge, request.getTags(), request.getFields());
 
-        return ChallengeDto.ChallengeCreateResponse.from(challenge.getId());
+        return ChallengeDto.ChallengeIdResponse.from(challenge);
     }
 
     private void saveThumbnailImage(MultipartFile file, Challenge challenge) {
@@ -317,4 +321,40 @@ public class ChallengeService {
         return ChallengeDto.ChallengePageResponse.from(page);
     }
 
+    @Transactional
+    public ChallengeDto.ChallengeIdResponse updateChallenge(
+            Long challengeId,
+            UserDetails userDetails,
+            ChallengeDto.ChallengeUpdateRequest request
+    ) {
+        Challenge challenge = challengeRepository.findById(challengeId)
+                .orElseThrow(() -> new RestException(ErrorCode.CHALLENGE_NOT_FOUND));
+
+        challenge.canUpdateBy(userDetails);
+
+        // 분야 처리
+        Set<Tag> resolvedTags = null;
+        if(request.getTags() != null) {
+            resolvedTags = tagService.findOrCreateByNames(request.getTags());
+        }
+
+        Set<Field> resolvedFields = null;
+        if(request.getFields() != null) {
+            resolvedFields = fieldService.findFieldByName(request.getFields());
+        }
+
+        request.applyTo(challenge, resolvedTags, resolvedFields);
+
+        if (request.getThumbnail() != null && !request.getThumbnail().isEmpty()) {
+            if (challenge.getChallengeImage() != null) {
+                fileHandler.deleteIfExists(challenge.getChallengeImage());
+            }
+
+            ChallengeImage newImage = ChallengeImage.from(request.getThumbnail(), challenge);
+            fileHandler.saveFile(request.getThumbnail(), newImage);
+            challenge.setChallengeImage(newImage);
+        }
+
+        return ChallengeDto.ChallengeIdResponse.from(challenge);
+    }
 }

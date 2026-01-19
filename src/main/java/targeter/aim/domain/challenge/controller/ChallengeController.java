@@ -32,11 +32,24 @@ public class ChallengeController {
     )
     @ApiResponse(responseCode = "201", description = "챌린지 생성 성공")
     @ResponseStatus(HttpStatus.CREATED)
-    public ChallengeDto.ChallengeCreateResponse createChallenge(
+    public ChallengeDto.ChallengeIdResponse createChallenge(
             @ModelAttribute @Valid ChallengeDto.ChallengeCreateRequest request,
             @AuthenticationPrincipal UserDetails userDetails
     ) {
         return challengeService.createChallenge(userDetails, request);
+    }
+
+    @PatchMapping(value = "/{challengeId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @Operation(
+            summary = "챌린지 수정",
+            description = "해당 id의 챌린지를 수정합니다."
+    )
+    public ChallengeDto.ChallengeIdResponse updateChallenge(
+            @PathVariable Long challengeId,
+            @ModelAttribute @Valid @ParameterObject ChallengeDto.ChallengeUpdateRequest request,
+            @AuthenticationPrincipal UserDetails userDetails
+    ) {
+        return challengeService.updateChallenge(challengeId, userDetails, request);
     }
 
     @NoJwtAuth
