@@ -117,6 +117,8 @@ public class ChallengeDto {
     public static class ChallengeListResponse {
         private Long challengeId;
 
+        private FileDto.FileResponse thumbnail;
+
         private UserResponse user;
 
         private LocalDate startDate;
