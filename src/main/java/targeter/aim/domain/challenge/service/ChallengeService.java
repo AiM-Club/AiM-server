@@ -26,7 +26,6 @@ import targeter.aim.system.security.model.UserDetails;
 
 import java.time.Duration;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -320,6 +319,71 @@ public class ChallengeService {
         );
 
         return ChallengeDto.ChallengePageResponse.from(page);
+    }
+
+    // SOLO 챌린지 Overview 조회
+    @Transactional(readOnly = true)
+    public ChallengeDto.SoloChallengeOverviewResponse getSoloChallengeOverview(
+            Long challengeId,
+            UserDetails userDetails
+    ) {
+        if (userDetails == null) {
+            throw new RestException(ErrorCode.AUTH_LOGIN_REQUIRED);
+        }
+
+        Long loginUserId = userDetails.getUser().getId();
+
+        Challenge challenge = challengeRepository.findById(challengeId)
+                .orElseThrow(() -> new RestException(ErrorCode.GLOBAL_NOT_FOUND));
+
+        if (challenge.getMode() != ChallengeMode.SOLO) {
+            throw new RestException(ErrorCode.GLOBAL_BAD_REQUEST);
+        }
+
+        if (challenge.getVisibility() == ChallengeVisibility.PRIVATE &&
+                !challenge.getHost().getId().equals(loginUserId)) {
+            throw new RestException(ErrorCode.AUTH_FORBIDDEN);
+        }
+
+        User host = challenge.getHost();
+
+        int totalWeeks = challenge.getDurationWeek();
+        int currentWeek = calcCurrentWeek(challenge.getStartedAt(), totalWeeks);
+
+        List<Long> userIds = List.of(host.getId());
+
+        Map<Long, Long> completedTotalMap =
+                safeMap(weeklyProgressQueryRepository.completedCountByUsers(
+                        challengeId,
+                        userIds,
+                        totalWeeks
+                ));
+
+        int progressRate = percent(
+                completedTotalMap.getOrDefault(host.getId(), 0L),
+                totalWeeks
+        );
+
+        int successEndWeek = Math.max(currentWeek, 1);
+
+        Map<Long, Long> completedUpToCurrentMap =
+                safeMap(weeklyProgressQueryRepository.completedCountByUsers(
+                        challengeId,
+                        userIds,
+                        successEndWeek
+                ));
+
+        int successRate = percent(
+                completedUpToCurrentMap.getOrDefault(host.getId(), 0L),
+                successEndWeek
+        );
+
+        return ChallengeDto.SoloChallengeOverviewResponse.from(
+                challenge,
+                host,
+                progressRate,
+                successRate
+        );
     }
 
     @Transactional
