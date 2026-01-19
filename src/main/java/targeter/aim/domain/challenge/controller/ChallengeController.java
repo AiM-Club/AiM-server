@@ -52,6 +52,20 @@ public class ChallengeController {
         return challengeService.updateChallenge(challengeId, userDetails, request);
     }
 
+    @DeleteMapping("/{challengeId}")
+    @Operation(
+            summary = "챌린지 삭제",
+            description = "해당 id의 챌린지를 삭제합니다."
+    )
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    @ApiResponse(responseCode = "204", description = "챌린지 삭제 성공")
+    public void deleteChallenge(
+            @PathVariable Long challengeId,
+            @AuthenticationPrincipal UserDetails userDetails
+    ) {
+        challengeService.deleteChallenge(challengeId, userDetails);
+    }
+
     @NoJwtAuth
     @GetMapping("/vs")
     @Operation(

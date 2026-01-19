@@ -37,6 +37,7 @@ public class ChallengeService {
 
     private final ChallengeRepository challengeRepository;
     private final ChallengeMemberRepository challengeMemberRepository;
+    private final WeeklyProgressRepository weeklyProgressRepository;
     private final UserRepository userRepository;
     private final TagRepository tagRepository;
     private final FieldRepository fieldRepository;
@@ -356,5 +357,24 @@ public class ChallengeService {
         }
 
         return ChallengeDto.ChallengeIdResponse.from(challenge);
+    }
+
+    @Transactional
+    public void deleteChallenge(Long challengeId, UserDetails userDetails) {
+        Challenge challenge = challengeRepository.findById(challengeId)
+                .orElseThrow(() -> new RestException(ErrorCode.CHALLENGE_NOT_FOUND));
+
+        challenge.canDeleteBy(userDetails);
+
+        if(challenge.getChallengeImage() != null) {
+            fileHandler.deleteIfExists(challenge.getChallengeImage());
+        }
+        weeklyProgressRepository.deleteAllByChallenge(challenge);
+        challengeMemberRepository.deleteAllById_Challenge(challenge);
+
+        challenge.getTags().clear();
+        challenge.getFields().clear();
+
+        challengeRepository.delete(challenge);
     }
 }
