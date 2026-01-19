@@ -44,6 +44,7 @@ public class ChallengeService {
 
     private final ChallengeRoutePersistService persistService;
     private final ChallengeRouteGenerationService generationService;
+    private final ChallengeCleanupService cleanupService;
     private final FileHandler fileHandler;
 
     @Transactional
@@ -65,7 +66,12 @@ public class ChallengeService {
 
         challenge.setMode(request.getMode());
         challenge.setVisibility(request.getVisibility());
-        saveThumbnailImage(request.getThumbnail(), challenge);
+        try {
+            saveThumbnailImage(request.getThumbnail(), challenge);
+        } catch (Exception e) {
+            cleanupService.deleteChallengeAtomic(challengeId);
+            throw new RestException(ErrorCode.FILE_UPLOAD_FAILED);
+        }
 
         // 4. 태그 / 분야 연관관계 매핑
         updateChallengeLabels(challenge, request.getTags(), request.getFields());
@@ -76,7 +82,7 @@ public class ChallengeService {
     private void saveThumbnailImage(MultipartFile file, Challenge challenge) {
         if(file != null && !file.isEmpty()) {
             ChallengeImage thumbnailImage = ChallengeImage.from(file, challenge);
-            if(thumbnailImage == null) return;
+            if(thumbnailImage == null) throw new RestException(ErrorCode.FILE_UPLOAD_FAILED);
             challenge.setChallengeImage(thumbnailImage);
             thumbnailImage.setChallenge(challenge);
             fileHandler.saveFile(file, thumbnailImage);
