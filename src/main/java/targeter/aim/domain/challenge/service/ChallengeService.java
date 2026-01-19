@@ -58,12 +58,6 @@ public class ChallengeService {
     ) {
         User user = userDetails.getUser();
 
-        challengeRepository.findByHostAndNameAndStartedAtAndModeAndVisibility(
-                user, request.getName(), request.getStartedAt(), request.getMode(), request.getVisibility()
-        ).ifPresent(existing -> {
-            throw new RestException(ErrorCode.CHALLENGE_ALREADY_EXIST);
-        });
-
         // 1. 주차별 계획(Payload) 생성
         RoutePayload routePayload = generationService.generateRoute(request);
 
@@ -74,8 +68,6 @@ public class ChallengeService {
         Challenge challenge = challengeRepository.findById(challengeId)
                 .orElseThrow(() -> new RestException(ErrorCode.CHALLENGE_NOT_FOUND));
 
-        challenge.setMode(request.getMode());
-        challenge.setVisibility(request.getVisibility());
         try {
             saveThumbnailImage(request.getThumbnail(), challenge);
         } catch (Exception e) {
