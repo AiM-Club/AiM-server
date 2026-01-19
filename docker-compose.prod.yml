@@ -28,7 +28,7 @@ services:
       - GOOGLE_REDIRECT_URI=${GOOGLE_REDIRECT_URI}
       - APP_CORS_ORIGINS=${APP_CORS_ORIGINS}
     volumes:
-      - ${DEPLOY_VOLUME_PATH}/uploaded:/uploaded
+      - ~/deploy/aim/uploaded:/uploaded
 
 networks:
   mariadb_net:
