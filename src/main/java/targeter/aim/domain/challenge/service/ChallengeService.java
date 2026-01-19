@@ -5,13 +5,13 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 import targeter.aim.domain.ai.llm.dto.RoutePayload;
 import targeter.aim.domain.challenge.dto.ChallengeDto;
 import targeter.aim.domain.challenge.entity.*;
 import targeter.aim.domain.challenge.repository.*;
 import targeter.aim.domain.file.entity.ChallengeImage;
-import targeter.aim.domain.file.entity.ProfileImage;
-import targeter.aim.domain.file.repository.AttachedFileRepository;
+import targeter.aim.domain.file.handler.FileHandler;
 import targeter.aim.domain.label.entity.Field;
 import targeter.aim.domain.label.entity.Tag;
 import targeter.aim.domain.label.repository.FieldRepository;
@@ -44,6 +44,7 @@ public class ChallengeService {
 
     private final ChallengeRoutePersistService persistService;
     private final ChallengeRouteGenerationService generationService;
+    private final FileHandler fileHandler;
 
     @Transactional
     public ChallengeDto.ChallengeCreateResponse createChallenge(
@@ -64,11 +65,22 @@ public class ChallengeService {
 
         challenge.setMode(request.getMode());
         challenge.setVisibility(request.getVisibility());
+        saveThumbnailImage(request.getThumbnail(), challenge);
 
         // 4. 태그 / 분야 연관관계 매핑
         updateChallengeLabels(challenge, request.getTags(), request.getFields());
 
         return ChallengeDto.ChallengeCreateResponse.from(challenge.getId());
+    }
+
+    private void saveThumbnailImage(MultipartFile file, Challenge challenge) {
+        if(file != null && !file.isEmpty()) {
+            ChallengeImage thumbnailImage = ChallengeImage.from(file, challenge);
+            if(thumbnailImage == null) return;
+            challenge.setChallengeImage(thumbnailImage);
+            thumbnailImage.setChallenge(challenge);
+            fileHandler.saveFile(file, thumbnailImage);
+        }
     }
 
     @Transactional(readOnly = true)

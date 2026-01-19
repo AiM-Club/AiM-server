@@ -2,6 +2,7 @@ package targeter.aim.domain.challenge.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
+import org.springframework.web.multipart.MultipartFile;
 import targeter.aim.domain.challenge.entity.*;
 import targeter.aim.domain.file.dto.FileDto;
 import targeter.aim.domain.label.dto.FieldDto;
@@ -182,6 +183,9 @@ public class ChallengeDto {
     @Builder
     @Schema(description = "챌린지 생성 요청")
     public static class ChallengeCreateRequest {
+        @Schema(description = "챌린지 썸네일")
+        private MultipartFile thumbnail;
+
         @Schema(description = "챌린지 이름", example = "다이어트 챌린지")
         private String name;
 
@@ -197,8 +201,8 @@ public class ChallengeDto {
         @Schema(description = "분야 목록(1~3개)", example = "[\"IT\", \"경영\"]")
         private List<String> fields;
 
-        @Schema(description = "직무 목록(1~3개)", example = "[\"직업1\"]")
-        private List<String> jobs;
+        @Schema(description = "직무", example = "직무")
+        private String job;
 
         @Schema(description = "AI 요청사항", example = "4주동안 빠르게 다이어트할 수 있는 방법을 알려줘. 금식은 최대한 자제할거야.")
         private String userRequest;

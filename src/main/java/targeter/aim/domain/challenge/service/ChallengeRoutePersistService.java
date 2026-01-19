@@ -45,7 +45,7 @@ public class ChallengeRoutePersistService {
         Challenge challenge = Challenge.builder()
                 .host(host)
                 .name(req.getName())
-                .job(String.join(",", req.getJobs()))
+                .job(req.getJob())
                 .startedAt(req.getStartedAt())
                 .durationWeek(req.getDuration())
                 .status(ChallengeStatus.IN_PROGRESS)

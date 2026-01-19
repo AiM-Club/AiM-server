@@ -3,11 +3,13 @@ package targeter.aim.domain.challenge.controller;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import targeter.aim.domain.challenge.dto.ChallengeDto;
@@ -23,7 +25,7 @@ public class ChallengeController {
 
     private final ChallengeService challengeService;
 
-    @PostMapping
+    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @Operation(
             summary = "챌린지 생성",
             description = "새로운 챌린지를 생성합니다."
@@ -31,7 +33,7 @@ public class ChallengeController {
     @ApiResponse(responseCode = "201", description = "챌린지 생성 성공")
     @ResponseStatus(HttpStatus.CREATED)
     public ChallengeDto.ChallengeCreateResponse createChallenge(
-            @RequestBody ChallengeDto.ChallengeCreateRequest request,
+            @ModelAttribute @Valid ChallengeDto.ChallengeCreateRequest request,
             @AuthenticationPrincipal UserDetails userDetails
     ) {
         return challengeService.createChallenge(userDetails, request);
