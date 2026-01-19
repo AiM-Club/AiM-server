@@ -75,4 +75,17 @@ public class ChallengeController {
     ) {
         return challengeService.getSoloChallenges(request, userDetails);
     }
+
+    @GetMapping("/solo/{challengeId}/overview")
+    @Operation(
+            summary = "SOLO 챌린지 상세 Overview 조회",
+            description = "로그인한 사용자가 특정 SOLO 챌린지의 상세 정보와 주최자 진행 현황을 조회합니다."
+    )
+    public ChallengeDto.SoloChallengeOverviewResponse getSoloChallengeOverview(
+            @PathVariable Long challengeId,
+            @AuthenticationPrincipal UserDetails userDetails
+    ) {
+        return challengeService.getSoloChallengeOverview(challengeId, userDetails);
+    }
+
 }
