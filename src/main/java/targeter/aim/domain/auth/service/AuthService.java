@@ -3,26 +3,20 @@ package targeter.aim.domain.auth.service;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.*;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.util.LinkedMultiValueMap;
-import org.springframework.util.MultiValueMap;
-import org.springframework.web.client.RestClientResponseException;
-import org.springframework.web.client.RestTemplate;
 import org.springframework.web.multipart.MultipartFile;
 import targeter.aim.domain.auth.dto.AuthDto;
 import targeter.aim.domain.auth.token.entity.RefreshToken;
 import targeter.aim.domain.auth.token.entity.dto.RefreshTokenDto;
 import targeter.aim.domain.auth.token.repository.RefreshTokenCacheRepository;
+import targeter.aim.domain.auth.token.repository.RefreshTokenQueryRepository;
 import targeter.aim.domain.auth.token.repository.RefreshTokenRepository;
 import targeter.aim.domain.auth.token.validator.RefreshTokenValidator;
 import targeter.aim.domain.file.entity.ProfileImage;
 import targeter.aim.domain.file.handler.FileHandler;
 import targeter.aim.domain.user.dto.UserDto;
-import targeter.aim.domain.user.entity.SocialLogin;
 import targeter.aim.domain.user.entity.Tier;
 import targeter.aim.domain.user.entity.User;
 import targeter.aim.domain.user.repository.TierRepository;
@@ -36,9 +30,6 @@ import targeter.aim.system.security.service.UserLoadService;
 import targeter.aim.system.security.utility.jwt.JwtTokenProvider;
 import targeter.aim.system.security.utility.jwt.JwtTokenResolver;
 
-import java.util.Map;
-import java.util.Optional;
-
 @Service
 @RequiredArgsConstructor
 public class AuthService {
@@ -49,6 +40,7 @@ public class AuthService {
     private final JwtTokenProvider jwtTokenProvider;
     private final JwtTokenResolver jwtTokenResolver;
     private final RefreshTokenRepository refreshTokenRepository;
+    private final RefreshTokenQueryRepository refreshTokenQueryRepository;
     private final RefreshTokenCacheRepository refreshTokenCacheRepository;
     private final RefreshTokenValidator refreshTokenValidator;
     private final UserLoadService userLoadService;
@@ -134,11 +126,13 @@ public class AuthService {
         String id = jwtTokenResolver.resolveTokenFromString(refreshTokenUuid).getSubject();
 
         refreshTokenValidator.validateOrThrow(id, refreshTokenUuid);
-        refreshTokenRepository.deleteByUuid(refreshTokenUuid);
-        refreshTokenCacheRepository.evictRefreshUuid(refreshTokenUuid);
 
         AuthDetails authDetails = userLoadService.loadUserByKey(id)
                 .orElseThrow(() -> new RestException(ErrorCode.AUTH_USER_NOT_FOUND));
+
+        refreshTokenQueryRepository.deleteAllByUserKey(authDetails.getKey());
+        refreshTokenCacheRepository.evictRefreshUuid(refreshTokenUuid);
+
         JwtDto.TokenPair tokenPair = jwtTokenProvider.createTokenPair(authDetails);
 
         String newRefreshUuid = tokenPair.getRefreshToken().getTokenString();
@@ -159,7 +153,7 @@ public class AuthService {
         String refreshUuid = jwtTokenResolver.resolveTokenFromString(accessToken).getRefreshUuid();
 
         refreshTokenValidator.validateOrThrow(userDetails.getKey(), refreshUuid);
-        refreshTokenRepository.deleteByUuid(refreshUuid);
+        refreshTokenQueryRepository.deleteAllByUuid(refreshUuid);
         refreshTokenCacheRepository.evictRefreshUuid(refreshUuid);
     }
 
