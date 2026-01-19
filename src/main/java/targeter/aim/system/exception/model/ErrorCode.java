@@ -65,6 +65,7 @@ public enum ErrorCode {
     // Challenge
     CHALLENGE_NOT_FOUND(404, "존재하지 않는 챌린지입니다."),
     CHALLENGE_INVALID_TIMER_ACTION(400, "지원하지 않는 타이머 액션입니다."),
+    CHALLENGE_ALREADY_EXIST(409, "이미 존재하는 챌린지입니다."),
 
     // Other
     INTERNAL_SERVER_ERROR(500, "오류가 발생했습니다.");
