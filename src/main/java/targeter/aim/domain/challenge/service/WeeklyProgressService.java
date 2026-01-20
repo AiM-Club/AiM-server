@@ -3,7 +3,6 @@ package targeter.aim.domain.challenge.service;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import targeter.aim.domain.challenge.dto.ChallengeDto;
 import targeter.aim.domain.challenge.dto.WeeklyProgressDto;
 import targeter.aim.domain.challenge.entity.Challenge;
 import targeter.aim.domain.challenge.entity.ChallengeMode;
@@ -27,7 +26,10 @@ public class WeeklyProgressService {
     private final WeeklyProgressRepository weeklyProgressRepository;
 
     @Transactional(readOnly = true)
-    public WeeklyProgressDto.WeekProgressListResponse getVsWeeklyProgressList(Long challengeId, UserDetails userDetails) {
+    public WeeklyProgressDto.WeekProgressListResponse getVsWeeklyProgressList(
+            Long challengeId,
+            UserDetails userDetails
+    ) {
         if (userDetails == null) {
             throw new RestException(ErrorCode.AUTH_LOGIN_REQUIRED);
         }
@@ -40,16 +42,22 @@ public class WeeklyProgressService {
             throw new RestException(ErrorCode.GLOBAL_BAD_REQUEST);
         }
 
-        List<WeeklyProgress> weeklyProgressList = weeklyProgressRepository.findAllByChallengeAndUser(challenge, loginUser);
+        List<WeeklyProgress> weeklyProgressList =
+                weeklyProgressRepository.findAllByChallengeAndUser(challenge, loginUser);
 
         int currentWeek = calcCurrentWeek(challenge.getStartedAt(), challenge.getDurationWeek());
 
-        return WeeklyProgressDto.WeekProgressListResponse.from(challenge, currentWeek, weeklyProgressList);
+        return WeeklyProgressDto.WeekProgressListResponse.from(
+                challenge, currentWeek, weeklyProgressList
+        );
     }
 
-
     private int calcCurrentWeek(LocalDate startedAt, int totalWeeks) {
-        long days = Duration.between(startedAt.atStartOfDay(), LocalDate.now().atStartOfDay()).toDays();
+        long days = Duration.between(
+                startedAt.atStartOfDay(),
+                LocalDate.now().atStartOfDay()
+        ).toDays();
+
         int week = (int) (days / 7) + 1;
         return Math.min(Math.max(week, 1), totalWeeks);
     }
