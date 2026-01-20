@@ -7,7 +7,7 @@ public class ChallengeLikedDto {
 
     @Getter
     @AllArgsConstructor
-    public static class LikeResponse {
+    public static class LikedResponse {
         private boolean likes;
     }
 }
