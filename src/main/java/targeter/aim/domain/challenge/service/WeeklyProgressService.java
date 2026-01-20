@@ -18,6 +18,7 @@ import targeter.aim.system.exception.model.ErrorCode;
 import targeter.aim.system.exception.model.RestException;
 import targeter.aim.system.security.model.UserDetails;
 
+
 import java.time.Duration;
 import java.time.LocalDate;
 import java.util.List;
@@ -122,17 +123,28 @@ public class WeeklyProgressService {
         if (!weeklyProgress.getChallenge().getId().equals(challengeId)) {
             throw new RestException(ErrorCode.GLOBAL_BAD_REQUEST);
         }
+        List<WeeklyComment> parentComments =
+                weeklyCommentRepository
+                        .findAllByWeeklyProgress_IdAndParentCommentIsNullOrderByCreatedAtAsc(weeksId);
 
-        List<WeeklyComment> comments =
-                weeklyCommentRepository.findAllByWeeklyProgressAndDepthOrderByCreatedAtAsc(
-                        weeklyProgress, 1
-                );
+        return parentComments.stream()
+                .map(parent -> {
+                    // 부모 DTO
+                    WeeklyCommentDto.WeeklyCommentResponse parentDto =
+                            WeeklyCommentDto.WeeklyCommentResponse.from(parent);
 
-        return comments.stream()
-                .map(WeeklyCommentDto.WeeklyCommentResponse::from)
-                .toList();
-    }
+                    // 대댓글 조회
+                    List<WeeklyCommentDto.WeeklyCommentResponse> children =
+                            weeklyCommentRepository
+                                    .findAllByParentComment_IdOrderByCreatedAtAsc(parent.getId())
+                                    .stream()
+                                    .map(WeeklyCommentDto.WeeklyCommentResponse::from)
+                                    .toList();
 
+                    parentDto.setChildrenComments(children);
+                    return parentDto;
+                })
+                .toList(); }
     private int calcCurrentWeek(LocalDate startedAt, int totalWeeks) {
         long days = Duration.between(
                 startedAt.atStartOfDay(),

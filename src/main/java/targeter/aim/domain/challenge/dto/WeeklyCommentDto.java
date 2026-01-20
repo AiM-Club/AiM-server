@@ -5,6 +5,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import targeter.aim.domain.challenge.entity.WeeklyComment;
 import targeter.aim.domain.file.dto.FileDto;
 import targeter.aim.domain.user.dto.UserDto;
 
@@ -45,6 +46,20 @@ public class WeeklyCommentDto {
 
         @Schema(description = "자식 댓글 목록")
         private List<WeeklyCommentResponse> childrenComments;
+
+        public static WeeklyCommentResponse from(WeeklyComment weeklyComment) {
+            return WeeklyCommentResponse.builder()
+                    .commentId(weeklyComment.getId())
+                    .depth(weeklyComment.getDepth())
+                    .writerInfo(UserDto.UserResponse.from(weeklyComment.getUser()))
+                    .content(weeklyComment.getContent())
+                    .attachedImages(List.of())
+                    .attachedFiles(List.of())
+                    .createdAt(weeklyComment.getCreatedAt())
+                    .updatedAt(weeklyComment.getLastModifiedAt())
+                    .childrenComments(List.of())
+                    .build();
+        }
     }
 
     @Data
