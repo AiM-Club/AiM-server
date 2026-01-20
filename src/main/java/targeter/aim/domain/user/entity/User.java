@@ -57,6 +57,9 @@ public class User extends TimeStampedEntity {
     @Column(name = "social_id")
     private String socialId;    // 구글 / 카카오 연동 아이디
 
+    @Column(nullable = true)
+    private Integer level;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(nullable = false, name = "tier_id")
     private Tier tier;

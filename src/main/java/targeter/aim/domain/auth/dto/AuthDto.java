@@ -63,6 +63,7 @@ public class AuthDto {
                     .password(encoder.encode(password))
                     .birthday(birthday)
                     .gender(gender)
+                    .level(1)
                     .build();
         }
     }
