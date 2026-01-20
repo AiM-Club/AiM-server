@@ -5,6 +5,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.springframework.data.domain.Page;
 import targeter.aim.domain.challenge.entity.WeeklyComment;
 import targeter.aim.domain.file.dto.FileDto;
 import targeter.aim.domain.user.dto.UserDto;
@@ -13,6 +14,61 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 public class WeeklyCommentDto {
+
+    @Data
+    @AllArgsConstructor
+    @NoArgsConstructor
+    @Builder
+    @Schema(description = "페이지 정보")
+    public static class PageInfo {
+        @Schema(description = "현재 페이지(0부터 시작)", example = "0")
+        private int page;
+
+        @Schema(description = "페이지 크기", example = "10")
+        private int size;
+
+        @Schema(description = "전체 요소 수", example = "123")
+        private long totalElements;
+
+        @Schema(description = "전체 페이지 수", example = "13")
+        private int totalPages;
+
+        @Schema(description = "다음 페이지 존재 여부", example = "true")
+        private boolean hasNext;
+
+        public static PageInfo from(Page<?> page) {
+            return PageInfo.builder()
+                    .page(page.getNumber())
+                    .size(page.getSize())
+                    .totalElements(page.getTotalElements())
+                    .totalPages(page.getTotalPages())
+                    .hasNext(page.hasNext())
+                    .build();
+        }
+    }
+
+    @Data
+    @AllArgsConstructor
+    @NoArgsConstructor
+    @Builder
+    @Schema(description = "챌린지 주차별 댓글 목록 조회 응답")
+    public static class WeeklyCommentListResponse {
+        @Schema(description = "댓글 목록(부모 댓글 + childrenComments 포함)")
+        private List<WeeklyCommentResponse> comments;
+
+        @Schema(description = "페이지 메타 정보")
+        private PageInfo pageInfo;
+
+        public static WeeklyCommentListResponse of(
+                Page<?> page,
+                List<WeeklyCommentResponse> comments
+        ) {
+            return WeeklyCommentListResponse.builder()
+                    .pageInfo(PageInfo.from(page))
+                    .comments(comments)
+                    .build();
+        }
+    }
 
     @Data
     @AllArgsConstructor
