@@ -1,6 +1,9 @@
 package targeter.aim.domain.challenge.service;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -10,6 +13,8 @@ import targeter.aim.domain.challenge.entity.ChallengeMode;
 import targeter.aim.domain.challenge.entity.WeeklyComment;
 import targeter.aim.domain.challenge.entity.WeeklyProgress;
 import targeter.aim.domain.challenge.repository.ChallengeRepository;
+import targeter.aim.domain.challenge.repository.CommentSortType;
+import targeter.aim.domain.challenge.repository.SortOrder;
 import targeter.aim.domain.challenge.repository.WeeklyCommentRepository;
 import targeter.aim.domain.challenge.repository.WeeklyProgressRepository;
 import targeter.aim.domain.user.entity.User;
@@ -75,13 +80,25 @@ public class WeeklyCommentService {
     }
 
     @Transactional(readOnly = true)
-    public List<WeeklyCommentDto.WeeklyCommentResponse> getWeeklyComments(
+    public WeeklyCommentDto.WeeklyCommentListResponse getWeeklyComments(
             Long challengeId,
             Long weeksId,
+            CommentSortType sort,
+            SortOrder order,
+            int page,
+            int size,
             UserDetails userDetails
     ) {
         if (userDetails == null) {
             throw new RestException(ErrorCode.AUTH_LOGIN_REQUIRED);
+        }
+
+        if (page < 0 || size < 1) {
+            throw new RestException(ErrorCode.GLOBAL_INVALID_PARAMETER);
+        }
+
+        if (sort == CommentSortType.LATEST && order != SortOrder.DESC) {
+            throw new RestException(ErrorCode.GLOBAL_INVALID_PARAMETER);
         }
 
         Challenge challenge = challengeRepository.findById(challengeId)
@@ -98,18 +115,20 @@ public class WeeklyCommentService {
             throw new RestException(ErrorCode.GLOBAL_BAD_REQUEST);
         }
 
-        List<WeeklyComment> parentComments =
-                weeklyCommentRepository
-                        .findAllByWeeklyProgress_IdAndParentCommentIsNullOrderByCreatedAtAsc(weeksId);
+        Sort parentSort = Sort.by(Sort.Direction.DESC, "createdAt");
+        PageRequest pageRequest = PageRequest.of(page, size, parentSort);
 
-        return parentComments.stream()
+        Page<WeeklyComment> parentPage =
+                weeklyCommentRepository.findAllByWeeklyProgress_IdAndParentCommentIsNull(weeksId, pageRequest);
+
+        List<WeeklyCommentDto.WeeklyCommentResponse> content = parentPage.getContent().stream()
                 .map(parent -> {
                     WeeklyCommentDto.WeeklyCommentResponse parentDto =
                             WeeklyCommentDto.WeeklyCommentResponse.from(parent);
 
                     List<WeeklyCommentDto.WeeklyCommentResponse> children =
                             weeklyCommentRepository
-                                    .findAllByParentComment_IdOrderByCreatedAtAsc(parent.getId())
+                                    .findAllByParentComment_Id(parent.getId(), Sort.by(Sort.Direction.DESC, "createdAt"))
                                     .stream()
                                     .map(WeeklyCommentDto.WeeklyCommentResponse::from)
                                     .toList();
@@ -118,5 +137,7 @@ public class WeeklyCommentService {
                     return parentDto;
                 })
                 .toList();
+
+        return WeeklyCommentDto.WeeklyCommentListResponse.of(parentPage, content);
     }
 }
