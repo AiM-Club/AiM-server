@@ -13,6 +13,8 @@ import org.springframework.http.MediaType;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import targeter.aim.domain.challenge.dto.ChallengeDto;
+import targeter.aim.domain.challenge.dto.ChallengeLikedDto;
+import targeter.aim.domain.challenge.service.ChallengeLikedService;
 import targeter.aim.domain.challenge.service.ChallengeService;
 import targeter.aim.system.security.annotation.NoJwtAuth;
 import targeter.aim.system.security.model.UserDetails;
@@ -24,6 +26,7 @@ import targeter.aim.system.security.model.UserDetails;
 public class ChallengeController {
 
     private final ChallengeService challengeService;
+    private final ChallengeLikedService challengeLikedService;
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @Operation(
@@ -116,4 +119,22 @@ public class ChallengeController {
     ) {
         challengeService.deleteChallenge(challengeId, userDetails);
     }
+
+    @PostMapping("/{challengeId}/likes")
+    @Operation(
+            summary = "챌린지 좋아요 토글",
+            description = "챌린지에 좋아요를 누르거나 취소합니다."
+    )
+    public ChallengeLikedDto.LikedResponse toggleLike(
+            @PathVariable Long challengeId,
+            @AuthenticationPrincipal UserDetails userDetails
+    ) {
+        boolean liked = challengeLikedService.toggleLike(
+                userDetails.getUser().getId(),
+                challengeId
+        );
+
+        return new ChallengeLikedDto.LikedResponse(liked);
+    }
+
 }
