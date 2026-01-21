@@ -52,8 +52,9 @@ class ChallengeRoutePersistServiceTest {
         given(existingChallenge.getId()).willReturn(999L);
 
         // DB에 이미 있다고 가정
-        given(challengeRepository.findByHostAndNameAndStartedAt(mockUser, request.getName(), request.getStartedAt()))
-                .willReturn(Optional.of(existingChallenge));
+        given(challengeRepository.findByHostAndNameAndStartedAtAndModeAndVisibility(
+                mockUser, request.getName(), request.getStartedAt(), request.getMode(), request.getVisibility())).willReturn(Optional.of(existingChallenge));
+        // ChallengeRepository 메서드 시그니처 변경(findByHostAndNameAndStartedAt → mode/visibility 포함)에 맞춰 테스트 수정
 
         // when
         Long resultId = persistService.persistAtomic(userId, request, new RoutePayload());
@@ -73,7 +74,7 @@ class ChallengeRoutePersistServiceTest {
         ChallengeDto.ChallengeCreateRequest request = ChallengeDto.ChallengeCreateRequest.builder()
                 .name("New Challenge")
                 .startedAt(LocalDate.now())
-                .jobs(List.of("Dev"))
+                .job("Dev")
                 .duration(1)
                 .build();
 
@@ -86,7 +87,7 @@ class ChallengeRoutePersistServiceTest {
         Challenge savedChallenge = mock(Challenge.class);
 
         given(userRepository.findById(userId)).willReturn(Optional.of(mockUser));
-        given(challengeRepository.findByHostAndNameAndStartedAt(any(), any(), any()))
+        given(challengeRepository.findByHostAndNameAndStartedAtAndModeAndVisibility(any(), any(), any(), any(), any()))
                 .willReturn(Optional.empty()); // 중복 없음
         given(challengeRepository.save(any(Challenge.class))).willReturn(savedChallenge);
         given(savedChallenge.getId()).willReturn(100L);
