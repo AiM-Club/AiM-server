@@ -157,6 +157,7 @@ public class OAuth2Service {
                     .socialLogin(SocialLogin.KAKAO)
                     .socialId(socialId)
                     .tier(bronze)
+                    .level(1)
                     .build();
 
             user = userRepository.save(user);
@@ -236,6 +237,7 @@ public class OAuth2Service {
                 .birthday(null)
                 .gender(null)
                 .tier(bronze)
+                .level(1)
                 .build();
 
         return userRepository.save(user);

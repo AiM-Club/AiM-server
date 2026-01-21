@@ -29,10 +29,10 @@ public class ChallengeImage extends AttachedFile {
         throwIfNotAImageFile(file);
 
         String uuId = UUID.randomUUID().toString();
-        String filePath = "challenge/" + uuId;
+        String filePath = uuId + "." + extractExt(file.getOriginalFilename()).toLowerCase();
 
         return ChallengeImage.builder()
-                .uuid(UUID.randomUUID().toString())
+                .uuid(uuId)
                 .fileName(safeFilename(file.getOriginalFilename()))
                 .handlingType(HandlingType.IMAGE)
                 .challenge(challenge)

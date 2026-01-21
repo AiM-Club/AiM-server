@@ -35,6 +35,9 @@ public class UserDto {
         @Schema(description = "사용자 티어")
         private TierDto.TierResponse tier;
 
+        @Schema(description = "사용자 레벨")
+        private Integer level;
+
         @Schema(
                 description = "소셜 로그인 방식 (일반 회원가입 시 null)",
                 example = "KAKAO | GOOGLE",
@@ -65,6 +68,7 @@ public class UserDto {
                     .birthday(user.getBirthday())
                     .gender(user.getGender())
                     .tier(TierDto.TierResponse.from(user.getTier()))
+                    .level(user.getLevel())
                     .profileImage(FileDto.FileResponse.from(user.getProfileImage()))
                     .socialLogin(user.getSocialLogin() == null ? null : user.getSocialLogin())
                     .isNewUser(isNewUser)
