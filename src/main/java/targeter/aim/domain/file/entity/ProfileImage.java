@@ -29,7 +29,7 @@ public class ProfileImage extends AttachedFile {
         throwIfNotAImageFile(file);
 
         String uuId = UUID.randomUUID().toString();
-        String filePath = "profile/" + uuId;
+        String filePath = uuId + "." + extractExt(file.getOriginalFilename()).toLowerCase();
 
         return ProfileImage.builder()
                 .uuid(uuId)
@@ -42,18 +42,18 @@ public class ProfileImage extends AttachedFile {
 
     private static void throwIfNotAImageFile(MultipartFile file) {
         if (file == null || file.isEmpty()) {
-            throw new RestException(ErrorCode.FILE_NOT_IMAGE);
+            throw new RestException(ErrorCode.FILE_NOT_FOUND);
         }
 
         String contentType = file.getContentType();
-        if (contentType == null || !contentType.toLowerCase().startsWith("image/")) {
+        if (contentType == null || !contentType.toLowerCase().startsWith("image/") && !contentType.equalsIgnoreCase("application/pdf")) {
             throw new RestException(ErrorCode.FILE_NOT_IMAGE);
         }
 
         String fileName = file.getOriginalFilename();
         String extension = extractExt(fileName);
-        if(extension == null || !List.of("JPG", "JPEG", "PNG", "WEBP").contains(extension.toUpperCase())) {
-            throw new RestException(ErrorCode.FILE_NOT_IMAGE);
+        if(extension == null || !List.of("JPG", "JPEG", "PNG", "PDF").contains(extension.toUpperCase())) {
+            throw new RestException(ErrorCode.FILE_NOT_READABLE);
         }
     }
 

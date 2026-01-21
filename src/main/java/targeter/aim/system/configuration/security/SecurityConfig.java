@@ -18,8 +18,7 @@ import targeter.aim.system.security.configurer.JwtAutoConfigurerFactory;
 import targeter.aim.system.security.model.ApiPathPattern;
 import targeter.aim.system.security.service.UserLoadServiceImpl;
 
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Configuration
@@ -50,7 +49,7 @@ public class SecurityConfig {
                                 "/h2-console/**"
                         ).permitAll()
                         // 비로그인 허용 VS 챌린지 목록 조회(ALL) 및 상세 조회만
-                        .requestMatchers(HttpMethod.GET, "/api/challenges", "/api/challenges/vs/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/files/**", "/api/challenges", "/api/challenges/vs/**").permitAll()
                         .requestMatchers("/api/**").authenticated()
                         .anyRequest().permitAll()
                 )
