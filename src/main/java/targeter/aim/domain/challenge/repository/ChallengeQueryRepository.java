@@ -1,7 +1,7 @@
 package targeter.aim.domain.challenge.repository;
 
 import com.querydsl.core.Tuple;
-import com.querydsl.core.types.dsl.CaseBuilder;
+import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.core.types.dsl.Expressions;
 import com.querydsl.jpa.JPAExpressions;
 import com.querydsl.jpa.impl.JPAQuery;
@@ -15,8 +15,12 @@ import targeter.aim.domain.challenge.dto.ChallengeDto;
 import targeter.aim.domain.challenge.entity.Challenge;
 import targeter.aim.domain.challenge.entity.ChallengeMode;
 import targeter.aim.domain.challenge.entity.ChallengeStatus;
+import targeter.aim.domain.challenge.entity.QChallenge;
 import targeter.aim.domain.file.dto.FileDto;
+import targeter.aim.domain.file.entity.ChallengeImage;
 import targeter.aim.domain.file.entity.ProfileImage;
+import targeter.aim.domain.label.entity.QField;
+import targeter.aim.domain.label.entity.QTag;
 import targeter.aim.domain.user.entity.User;
 import targeter.aim.system.security.model.UserDetails;
 
@@ -118,7 +122,6 @@ public class ChallengeQueryRepository {
     }
 
     // 공통 Query 구성
-
     private JPAQuery<Tuple> buildBaseQuery(
             UserDetails userDetails,
             ChallengeFilterType filterType,
@@ -151,8 +154,10 @@ public class ChallengeQueryRepository {
                     .where(challengeMember.id.user.id.eq(userDetails.getUser().getId()));
         }
 
-        if (keyword != null && !keyword.isBlank()) {
-            query.where(challenge.name.containsIgnoreCase(keyword));
+        BooleanExpression keywordPredicate = keywordCondition(keyword);
+
+        if (keywordPredicate != null) {
+            query.where(keywordPredicate);
         }
 
         return query;
@@ -174,11 +179,46 @@ public class ChallengeQueryRepository {
                     .where(challengeMember.id.user.id.eq(userDetails.getUser().getId()));
         }
 
-        if (keyword != null && !keyword.isBlank()) {
-            query.where(challenge.name.containsIgnoreCase(keyword));
+        BooleanExpression keywordPredicate = keywordCondition(keyword);
+
+        if (keywordPredicate != null) {
+            query.where(keywordPredicate);
         }
 
         return query;
+    }
+
+    // 제목 + 분야 + 태그 검색 조건설정
+    private BooleanExpression keywordCondition(String keyword) {
+        if(keyword == null || keyword.isBlank()) return null;
+
+        String k = keyword.trim();
+
+        BooleanExpression inTitle = challenge.name.containsIgnoreCase(k);
+
+        // 분야 검색
+        var cField = new QChallenge("cField");
+        QField f = new QField("f");
+
+        BooleanExpression inField = JPAExpressions
+                .selectOne()
+                .from(cField)
+                .join(cField.fields, f)
+                .where(cField.id.eq(challenge.id).and(f.name.containsIgnoreCase(k)))
+                .exists();
+
+        // 태그 검색
+        var cTag = new QChallenge("cTag");
+        QTag t = new QTag("t");
+
+        BooleanExpression inTag = JPAExpressions
+                .selectOne()
+                .from(cTag)
+                .join(cTag.tags, t)
+                .where(cTag.id.eq(challenge.id).and(t.name.containsIgnoreCase(k)))
+                .exists();
+
+        return inTitle.or(inField).or(inTag);
     }
 
     // 정렬
@@ -202,7 +242,7 @@ public class ChallengeQueryRepository {
         }
     }
 
-       //DTO 매핑
+    //DTO 매핑
     private List<ChallengeDto.ChallengeListResponse> enrichDetails(List<Tuple> tuples) {
         if (tuples.isEmpty()) return List.of();
 
@@ -254,8 +294,13 @@ public class ChallengeQueryRepository {
         Challenge c = tuple.get(0, Challenge.class);
         User host = c.getHost();
         ProfileImage profileImage = host.getProfileImage();
+        ChallengeImage challengeImage = c.getChallengeImage();
 
         return ChallengeDto.ChallengeListResponse.builder()
+                .challengeId(c.getId())
+                .thumbnail(challengeImage != null
+                        ? FileDto.FileResponse.from(challengeImage)
+                        : null)
                 .user(ChallengeDto.UserResponse.builder()
                         .userId(host.getId())
                         .nickname(host.getNickname())
@@ -296,4 +341,91 @@ public class ChallengeQueryRepository {
         return dto.getStartDate()
                 .plusWeeks(Integer.parseInt(dto.getDuration().replace("주", "")));
     }
+
+    private BooleanExpression soloStatusCondition(String filterType) {
+
+        return switch (filterType) {
+            case "IN_PROGRESS" ->
+                    challenge.status.eq(ChallengeStatus.IN_PROGRESS);
+
+            case "COMPLETE" ->
+                    challenge.status.eq(ChallengeStatus.COMPLETED);
+
+            default -> null;
+        };
+    }
+
+    private void applySoloSorting(JPAQuery<?> query, String sort) {
+        switch (sort) {
+            case "LATEST" ->
+                    query.orderBy(challenge.createdAt.desc());
+
+            case "OLDEST" ->
+                    query.orderBy(challenge.createdAt.asc());
+
+            case "TITLE" ->
+                    query.orderBy(
+                            challenge.name.asc(),
+                            challenge.createdAt.desc()
+                    );
+
+            default ->
+                    query.orderBy(challenge.createdAt.desc());
+        }
+    }
+
+    public Page<ChallengeDto.ChallengeListResponse> paginateSoloChallenges(
+            ChallengeDto.SoloChallengeListRequest request,
+            String keyword,
+            Pageable pageable
+    ) {
+        JPAQuery<Tuple> query = queryFactory
+                .select(
+                        challenge,
+                        Expressions.FALSE,
+                        JPAExpressions.select(challengeLiked.count())
+                                .from(challengeLiked)
+                                .where(challengeLiked.challenge.eq(challenge))
+                )
+                .from(challenge)
+                .where(
+                        challenge.mode.eq(ChallengeMode.SOLO),
+                        soloStatusCondition(request.getFilterType())
+                )
+                .leftJoin(challenge.host)
+                .leftJoin(challenge.host.tier)
+                .leftJoin(challenge.host.profileImage);
+
+        if (keyword != null) {
+            query.where(keywordCondition(keyword));
+        }
+
+        applySoloSorting(query, request.getSort());
+
+        List<Tuple> tuples = query
+                .offset(pageable.getOffset())
+                .limit(pageable.getPageSize())
+                .fetch();
+
+        JPAQuery<Long> countQuery = queryFactory
+                .select(challenge.count())
+                .from(challenge)
+                .where(
+                        challenge.mode.eq(ChallengeMode.SOLO),
+                        soloStatusCondition(request.getFilterType())
+                );
+
+        if (keyword != null) {
+            countQuery.where(keywordCondition(keyword));
+        }
+
+        Long total = countQuery.fetchOne();
+
+        return new PageImpl<>(
+                enrichDetails(tuples),
+                pageable,
+                total == null ? 0 : total
+        );
+    }
+
 }

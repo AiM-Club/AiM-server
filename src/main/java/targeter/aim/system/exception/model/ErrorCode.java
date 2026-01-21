@@ -35,8 +35,9 @@ public enum ErrorCode {
     AUTH_INVALID_NICKNAME_FORMAT(400, "닉네임 형식이 올바르지 않습니다."),
     AUTH_PASSWORD_NOT_MATCH(401, "비밀번호가 올바르지 않습니다."),
     AUTH_FORBIDDEN(403, "접근 권한이 없습니다."),
+    AUTH_LOGIN_REQUIRED(401, "로그인이 필요합니다."),
 
-    // Auth - Token/JWT
+    // Auth - Token / JWT
     AUTH_TOKEN_NOT_FOUND(401, "인증 토큰이 존재하지 않습니다."),
     AUTH_TOKEN_MISSING(401, "인증 토큰이 존재하지 않습니다."),
     AUTH_TOKEN_INVALID(401, "유효하지 않은 토큰입니다."),
@@ -48,8 +49,6 @@ public enum ErrorCode {
     AUTH_USER_NOT_FOUND(404, "등록된 유저를 찾을 수 없습니다."),
     AUTH_CANNOT_GENERATE_TOKEN(400, "인증키를 생성 할 수 없습니다."),
     DUPLICATE_EMAIL_PROVIDER(409, "이미 존재하는 이메일입니다. 다른 로그인 방식으로 가입된 계정입니다."),
-    AUTH_LOGIN_REQUIRED(401, "로그인이 필요합니다."),
-
 
     // Auth - Kakao
     AUTH_KAKAO_CODE_INVALID(401, "카카오 인가 코드가 유효하지 않습니다."),
@@ -66,7 +65,7 @@ public enum ErrorCode {
     // Challenge
     CHALLENGE_NOT_FOUND(404, "존재하지 않는 챌린지입니다."),
     CHALLENGE_INVALID_TIMER_ACTION(400, "지원하지 않는 타이머 액션입니다."),
-
+    CHALLENGE_ALREADY_EXIST(409, "이미 존재하는 챌린지입니다."),
 
     // Other
     INTERNAL_SERVER_ERROR(500, "오류가 발생했습니다.");
@@ -74,4 +73,3 @@ public enum ErrorCode {
     private final int statusCode;
     private final String message;
 }
-

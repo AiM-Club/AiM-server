@@ -5,17 +5,19 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 import targeter.aim.domain.ai.llm.dto.RoutePayload;
 import targeter.aim.domain.challenge.dto.ChallengeDto;
 import targeter.aim.domain.challenge.entity.*;
 import targeter.aim.domain.challenge.repository.*;
 import targeter.aim.domain.file.entity.ChallengeImage;
-import targeter.aim.domain.file.entity.ProfileImage;
-import targeter.aim.domain.file.repository.AttachedFileRepository;
+import targeter.aim.domain.file.handler.FileHandler;
 import targeter.aim.domain.label.entity.Field;
 import targeter.aim.domain.label.entity.Tag;
 import targeter.aim.domain.label.repository.FieldRepository;
 import targeter.aim.domain.label.repository.TagRepository;
+import targeter.aim.domain.label.service.FieldService;
+import targeter.aim.domain.label.service.TagService;
 import targeter.aim.domain.user.entity.User;
 import targeter.aim.domain.user.repository.UserRepository;
 import targeter.aim.system.exception.model.ErrorCode;
@@ -24,7 +26,6 @@ import targeter.aim.system.security.model.UserDetails;
 
 import java.time.Duration;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -33,21 +34,62 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class ChallengeService {
 
-    private final ChallengeQueryRepository challengeQueryRepository;
     private final ChallengeRepository challengeRepository;
-    private final WeeklyProgressRepository weeklyProgressRepository;
     private final ChallengeMemberRepository challengeMemberRepository;
-    private final WeeklyCommentRepository weeklyCommentRepository;
-    private final AttachedFileRepository attachedFileRepository;
-
+    private final WeeklyProgressRepository weeklyProgressRepository;
     private final UserRepository userRepository;
     private final TagRepository tagRepository;
     private final FieldRepository fieldRepository;
 
+    private final ChallengeQueryRepository challengeQueryRepository;
+    private final WeeklyProgressQueryRepository weeklyProgressQueryRepository;
+
     private final ChallengeRoutePersistService persistService;
     private final ChallengeRouteGenerationService generationService;
+    private final ChallengeCleanupService cleanupService;
+    private final TagService tagService;
+    private final FieldService fieldService;
+    private final FileHandler fileHandler;
 
-    // 챌린지 목록 조회
+    @Transactional
+    public ChallengeDto.ChallengeIdResponse createChallenge(
+            UserDetails userDetails,
+            ChallengeDto.ChallengeCreateRequest request
+    ) {
+        User user = userDetails.getUser();
+
+        // 1. 주차별 계획(Payload) 생성
+        RoutePayload routePayload = generationService.generateRoute(request);
+
+        // 2. 생성된 데이터 저장
+        Long challengeId = persistService.persistAtomic(user.getId(), request, routePayload);
+
+        // 3. 생성된 챌린지 조회
+        Challenge challenge = challengeRepository.findById(challengeId)
+                .orElseThrow(() -> new RestException(ErrorCode.CHALLENGE_NOT_FOUND));
+
+        try {
+            saveThumbnailImage(request.getThumbnail(), challenge);
+        } catch (Exception e) {
+            cleanupService.deleteChallengeAtomic(challengeId);
+            throw new RestException(ErrorCode.FILE_UPLOAD_FAILED);
+        }
+
+        // 4. 태그 / 분야 연관관계 매핑
+        updateChallengeLabels(challenge, request.getTags(), request.getFields());
+
+        return ChallengeDto.ChallengeIdResponse.from(challenge);
+    }
+
+    private void saveThumbnailImage(MultipartFile file, Challenge challenge) {
+        if(file != null && !file.isEmpty()) {
+            ChallengeImage thumbnailImage = ChallengeImage.from(file, challenge);
+            if(thumbnailImage == null) throw new RestException(ErrorCode.FILE_UPLOAD_FAILED);
+            challenge.setChallengeImage(thumbnailImage);
+            thumbnailImage.setChallenge(challenge);
+            fileHandler.saveFile(file, thumbnailImage);
+        }
+    }
 
     @Transactional(readOnly = true)
     public ChallengeDto.ChallengePageResponse getVsChallenges(
@@ -98,34 +140,6 @@ public class ChallengeService {
         }
     }
 
-    //챌린지 생성
-
-    @Transactional
-    public ChallengeDto.ChallengeDetailsResponse createChallenge(
-            UserDetails userDetails,
-            ChallengeDto.ChallengeCreateRequest request
-    ) {
-        User user = userDetails.getUser();
-
-        // 1. 주차별 계획(Payload) 생성
-        RoutePayload routePayload = generationService.generateRoute(request);
-
-        // 2. 생성된 데이터 저장
-        Long challengeId = persistService.persistAtomic(user.getId(), request, routePayload);
-
-        // 3. 생성된 챌린지 조회
-        Challenge challenge = challengeRepository.findById(challengeId)
-                .orElseThrow(() -> new RestException(ErrorCode.CHALLENGE_NOT_FOUND));
-
-        challenge.setMode(request.getMode());
-        challenge.setVisibility(request.getVisibility());
-
-        // 4. 태그 / 분야 연관관계 매핑
-        updateChallengeLabels(challenge, request.getTags(), request.getFields());
-
-        return toChallengeDetailsResponse(challenge);
-    }
-
     private void updateChallengeLabels(Challenge challenge, List<String> tagNames, List<String> fieldNames) {
         if (tagNames != null) {
             Set<Tag> tags = tagNames.stream()
@@ -146,46 +160,9 @@ public class ChallengeService {
         }
     }
 
-    private ChallengeDto.ChallengeDetailsResponse toChallengeDetailsResponse(Challenge challenge) {
-        User host = challenge.getHost();
-
-        ChallengeDto.ChallengeDetailsResponse.ChallengeInfo info =
-                ChallengeDto.ChallengeDetailsResponse.ChallengeInfo.builder()
-                        .challengeThumbnail(null)
-                        .title(challenge.getName())
-                        .tags(challenge.getTags().stream().map(Tag::getName).toList())
-                        .fields(challenge.getFields().stream().map(Field::getName).toList())
-                        .jobs(List.of(challenge.getJob().split(",")))
-                        .startedAt(challenge.getStartedAt())
-                        .durationWeek(challenge.getDurationWeek())
-                        .status(challenge.getStatus())
-                        .build();
-
-        ChallengeDto.ChallengeDetailsResponse.ParticipantDetails me =
-                ChallengeDto.ChallengeDetailsResponse.ParticipantDetails.builder()
-                        .nickname(host.getNickname())
-                        .progressRate("0/0")
-                        .successRate(0)
-                        .isSuccess(false)
-                        .isRealTimeActive(false)
-                        .build();
-
-        ChallengeDto.ChallengeDetailsResponse.Participants participants =
-                ChallengeDto.ChallengeDetailsResponse.Participants.builder()
-                        .me(me)
-                        .build();
-
-        return ChallengeDto.ChallengeDetailsResponse.builder()
-                .challengeInfo(info)
-                .participants(participants)
-                .currentWeekDetails(null)
-                .build();
-    }
-
-    //VS 챌린지 상세 조회
-
+    // VS 챌린지 Overview 조회
     @Transactional(readOnly = true)
-    public ChallengeDto.VsChallengeDetailResponse getVsChallengeDetail(
+    public ChallengeDto.VsChallengeOverviewResponse getVsChallengeOverview(
             Long challengeId,
             UserDetails userDetails
     ) {
@@ -222,32 +199,79 @@ public class ChallengeService {
         int totalWeeks = challenge.getDurationWeek();
         int currentWeek = calcCurrentWeek(challenge.getStartedAt(), totalWeeks);
 
-        WeeklyProgress myWeek =
-                weeklyProgressRepository.findByChallengeAndUserAndWeekNumber(challenge, me, currentWeek)
-                        .orElse(null);
+        // 6) userIds 구성 (상대 없으면 나만)
+        List<Long> userIds = (opponent == null)
+                ? List.of(me.getId())
+                : List.of(me.getId(), opponent.getId());
 
-        String thumbnail = attachedFileRepository.findChallengeImageByChallengeId(challengeId)
-                .map(ChallengeImage::getFilePath)
-                .orElse(null);
+        // 7) (진도율) 완료주차/전체주차 %
+        Map<Long, Long> completedTotalMap =
+                safeMap(weeklyProgressQueryRepository.completedCountByUsers(challengeId, userIds, totalWeeks));
 
-        ChallengeDto.VsChallengeDetailResponse.ChallengeInfo challengeInfo =
-                ChallengeDto.VsChallengeDetailResponse.ChallengeInfo.builder()
-                        .thumbnail(thumbnail)
-                        .title(challenge.getName())
-                        .tags(challenge.getTags().stream().map(Tag::getName).toList())
-                        .category(challenge.getFields().stream().map(Field::getName).findFirst().orElse(null))
-                        .job(challenge.getJob())
-                        .startDate(challenge.getStartedAt().toString())
-                        .totalWeeks(totalWeeks)
-                        .state(challenge.getStatus().name())
-                        .build();
+        int myProgressRate = percent(completedTotalMap.getOrDefault(me.getId(), 0L), totalWeeks);
+        int oppoProgressRate = opponent == null ? 0
+                : percent(completedTotalMap.getOrDefault(opponent.getId(), 0L), totalWeeks);
 
-        return ChallengeDto.VsChallengeDetailResponse.builder()
-                .challengeInfo(challengeInfo)
-                .build();
+        // 8) (성공률) 성공주차/현재주차 %
+        //    - 현재주차는 "진행 중인 주차"까지 포함해서 분모로 잡는다 (요구사항/정책에 따라 바꿔도 됨)
+        int successEndWeek = Math.max(currentWeek, 1);
+
+        Map<Long, Long> completedUpToCurrentMap =
+                safeMap(weeklyProgressQueryRepository.completedCountByUsers(challengeId, userIds, successEndWeek));
+
+        int mySuccessRate = percent(completedUpToCurrentMap.getOrDefault(me.getId(), 0L), successEndWeek);
+        int oppoSuccessRate = opponent == null ? 0
+                : percent(completedUpToCurrentMap.getOrDefault(opponent.getId(), 0L), successEndWeek);
+
+        // 9) (우세현황) 지난주차까지 기준 성공률로 막대폭 산정
+        int dominanceEndWeek = Math.max(currentWeek - 1, 0);
+
+        int myDominanceRate = 0;
+        int oppoDominanceRate = 0;
+
+        if (dominanceEndWeek > 0) {
+            Map<Long, Long> completedUpToPrevMap =
+                    safeMap(weeklyProgressQueryRepository.completedCountByUsers(challengeId, userIds, dominanceEndWeek));
+
+            myDominanceRate = percent(completedUpToPrevMap.getOrDefault(me.getId(), 0L), dominanceEndWeek);
+            oppoDominanceRate = opponent == null ? 0
+                    : percent(completedUpToPrevMap.getOrDefault(opponent.getId(), 0L), dominanceEndWeek);
+        }
+
+        int myPercent;
+        int opponentPercent;
+
+        if (opponent == null) {
+            // 상대가 없으면 내 100 / 상대 0 (정책)
+            myPercent = 100;
+            opponentPercent = 0;
+        } else {
+            int sum = myDominanceRate + oppoDominanceRate;
+            if (sum == 0) {
+                myPercent = 50;
+                opponentPercent = 50;
+            } else {
+                myPercent = (int) Math.round((myDominanceRate * 100.0) / sum);
+                opponentPercent = 100 - myPercent;
+            }
+        }
+
+        ChallengeDto.VsChallengeOverviewResponse.Dominance dominance =
+                ChallengeDto.VsChallengeOverviewResponse.Dominance.of(
+                        oppoDominanceRate,
+                        myDominanceRate,
+                        opponentPercent,
+                        myPercent
+                );
+
+        // 10) DTO 반환
+        return ChallengeDto.VsChallengeOverviewResponse.from(
+                challenge,
+                dominance,
+                me, myProgressRate, mySuccessRate,
+                opponent, oppoProgressRate, oppoSuccessRate
+        );
     }
-
-    // 공통 계산 메서드
 
     private int calcCurrentWeek(LocalDate startedAt, int totalWeeks) {
         long days = Duration.between(startedAt.atStartOfDay(), LocalDate.now().atStartOfDay()).toDays();
@@ -255,13 +279,158 @@ public class ChallengeService {
         return Math.min(Math.max(week, 1), totalWeeks);
     }
 
-    private boolean isRealTimeActive(WeeklyProgress wp) {
-        return wp != null && wp.getLastModifiedAt() != null &&
-                Duration.between(wp.getLastModifiedAt(), LocalDateTime.now()).getSeconds() <= 30;
+    private int percent(long numerator, int denominator) {
+        if (denominator <= 0) return 0;
+        return (int) Math.round((numerator * 100.0) / denominator);
     }
 
-    private String getProfileImagePath(User user) {
-        ProfileImage img = user.getProfileImage();
-        return img == null ? null : img.getFilePath();
+    private Map<Long, Long> safeMap(Map<Long, Long> map) {
+        return map == null ? Map.of() : map;
+    }
+
+    @Transactional(readOnly = true)
+    public ChallengeDto.ChallengePageResponse getSoloChallenges(
+            ChallengeDto.SoloChallengeListRequest request,
+            UserDetails userDetails
+    ) {
+        if (userDetails == null) {
+            throw new RestException(ErrorCode.AUTH_LOGIN_REQUIRED);
+        }
+
+        Pageable pageable = org.springframework.data.domain.PageRequest.of(
+                request.getPage(),
+                request.getSize()
+        );
+
+        String keyword = normalizeKeyword(request.getKeyword());
+
+        var page = challengeQueryRepository.paginateSoloChallenges(
+                request,
+                keyword,
+                pageable
+        );
+
+        return ChallengeDto.ChallengePageResponse.from(page);
+    }
+
+    // SOLO 챌린지 Overview 조회
+    @Transactional(readOnly = true)
+    public ChallengeDto.SoloChallengeOverviewResponse getSoloChallengeOverview(
+            Long challengeId,
+            UserDetails userDetails
+    ) {
+        if (userDetails == null) {
+            throw new RestException(ErrorCode.AUTH_LOGIN_REQUIRED);
+        }
+
+        Long loginUserId = userDetails.getUser().getId();
+
+        Challenge challenge = challengeRepository.findById(challengeId)
+                .orElseThrow(() -> new RestException(ErrorCode.GLOBAL_NOT_FOUND));
+
+        if (challenge.getMode() != ChallengeMode.SOLO) {
+            throw new RestException(ErrorCode.GLOBAL_BAD_REQUEST);
+        }
+
+        if (challenge.getVisibility() == ChallengeVisibility.PRIVATE &&
+                !challenge.getHost().getId().equals(loginUserId)) {
+            throw new RestException(ErrorCode.AUTH_FORBIDDEN);
+        }
+
+        User host = challenge.getHost();
+
+        int totalWeeks = challenge.getDurationWeek();
+        int currentWeek = calcCurrentWeek(challenge.getStartedAt(), totalWeeks);
+
+        List<Long> userIds = List.of(host.getId());
+
+        Map<Long, Long> completedTotalMap =
+                safeMap(weeklyProgressQueryRepository.completedCountByUsers(
+                        challengeId,
+                        userIds,
+                        totalWeeks
+                ));
+
+        int progressRate = percent(
+                completedTotalMap.getOrDefault(host.getId(), 0L),
+                totalWeeks
+        );
+
+        int successEndWeek = Math.max(currentWeek, 1);
+
+        Map<Long, Long> completedUpToCurrentMap =
+                safeMap(weeklyProgressQueryRepository.completedCountByUsers(
+                        challengeId,
+                        userIds,
+                        successEndWeek
+                ));
+
+        int successRate = percent(
+                completedUpToCurrentMap.getOrDefault(host.getId(), 0L),
+                successEndWeek
+        );
+
+        return ChallengeDto.SoloChallengeOverviewResponse.from(
+                challenge,
+                host,
+                progressRate,
+                successRate
+        );
+    }
+
+    @Transactional
+    public ChallengeDto.ChallengeIdResponse updateChallenge(
+            Long challengeId,
+            UserDetails userDetails,
+            ChallengeDto.ChallengeUpdateRequest request
+    ) {
+        Challenge challenge = challengeRepository.findById(challengeId)
+                .orElseThrow(() -> new RestException(ErrorCode.CHALLENGE_NOT_FOUND));
+
+        challenge.canUpdateBy(userDetails);
+
+        // 분야 처리
+        Set<Tag> resolvedTags = null;
+        if(request.getTags() != null) {
+            resolvedTags = tagService.findOrCreateByNames(request.getTags());
+        }
+
+        Set<Field> resolvedFields = null;
+        if(request.getFields() != null) {
+            resolvedFields = fieldService.findFieldByName(request.getFields());
+        }
+
+        request.applyTo(challenge, resolvedTags, resolvedFields);
+
+        if (request.getThumbnail() != null && !request.getThumbnail().isEmpty()) {
+            if (challenge.getChallengeImage() != null) {
+                fileHandler.deleteIfExists(challenge.getChallengeImage());
+            }
+
+            ChallengeImage newImage = ChallengeImage.from(request.getThumbnail(), challenge);
+            fileHandler.saveFile(request.getThumbnail(), newImage);
+            challenge.setChallengeImage(newImage);
+        }
+
+        return ChallengeDto.ChallengeIdResponse.from(challenge);
+    }
+
+    @Transactional
+    public void deleteChallenge(Long challengeId, UserDetails userDetails) {
+        Challenge challenge = challengeRepository.findById(challengeId)
+                .orElseThrow(() -> new RestException(ErrorCode.CHALLENGE_NOT_FOUND));
+
+        challenge.canDeleteBy(userDetails);
+
+        if(challenge.getChallengeImage() != null) {
+            fileHandler.deleteIfExists(challenge.getChallengeImage());
+        }
+        weeklyProgressRepository.deleteAllByChallenge(challenge);
+        challengeMemberRepository.deleteAllById_Challenge(challenge);
+
+        challenge.getTags().clear();
+        challenge.getFields().clear();
+
+        challengeRepository.delete(challenge);
     }
 }

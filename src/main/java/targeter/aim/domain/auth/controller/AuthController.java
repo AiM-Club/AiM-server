@@ -7,6 +7,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -14,6 +15,7 @@ import targeter.aim.domain.auth.dto.AuthDto;
 import targeter.aim.domain.auth.service.AuthService;
 import targeter.aim.domain.user.dto.UserDto;
 import targeter.aim.system.security.annotation.NoJwtAuth;
+import targeter.aim.system.security.model.JwtDto;
 import targeter.aim.system.security.model.UserDetails;
 import targeter.aim.system.security.utility.validator.ValidatorUtil;
 
@@ -26,7 +28,7 @@ public class AuthController {
     private final AuthService authService;
 
     @NoJwtAuth("회원가입은 인증이 필요하지 않음")
-    @PostMapping("/register")
+    @PostMapping(value = "/register", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @Operation(summary = "회원가입", description = "새로운 사용자를 등록합니다.")
     @ApiResponse(responseCode = "200", description = "회원가입 성공")
     public UserDto.UserResponse signUp(@ModelAttribute @Valid AuthDto.SignUpRequest request) {
@@ -39,22 +41,6 @@ public class AuthController {
     @ApiResponse(responseCode = "200", description = "로그인 성공")
     public AuthDto.SignInResponse signIn(@RequestBody @Valid AuthDto.SignInRequest request) {
         return authService.signIn(request);
-    }
-
-    @NoJwtAuth("구글 로그인은 인증이 필요하지 않음")
-    @PostMapping("/login/google")
-    @Operation(summary = "구글 로그인", description = "인가 코드를 구글에 전달해 토큰 교환 후 서비스 JWT를 발급합니다.")
-    @ApiResponse(responseCode = "200", description = "구글 로그인 성공")
-    public AuthDto.SocialSignInResponse loginGoogle(@RequestBody @Valid AuthDto.GoogleLoginRequest request) {
-        return authService.loginGoogle(request);
-    }
-
-    @NoJwtAuth("카카오 로그인은 인증이 필요하지 않음")
-    @PostMapping("/login/kakao")
-    @Operation(summary = "카카오 로그인", description = "카카오 인가 코드로 로그인/회원가입을 처리하고 JWT 토큰을 발급합니다.")
-    @ApiResponse(responseCode = "200", description = "카카오 로그인 성공")
-    public AuthDto.AuthResponse loginWithKakao(@RequestBody @Valid AuthDto.KakaoLoginRequest request) {
-        return authService.loginWithKakao(request);
     }
 
     @NoJwtAuth("아이디 검증은 인증이 필요하지 않음")
@@ -73,6 +59,14 @@ public class AuthController {
     public AuthDto.NicknameExistResponse checkNickname(@RequestParam("nickname") String nickname) {
         ValidatorUtil.validateNickname(nickname);
         return authService.checkNickname(nickname);
+    }
+
+    @NoJwtAuth("토큰 갱신은 만료된 토큰으로 새 토큰을 발급받는 과정이므로 JWT 인증이 필요하지 않음")
+    @PostMapping("/token/refresh")
+    @Operation(summary = "토큰 재발행", description = "새로운 Access/Refresh Token을 재발급받습니다.")
+    @ApiResponse(responseCode = "200", description = "토큰 재발행 성공")
+    public JwtDto.TokenInfo refreshToken(@RequestBody @Valid AuthDto.RecreateRequest request) {
+        return authService.recreateToken(request);
     }
 
     @PostMapping("/logout")

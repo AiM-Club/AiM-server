@@ -64,3 +64,6 @@ gemini:
 app:
   cors:
     allowed-origins: ${APP_CORS_ORIGINS:}
+
+file:
+  save-path: /uploaded

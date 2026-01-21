@@ -141,7 +141,7 @@ class ChallengeRouteGenerationServiceTest {
                 .startedAt(LocalDate.now())
                 .duration(duration)
                 .tags(new ArrayList<>())
-                .jobs(new ArrayList<>())
+                .job(null) // 테스트에서는 직무가 필요 없으므로 null 처리 (jobs → job 구조 변경 반영)
                 .fields(new ArrayList<>())
                 .build();
     }

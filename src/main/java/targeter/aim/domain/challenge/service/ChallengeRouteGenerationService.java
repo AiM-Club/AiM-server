@@ -28,7 +28,7 @@ public class ChallengeRouteGenerationService {
                         req.getName(),
                         listToString(req.getTags()),
                         listToString(req.getFields()),
-                        listToString(req.getJobs()),
+                        req.getJob(),
                         req.getDuration(),
                         req.getStartedAt().format(DateTimeFormatter.ISO_LOCAL_DATE),
                         req.getUserRequest() != null ? req.getUserRequest() : ""

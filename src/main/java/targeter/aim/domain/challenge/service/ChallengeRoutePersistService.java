@@ -34,7 +34,9 @@ public class ChallengeRoutePersistService {
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
         // 2. 멱등성
-        Optional<Challenge> existing = challengeRepository.findByHostAndNameAndStartedAt(host, req.getName(), req.getStartedAt());
+        Optional<Challenge> existing = challengeRepository.findByHostAndNameAndStartedAtAndModeAndVisibility(
+                host, req.getName(), req.getStartedAt(), req.getMode(), req.getVisibility()
+        );
 
         if (existing.isPresent()) {
             log.warn("Challenge with id {} already exists", existing.get().getId());
@@ -45,7 +47,7 @@ public class ChallengeRoutePersistService {
         Challenge challenge = Challenge.builder()
                 .host(host)
                 .name(req.getName())
-                .job(String.join(",", req.getJobs()))
+                .job(req.getJob())
                 .startedAt(req.getStartedAt())
                 .durationWeek(req.getDuration())
                 .status(ChallengeStatus.IN_PROGRESS)

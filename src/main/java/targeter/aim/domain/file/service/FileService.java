@@ -28,7 +28,9 @@ public class FileService {
         if (fr.attachedFile().getHandlingType() != HandlingType.IMAGE) {
             throw new RestException(ErrorCode.FILE_INVALID_TYPE);
         }
-        if (!"image".equalsIgnoreCase(fr.mediaType().getType())) {
+        // PDF도 이미지로 처리
+        boolean isPdf = "application".equalsIgnoreCase(fr.mediaType().getType()) && "pdf".equalsIgnoreCase(fr.mediaType().getSubtype());
+        if (!"image".equalsIgnoreCase(fr.mediaType().getType()) && !isPdf) {
             throw new RestException(ErrorCode.FILE_INVALID_TYPE);
         }
         return fr;
