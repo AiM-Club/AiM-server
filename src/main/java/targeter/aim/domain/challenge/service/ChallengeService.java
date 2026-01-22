@@ -2,6 +2,7 @@ package targeter.aim.domain.challenge.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -106,14 +107,25 @@ public class ChallengeService {
         }
 
         String keyword = normalizeKeyword(condition.getKeyword());
+        String field = normalizeField(condition.getField());
 
-        var page = challengeQueryRepository.paginateByTypeAndKeyword(
-                userDetails,
-                pageable,
-                filterType,
-                sortType,
-                keyword
-        );
+        Page<ChallengeDto.ChallengeListResponse> page;
+
+        if(field != null) {
+            page = challengeQueryRepository.paginateByTypeAndKeywordAndField(
+                    userDetails, pageable, filterType, sortType, keyword, field
+            );
+        } else {
+            if (keyword != null) {
+                page = challengeQueryRepository.paginateByTypeAndKeyword(
+                        userDetails, pageable, filterType, sortType, keyword
+                );
+            } else {
+                page = challengeQueryRepository.paginateByType(
+                        userDetails, pageable, filterType, sortType
+                );
+            }
+        }
 
         return ChallengeDto.ChallengePageResponse.from(page);
     }
@@ -122,6 +134,18 @@ public class ChallengeService {
         if (keyword == null) return null;
         String k = keyword.trim();
         return k.isEmpty() ? null : k;
+    }
+
+    private String normalizeField(String field) {
+        if (field == null) return null;
+
+        String f = field.trim();
+        if(f.isEmpty()) return null;
+
+        String upper = f.toUpperCase(Locale.ROOT);
+        if("ALL".equals(upper)) return null;
+
+        return upper;
     }
 
     private ChallengeFilterType parseFilterType(String raw) {
