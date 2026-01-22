@@ -53,6 +53,25 @@ public class ChallengeDto {
 
         @Schema(description = "검색 키워드 (제목 기준 포함 검색)", example = "개발")
         private String keyword;
+
+        @Schema(
+                description = """
+                분야 필터
+                - ALL : 전체
+                - IT : IT
+                - BUSINESS  : 경영
+                - ECONOMICS : 경제
+                - POLITICS : 정치
+                - LANGUAGE : 어문
+                - SCIENCE : 자연(과학)
+                - DESIGN : 디자인
+                - SPROTS : 체육
+                - MUSIC : 음악
+                """,
+                example = "ALL",
+                allowableValues = {"ALL", "IT", "BUSINESS", "ECONOMICS", "POLITICS", "LANGUAGE", "SCIENCE", "DESIGN", "SPORTS", "MUSIC"}
+        )
+        private String field = "ALL";
     }
 
     @Data

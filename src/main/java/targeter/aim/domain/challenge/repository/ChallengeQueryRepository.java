@@ -43,14 +43,14 @@ public class ChallengeQueryRepository {
 
     private final JPAQueryFactory queryFactory;
 
-    // 기존 전체 조회용 (유지)
+    // 기존 전체 조회용
     public Page<ChallengeDto.ChallengeListResponse> paginateByType(
             UserDetails userDetails,
             Pageable pageable,
             ChallengeFilterType filterType,
             ChallengeSortType sortType
     ) {
-        JPAQuery<Tuple> query = buildBaseQuery(userDetails, filterType, null);
+        JPAQuery<Tuple> query = buildBaseQuery(userDetails, filterType, null, null);
         applySorting(query, sortType);
 
         List<Tuple> tuples = query
@@ -58,7 +58,7 @@ public class ChallengeQueryRepository {
                 .limit(pageable.getPageSize())
                 .fetch();
 
-        Long total = buildCountQuery(userDetails, filterType, null).fetchOne();
+        Long total = buildCountQuery(userDetails, filterType, null, null).fetchOne();
 
         return new PageImpl<>(
                 enrichDetails(tuples),
@@ -67,13 +67,14 @@ public class ChallengeQueryRepository {
         );
     }
 
-    // 검색 전용 (신규)
-    public Page<ChallengeDto.ChallengeListResponse> paginateByTypeAndKeyword(
+    // 분야 필터링
+    public Page<ChallengeDto.ChallengeListResponse> paginateByTypeAndKeywordAndField(
             UserDetails userDetails,
             Pageable pageable,
             ChallengeFilterType filterType,
             ChallengeSortType sortType,
-            String keyword
+            String keyword,
+            String field
     ) {
         // MY + 비로그인 → 빈 결과
         if (filterType == ChallengeFilterType.MY && userDetails == null) {
@@ -82,7 +83,7 @@ public class ChallengeQueryRepository {
 
         // ONGOING / FINISHED → 메모리 정렬
         if (sortType == ChallengeSortType.ONGOING || sortType == ChallengeSortType.FINISHED) {
-            List<Tuple> tuples = buildBaseQuery(userDetails, filterType, keyword).fetch();
+            List<Tuple> tuples = buildBaseQuery(userDetails, filterType, keyword, field).fetch();
             List<ChallengeDto.ChallengeListResponse> all = enrichDetails(tuples);
 
             List<ChallengeDto.ChallengeListResponse> inProgress = all.stream()
@@ -104,7 +105,7 @@ public class ChallengeQueryRepository {
         }
 
         // 나머지 → QueryDSL
-        JPAQuery<Tuple> query = buildBaseQuery(userDetails, filterType, keyword);
+        JPAQuery<Tuple> query = buildBaseQuery(userDetails, filterType, keyword, field);
         applySorting(query, sortType);
 
         List<Tuple> tuples = query
@@ -112,7 +113,7 @@ public class ChallengeQueryRepository {
                 .limit(pageable.getPageSize())
                 .fetch();
 
-        Long total = buildCountQuery(userDetails, filterType, keyword).fetchOne();
+        Long total = buildCountQuery(userDetails, filterType, keyword, field).fetchOne();
 
         return new PageImpl<>(
                 enrichDetails(tuples),
@@ -121,11 +122,23 @@ public class ChallengeQueryRepository {
         );
     }
 
+    // 검색 전용(위 메서드에서 field만 null)
+    public Page<ChallengeDto.ChallengeListResponse> paginateByTypeAndKeyword(
+            UserDetails userDetails,
+            Pageable pageable,
+            ChallengeFilterType filterType,
+            ChallengeSortType sortType,
+            String keyword
+    ) {
+        return paginateByTypeAndKeywordAndField(userDetails, pageable, filterType, sortType, keyword, null);
+    }
+
     // 공통 Query 구성
     private JPAQuery<Tuple> buildBaseQuery(
             UserDetails userDetails,
             ChallengeFilterType filterType,
-            String keyword
+            String keyword,
+            String field
     ) {
         JPAQuery<Tuple> query = queryFactory
                 .select(
@@ -156,8 +169,13 @@ public class ChallengeQueryRepository {
 
         BooleanExpression keywordPredicate = keywordCondition(keyword);
 
+        BooleanExpression fieldPredicate = fieldFilterCondition(field);
+
         if (keywordPredicate != null) {
             query.where(keywordPredicate);
+        }
+        if (fieldPredicate != null) {
+            query.where(fieldPredicate);
         }
 
         return query;
@@ -166,7 +184,8 @@ public class ChallengeQueryRepository {
     private JPAQuery<Long> buildCountQuery(
             UserDetails userDetails,
             ChallengeFilterType filterType,
-            String keyword
+            String keyword,
+            String field
     ) {
         JPAQuery<Long> query = queryFactory
                 .select(challenge.count())
@@ -180,9 +199,13 @@ public class ChallengeQueryRepository {
         }
 
         BooleanExpression keywordPredicate = keywordCondition(keyword);
+        BooleanExpression fieldPredicate = fieldFilterCondition(field);
 
         if (keywordPredicate != null) {
             query.where(keywordPredicate);
+        }
+        if (fieldPredicate != null) {
+            query.where(fieldPredicate);
         }
 
         return query;
@@ -219,6 +242,25 @@ public class ChallengeQueryRepository {
                 .exists();
 
         return inTitle.or(inField).or(inTag);
+    }
+
+    private BooleanExpression fieldFilterCondition(String field) {
+        if(field == null || field.isBlank()) return null;
+
+        String upper = field.trim();
+
+        var cField = new QChallenge("cFieldFilter");
+        QField f = new QField("fFilter");
+
+        return JPAExpressions
+                .selectOne()
+                .from(cField)
+                .join(cField.fields, f)
+                .where(
+                        cField.id.eq(challenge.id)
+                                .and(f.name.upper().eq(upper))
+                )
+                .exists();
     }
 
     // 정렬
