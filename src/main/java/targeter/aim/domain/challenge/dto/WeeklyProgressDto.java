@@ -5,6 +5,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.springframework.web.multipart.MultipartFile;
 import targeter.aim.domain.challenge.entity.Challenge;
 import targeter.aim.domain.challenge.entity.WeeklyProgress;
 
@@ -88,5 +89,21 @@ public class WeeklyProgressDto {
                         .build();
             }
         }
+    }
+
+    @Data
+    @AllArgsConstructor
+    @NoArgsConstructor
+    @Builder
+    @Schema(description = "챌린지 인증 파일 업로드 요청")
+    public static class ProofUploadRequest {
+        @Schema(description = "인증하고 싶은 챌린지 주차 아이디", example = "1")
+        private Long weeklyProgressId;
+
+        @Schema(description = "인증 이미지 목록")
+        private List<MultipartFile> attachedImages;
+
+        @Schema(description = "인증 파일 목록")
+        private List<MultipartFile> attachedFiles;
     }
 }

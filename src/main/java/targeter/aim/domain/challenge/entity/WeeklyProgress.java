@@ -4,7 +4,12 @@ import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 import targeter.aim.common.auditor.TimeStampedEntity;
+import targeter.aim.domain.file.entity.ChallengeProofAttachedFile;
+import targeter.aim.domain.file.entity.ChallengeProofImage;
 import targeter.aim.domain.user.entity.User;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Getter
@@ -43,6 +48,34 @@ public class WeeklyProgress extends TimeStampedEntity {
 
     @Column(name = "is_complete", nullable = false)
     private Boolean isComplete;
+
+    @OneToMany(mappedBy = "weeklyProgress", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    private List<ChallengeProofImage> attachedImages = new ArrayList<>();
+
+    public void addAttachedImage(ChallengeProofImage image) {
+        this.attachedImages.add(image);
+        image.setWeeklyProgress(this);
+    }
+
+    public void removeAttachedImage(ChallengeProofImage image) {
+        this.attachedImages.remove(image);
+        image.setWeeklyProgress(null);
+    }
+
+    @OneToMany(mappedBy = "weeklyProgress", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    private List<ChallengeProofAttachedFile> attachedFiles = new ArrayList<>();
+
+    public void addAttachedFile(ChallengeProofAttachedFile file) {
+        this.attachedFiles.add(file);
+        file.setWeeklyProgress(this);
+    }
+
+    public void removeAttachedFile(ChallengeProofAttachedFile file) {
+        this.attachedFiles.remove(file);
+        file.setWeeklyProgress(null);
+    }
 
     public void complete() {
         this.isComplete = true;

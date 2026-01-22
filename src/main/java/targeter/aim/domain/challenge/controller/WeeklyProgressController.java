@@ -2,12 +2,11 @@ package targeter.aim.domain.challenge.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import targeter.aim.domain.challenge.dto.WeeklyProgressDto;
 import targeter.aim.domain.challenge.service.WeeklyProgressService;
 import targeter.aim.system.security.model.UserDetails;
@@ -30,5 +29,17 @@ public class WeeklyProgressController {
             @AuthenticationPrincipal UserDetails userDetails
     ) {
         return weeklyProgressService.getVsWeeklyProgressList(challengeId, userDetails);
+    }
+
+    @PostMapping("/proof")
+    @Operation(
+            summary = "주차별 챌린지 인증샷 업로드",
+            description = "주차별로 챌린지 인증샷을 업로드합니다."
+    )
+    public ResponseEntity<String> uploadProofFile(
+            @Valid @ModelAttribute WeeklyProgressDto.ProofUploadRequest request
+    ) {
+        weeklyProgressService.uploadProofFiles(request);
+        return ResponseEntity.ok("챌린지 인증샷 업로드 완료");
     }
 }
