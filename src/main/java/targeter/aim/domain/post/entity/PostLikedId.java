@@ -1,4 +1,4 @@
-package targeter.aim.domain.challenge.entity;
+package targeter.aim.domain.post.entity;
 
 import jakarta.persistence.Embeddable;
 import lombok.AllArgsConstructor;
@@ -13,10 +13,9 @@ import java.io.Serializable;
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode
-public class ChallengeLikedId implements Serializable {
+public class PostLikedId implements Serializable {
 
     private Long userId;
 
-    private Long challengeId;
-
+    private Long postId;
 }
