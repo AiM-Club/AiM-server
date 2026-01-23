@@ -4,6 +4,7 @@ import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.jpa.JPAExpressions;
 import com.querydsl.jpa.impl.JPAQuery;
 import com.querydsl.jpa.impl.JPAQueryFactory;
+import jakarta.persistence.LockModeType;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -21,6 +22,7 @@ import targeter.aim.system.security.model.UserDetails;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static targeter.aim.domain.challenge.entity.QChallenge.challenge;
@@ -182,5 +184,18 @@ public class ChallengeRequestQueryRepository {
                 .requester(targeter.aim.domain.user.dto.UserDto.UserResponse.from(requester))
                 .challenge(challengeDto)
                 .build();
+    }
+
+    public Optional<ChallengeRequest> findByIdForUpdate(Long requestId) {
+        ChallengeRequest cr = queryFactory
+                .selectFrom(challengeRequest)
+                .join(challengeRequest.requester).fetchJoin()
+                .join(challengeRequest.applier).fetchJoin()
+                .join(challengeRequest.challenge).fetchJoin()
+                .where(challengeRequest.id.eq(requestId))
+                .setLockMode(LockModeType.PESSIMISTIC_WRITE)
+                .fetchOne();
+
+        return Optional.ofNullable(cr);
     }
 }

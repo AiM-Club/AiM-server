@@ -97,4 +97,16 @@ public class Challenge extends TimeStampedEntity {
 
         throw new RestException(ErrorCode.AUTH_FORBIDDEN);
     }
+
+    public void startVs() {
+        if(this.mode != ChallengeMode.VS) {
+            throw new RestException(ErrorCode.GLOBAL_BAD_REQUEST, "VS 챌린지가 아닙니다.");
+        }
+
+        if(this.status == ChallengeStatus.COMPLETED) {
+            throw new RestException(ErrorCode.GLOBAL_BAD_REQUEST, "이미 완료된 챌린지입니다.");
+        }
+
+        this.status = ChallengeStatus.IN_PROGRESS;
+    }
 }
