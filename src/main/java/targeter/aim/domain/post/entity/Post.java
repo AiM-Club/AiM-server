@@ -5,6 +5,7 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import targeter.aim.domain.challenge.entity.ChallengeMode;
+import targeter.aim.domain.user.entity.User;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -21,8 +22,9 @@ public class Post {
     @Column(name = "post_id")
     private Long id;
 
-    @Column(name = "user_id", nullable = false)
-    private Long userId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
 
     @Column(nullable = false)
     private String title;
@@ -35,7 +37,8 @@ public class Post {
     @Column(name = "duration_week", nullable = false)
     private Integer durationWeek;
 
-    @Column(nullable = false, columnDefinition = "TEXT")
+    @Lob
+    @Column(nullable = false, columnDefinition = "LONGTEXT")
     private String content;
 
     @Enumerated(EnumType.STRING)
