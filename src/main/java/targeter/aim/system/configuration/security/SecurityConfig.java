@@ -49,7 +49,7 @@ public class SecurityConfig {
                                 "/h2-console/**"
                         ).permitAll()
                         // 비로그인 허용 VS 챌린지 목록 조회(ALL) 및 상세 조회만
-                        .requestMatchers(HttpMethod.GET, "/api/files/**", "/api/challenges", "/api/challenges/vs/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/files/**", "/api/challenges", "/api/challenges/vs/**", "/api/posts/**").permitAll()
                         .requestMatchers("/api/**").authenticated()
                         .anyRequest().permitAll()
                 )

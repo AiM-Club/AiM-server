@@ -1,21 +1,28 @@
 package targeter.aim.domain.post.entity;
 
 import jakarta.persistence.*;
-import lombok.AccessLevel;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
+import lombok.experimental.SuperBuilder;
+import targeter.aim.common.auditor.TimeStampedEntity;
 import targeter.aim.domain.challenge.entity.ChallengeMode;
+import targeter.aim.domain.file.entity.PostImage;
+import targeter.aim.domain.label.entity.Field;
+import targeter.aim.domain.label.entity.Tag;
 import targeter.aim.domain.user.entity.User;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 @Entity
 @Table(name = "post")
 @Getter
+@SuperBuilder
+@AllArgsConstructor
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class Post {
+public class Post extends TimeStampedEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -50,6 +57,29 @@ public class Post {
 
     @Column(name = "like_count", nullable = false)
     private Integer likeCount = 0;
+
+    @OneToOne(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
+    private PostImage postImage;
+
+    @ManyToMany
+    @JoinTable(
+            name = "POST_TAG_MAPPING",
+            joinColumns = @JoinColumn(name = "post_id"),
+            inverseJoinColumns = @JoinColumn(name = "tag_id")
+    )
+    @Builder.Default
+    @ToString.Exclude
+    private Set<Tag> tags = new HashSet<>();
+
+    @ManyToMany
+    @JoinTable(
+            name = "POST_FIELD_MAPPING",
+            joinColumns = @JoinColumn(name = "post_id"),
+            inverseJoinColumns = @JoinColumn(name = "field_id")
+    )
+    @Builder.Default
+    @ToString.Exclude
+    private Set<Field> fields = new HashSet<>();
 
     @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Comment> comments = new ArrayList<>();

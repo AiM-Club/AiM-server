@@ -5,6 +5,7 @@ import lombok.*;
 import lombok.experimental.SuperBuilder;
 import targeter.aim.common.auditor.TimeStampedEntity;
 import targeter.aim.domain.challenge.entity.Challenge;
+import targeter.aim.domain.post.entity.Post;
 import targeter.aim.domain.user.entity.User;
 
 import java.util.HashSet;
@@ -36,4 +37,9 @@ public class Field extends TimeStampedEntity {
     @Builder.Default
     @ToString.Exclude
     private Set<Challenge> challenges = new HashSet<>();
+
+    @ManyToMany(mappedBy = "fields")
+    @Builder.Default
+    @ToString.Exclude
+    private Set<Post> posts = new HashSet<>();
 }

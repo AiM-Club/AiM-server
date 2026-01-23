@@ -1,0 +1,275 @@
+package targeter.aim.domain.post.repository;
+
+import com.querydsl.core.Tuple;
+import com.querydsl.core.types.dsl.BooleanExpression;
+import com.querydsl.core.types.dsl.Expressions;
+import com.querydsl.jpa.JPAExpressions;
+import com.querydsl.jpa.impl.JPAQuery;
+import com.querydsl.jpa.impl.JPAQueryFactory;
+import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Repository;
+import targeter.aim.domain.challenge.dto.ChallengeDto;
+import targeter.aim.domain.challenge.entity.ChallengeStatus;
+import targeter.aim.domain.challenge.repository.ChallengeFilterType;
+import targeter.aim.domain.challenge.repository.ChallengeSortType;
+import targeter.aim.domain.file.dto.FileDto;
+import targeter.aim.domain.file.entity.PostImage;
+import targeter.aim.domain.file.entity.ProfileImage;
+import targeter.aim.domain.label.entity.QField;
+import targeter.aim.domain.label.entity.QTag;
+import targeter.aim.domain.post.dto.PostDto;
+import targeter.aim.domain.post.entity.Post;
+import targeter.aim.domain.post.entity.PostType;
+import targeter.aim.domain.post.entity.QPost;
+import targeter.aim.domain.user.dto.TierDto;
+import targeter.aim.domain.user.dto.UserDto;
+import targeter.aim.domain.user.entity.User;
+import targeter.aim.system.security.model.UserDetails;
+
+import java.util.Comparator;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import static targeter.aim.domain.label.entity.QField.field;
+import static targeter.aim.domain.label.entity.QTag.tag;
+import static targeter.aim.domain.post.entity.QPost.post;
+import static targeter.aim.domain.post.entity.QPostLiked.postLiked;
+
+@Repository
+@RequiredArgsConstructor
+public class PostQueryRepository {
+
+    private final JPAQueryFactory queryFactory;
+
+    public Page<PostDto.VSRecruitListResponse> paginateByType(
+            UserDetails userDetails,
+            Pageable pageable,
+            PostSortType sortType
+    ) {
+        JPAQuery<Tuple> query = buildBaseQuery(userDetails, null);
+        applySorting(query, sortType);
+
+        List<Tuple> tuples = query
+                .offset(pageable.getOffset())
+                .limit(pageable.getPageSize())
+                .fetch();
+
+        Long total = buildCountQuery(null).fetchOne();
+
+        return new PageImpl<>(
+                enrichDetails(tuples),
+                pageable,
+                total == null ? 0 : total
+        );
+    }
+
+    // 분야 필터링
+    public Page<PostDto.VSRecruitListResponse> paginateByTypeAndKeyword(
+            UserDetails userDetails,
+            Pageable pageable,
+            PostSortType sortType,
+            String keyword
+    ) {
+        JPAQuery<Tuple> query = buildBaseQuery(userDetails, keyword);
+        applySorting(query, sortType);
+
+        List<Tuple> tuples = query
+                .offset(pageable.getOffset())
+                .limit(pageable.getPageSize())
+                .fetch();
+
+        Long total = buildCountQuery(keyword).fetchOne();
+
+        return new PageImpl<>(
+                enrichDetails(tuples),
+                pageable,
+                total == null ? 0 : total
+        );
+    }
+
+    private JPAQuery<Tuple> buildBaseQuery(
+            UserDetails userDetails,
+            String keyword
+    ) {
+        JPAQuery<Tuple> query = queryFactory
+                .select(
+                        post,
+                        userDetails != null
+                                ? JPAExpressions.selectOne()
+                                .from(postLiked)
+                                .where(
+                                        postLiked.post.eq(post)
+                                                .and(postLiked.user.id.eq(userDetails.getUser().getId()))
+                                ).exists()
+                                : Expressions.FALSE,
+                        JPAExpressions.select(postLiked.count())
+                                .from(postLiked)
+                                .where(postLiked.post.eq(post))
+                )
+                .from(post)
+                .where(post.type.eq(PostType.VS_RECRUIT))
+                .leftJoin(post.user).fetchJoin()
+                .leftJoin(post.user.tier).fetchJoin()
+                .leftJoin(post.user.profileImage).fetchJoin();
+
+        BooleanExpression keywordPredicate = keywordCondition(keyword);
+
+        if (keywordPredicate != null) {
+            query.where(keywordPredicate);
+        }
+
+        return query;
+    }
+
+    private JPAQuery<Long> buildCountQuery(
+            String keyword
+    ) {
+        JPAQuery<Long> query = queryFactory
+                .select(post.count())
+                .from(post)
+                .where(post.type.eq(PostType.VS_RECRUIT));
+
+        BooleanExpression keywordPredicate = keywordCondition(keyword);
+        if (keywordPredicate != null) {
+            query.where(keywordPredicate);
+        }
+
+        return query;
+    }
+
+    // 제목 + 분야 + 태그 검색 조건설정
+    private BooleanExpression keywordCondition(String keyword) {
+        if(keyword == null || keyword.isBlank()) return null;
+
+        String k = keyword.trim();
+
+        BooleanExpression inTitle = post.title.containsIgnoreCase(k);
+
+        // 분야 검색
+        var pField = new QPost("pField");
+        QField f = new QField("f");
+
+        BooleanExpression inField = JPAExpressions
+                .selectOne()
+                .from(pField)
+                .join(pField.fields, f)
+                .where(pField.id.eq(post.id).and(f.name.containsIgnoreCase(k)))
+                .exists();
+
+        // 태그 검색
+        var pTag = new QPost("pTag");
+        QTag t = new QTag("t");
+
+        BooleanExpression inTag = JPAExpressions
+                .selectOne()
+                .from(pTag)
+                .join(pTag.tags, t)
+                .where(pTag.id.eq(post.id).and(t.name.containsIgnoreCase(k)))
+                .exists();
+
+        return inTitle.or(inField).or(inTag);
+    }
+
+    // 정렬
+    private void applySorting(JPAQuery<?> query, PostSortType sortType) {
+        switch (sortType) {
+            case LATEST ->
+                    query.orderBy(post.createdAt.desc());
+
+            case OLDEST ->
+                    query.orderBy(post.createdAt.asc());
+
+            case LIKED ->
+                query.orderBy(post.likeCount.desc());
+
+            case TITLE ->
+                    query.orderBy(
+                            post.title.asc(),
+                            post.createdAt.desc()
+                    );
+        }
+    }
+
+    //DTO 매핑
+    private List<PostDto.VSRecruitListResponse> enrichDetails(List<Tuple> tuples) {
+        if (tuples.isEmpty()) return List.of();
+
+        List<Long> ids = tuples.stream()
+                .map(t -> t.get(0, Post.class).getId())
+                .toList();
+
+        Map<Long, List<String>> fieldMap = fetchFields(ids);
+        Map<Long, List<String>> tagMap = fetchTags(ids);
+
+        return tuples.stream()
+                .map(t -> mapToDto(t, fieldMap, tagMap))
+                .toList();
+    }
+
+    private Map<Long, List<String>> fetchFields(List<Long> ids) {
+        return queryFactory
+                .select(post.id, field.name)
+                .from(post)
+                .join(post.fields, field)
+                .where(post.id.in(ids))
+                .fetch()
+                .stream()
+                .collect(Collectors.groupingBy(
+                        t -> t.get(post.id),
+                        Collectors.mapping(t -> t.get(field.name), Collectors.toList())
+                ));
+    }
+
+    private Map<Long, List<String>> fetchTags(List<Long> ids) {
+        return queryFactory
+                .select(post.id, tag.name)
+                .from(post)
+                .join(post.tags, tag)
+                .where(post.id.in(ids))
+                .fetch()
+                .stream()
+                .collect(Collectors.groupingBy(
+                        t -> t.get(post.id),
+                        Collectors.mapping(t -> t.get(tag.name), Collectors.toList())
+                ));
+    }
+
+    private PostDto.VSRecruitListResponse mapToDto(
+            Tuple tuple,
+            Map<Long, List<String>> fieldMap,
+            Map<Long, List<String>> tagMap
+    ) {
+        Post p = tuple.get(0, Post.class);
+        User user = p.getUser();
+        ProfileImage profileImage = user.getProfileImage();
+        PostImage postImage = p.getPostImage();
+
+        return PostDto.VSRecruitListResponse.builder()
+                .postId(p.getId())
+                .thumbnail(postImage != null
+                        ? FileDto.FileResponse.from(postImage)
+                        : null)
+                .user(UserDto.UserResponse.builder()
+                        .id(user.getId())
+                        .nickname(user.getNickname())
+                        .tier(TierDto.TierResponse.from(user.getTier()))
+                        .profileImage(profileImage != null
+                                ? FileDto.FileResponse.from(profileImage)
+                                : null)
+                        .build())
+                .startDate(p.getStartedAt())
+                .duration(p.getDurationWeek() + "주")
+                .name(p.getTitle())
+                .fields(fieldMap.getOrDefault(p.getId(), List.of()))
+                .tags(tagMap.getOrDefault(p.getId(), List.of()))
+                .job(p.getJob())
+                .liked(Boolean.TRUE.equals(tuple.get(1, Boolean.class)))
+                .likeCount(tuple.get(2, Long.class) == null ? 0 : tuple.get(2, Long.class).intValue())
+                .build();
+    }
+}

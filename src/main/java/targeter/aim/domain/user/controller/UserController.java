@@ -22,7 +22,7 @@ public class UserController {
 
     @GetMapping("/profile")
     @Operation(summary = "프로필 조회(프로필 연동용)", description = "현재 로그인된 사용자의 프로필을 조회합니다. 연동 테스트용이기 때문에 수정이 필요합니다.")
-    public UserDto.UserProfileResponse getUserProfile(@Parameter(hidden = true) @AuthenticationPrincipal UserDetails userDetails) {
+    public UserDto.UserResponse getUserProfile(@Parameter(hidden = true) @AuthenticationPrincipal UserDetails userDetails) {
         return userService.getUserProfile(userDetails.getUser().getId());
     }
 }

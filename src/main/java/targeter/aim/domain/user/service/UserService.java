@@ -16,10 +16,10 @@ public class UserService {
     private final UserRepository userRepository;
 
     @Transactional(readOnly = true)
-    public UserDto.UserProfileResponse getUserProfile(Long userId) {
+    public UserDto.UserResponse getUserProfile(Long userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RestException(ErrorCode.USER_NOT_FOUND));
 
-        return UserDto.UserProfileResponse.from(user);
+        return UserDto.UserResponse.from(user);
     }
 }

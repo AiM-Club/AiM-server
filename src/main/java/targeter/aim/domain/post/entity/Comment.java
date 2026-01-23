@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import targeter.aim.common.auditor.TimeStampedEntity;
 import targeter.aim.domain.user.entity.User;
 
 import java.util.ArrayList;
@@ -13,7 +14,7 @@ import java.util.List;
 @Table(name = "comment")
 @Getter
 @NoArgsConstructor
-public class Comment {
+public class Comment extends TimeStampedEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
