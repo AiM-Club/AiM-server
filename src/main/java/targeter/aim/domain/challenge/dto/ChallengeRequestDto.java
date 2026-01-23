@@ -120,4 +120,20 @@ public class ChallengeRequestDto {
                     .build();
         }
     }
+
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Builder
+    @Schema(description = "VS 챌린지 초대 승인 응답")
+    public static class RequestAccessResponse {
+        @Schema(description = "챌린지 아이디", example = "1")
+        private Long challengeId;
+
+        public static RequestAccessResponse from(ChallengeRequest challengeRequest) {
+            return RequestAccessResponse.builder()
+                    .challengeId(challengeRequest.getChallenge().getId())
+                    .build();
+        }
+    }
 }

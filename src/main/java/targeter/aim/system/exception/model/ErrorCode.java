@@ -14,6 +14,7 @@ public enum ErrorCode {
     GLOBAL_METHOD_NOT_ALLOWED(405, "허용되지 않는 Method 입니다."),
     GLOBAL_INVALID_PARAMETER(400, "올바르지 않은 파라미터입니다."),
     INVALID_INPUT_VALUE(400, "유효하지 않은 입력 값입니다."),
+    GLOBAL_CONFLICT(409, "요청이 현재 상태와 충돌합니다."),
 
     // File
     FILE_UPLOAD_FAILED(400, "파일 업로드에 실패했습니다."),
