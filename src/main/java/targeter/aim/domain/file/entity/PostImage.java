@@ -21,7 +21,7 @@ import java.util.UUID;
 @DiscriminatorValue("POST_IMAGE")
 public class PostImage extends AttachedFile {
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "post_id")
     private Post post;
 
