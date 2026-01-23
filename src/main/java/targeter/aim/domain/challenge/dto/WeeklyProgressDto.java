@@ -53,6 +53,9 @@ public class WeeklyProgressDto {
         @NoArgsConstructor
         @Builder
         public static class WeeklyProgressDetails {
+            @Schema(description = "주차별 내용 아이디(댓글 연동용)", example = "1")
+            private Long weeklyProgressId;
+
             @Schema(description = "주차 번호", example = "1")
             private Integer weekNumber;
 
@@ -79,6 +82,7 @@ public class WeeklyProgressDto {
                 LocalDate weekStart = challengeStartDate.plusDays((long) (weekNumber - 1) * 7);
 
                 return WeeklyProgressDto.WeekProgressListResponse.WeeklyProgressDetails.builder()
+                        .weeklyProgressId(weeklyProgress.getId())
                         .weekNumber(weekNumber)
                         .weekStartDate(weekStart)
                         .weekEndDate(weekStart.plusDays(6))
