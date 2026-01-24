@@ -11,10 +11,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
-import targeter.aim.domain.challenge.dto.ChallengeDto;
-import targeter.aim.domain.challenge.entity.ChallengeStatus;
-import targeter.aim.domain.challenge.repository.ChallengeFilterType;
-import targeter.aim.domain.challenge.repository.ChallengeSortType;
 import targeter.aim.domain.file.dto.FileDto;
 import targeter.aim.domain.file.entity.PostImage;
 import targeter.aim.domain.file.entity.ProfileImage;
@@ -29,11 +25,9 @@ import targeter.aim.domain.user.dto.UserDto;
 import targeter.aim.domain.user.entity.User;
 import targeter.aim.system.security.model.UserDetails;
 
-import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static targeter.aim.domain.label.entity.QField.field;
 import static targeter.aim.domain.label.entity.QTag.tag;
