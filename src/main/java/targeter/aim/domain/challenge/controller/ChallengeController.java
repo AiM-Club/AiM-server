@@ -26,7 +26,6 @@ import targeter.aim.system.security.model.UserDetails;
 public class ChallengeController {
 
     private final ChallengeService challengeService;
-    private final ChallengeLikedService challengeLikedService;
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @Operation(

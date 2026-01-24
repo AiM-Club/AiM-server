@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import targeter.aim.domain.challenge.dto.ChallengeLikedDto;
+import targeter.aim.domain.challenge.service.ChallengeLikedService;
 import targeter.aim.system.security.model.UserDetails;
 
 @RestController
@@ -16,6 +17,8 @@ import targeter.aim.system.security.model.UserDetails;
 @RequestMapping("/api/challenges/{challengeId}/likes")
 @Tag(name = "Challenge", description = "챌린지 관련 API")
 public class ChallengeLikedController {
+
+    private final ChallengeLikedService challengeLikedService;
 
     @PostMapping
     @Operation(
