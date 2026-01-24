@@ -3,13 +3,10 @@ package targeter.aim.domain.post.dto;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 import org.springframework.data.domain.Page;
-import targeter.aim.domain.challenge.dto.ChallengeDto;
-import targeter.aim.domain.challenge.entity.ChallengeStatus;
 import targeter.aim.domain.file.dto.FileDto;
 import targeter.aim.domain.user.dto.UserDto;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.List;
 
 public class PostDto {
