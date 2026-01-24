@@ -14,7 +14,7 @@ import targeter.aim.system.security.model.UserDetails;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/posts/{postId}/liked")
+@RequestMapping("/api/posts/{postId}/likes")
 @Tag(name = "Post", description = "게시글 관련 API")
 public class PostLikedController {
 
