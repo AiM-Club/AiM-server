@@ -5,12 +5,18 @@ import org.springframework.core.io.Resource;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 import targeter.aim.domain.file.entity.AttachedFile;
+import targeter.aim.domain.file.entity.CommentAttachedFile;
+import targeter.aim.domain.file.entity.CommentImage;
 import targeter.aim.domain.file.entity.HandlingType;
 import targeter.aim.domain.file.handler.FileHandler;
 import targeter.aim.domain.file.repository.AttachedFileRepository;
+import targeter.aim.domain.post.entity.Comment;
 import targeter.aim.system.exception.model.ErrorCode;
 import targeter.aim.system.exception.model.RestException;
+
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -53,5 +59,33 @@ public class FileService {
         MediaType mediaType = fileHandler.detectMediaType(file);
 
         return new FileResource(file, resource, mediaType);
+    }
+
+    @Transactional
+    public void saveCommentImages(Comment comment, List<MultipartFile> images) {
+        if (images == null || images.isEmpty()) return;
+
+        for (MultipartFile mf : images) {
+            if (mf == null || mf.isEmpty()) continue;
+
+            CommentImage entity = CommentImage.from(mf, comment);
+
+            fileRepository.save(entity);
+            fileHandler.saveFile(mf, entity);
+        }
+    }
+
+    @Transactional
+    public void saveCommentFiles(Comment comment, List<MultipartFile> files) {
+        if (files == null || files.isEmpty()) return;
+
+        for (MultipartFile mf : files) {
+            if (mf == null || mf.isEmpty()) continue;
+
+            CommentAttachedFile entity = CommentAttachedFile.from(mf, comment);
+
+            fileRepository.save(entity);
+            fileHandler.saveFile(mf, entity);
+        }
     }
 }
