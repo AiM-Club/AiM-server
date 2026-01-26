@@ -4,11 +4,17 @@ import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 import targeter.aim.common.auditor.TimeStampedEntity;
+import lombok.AccessLevel;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 import targeter.aim.domain.challenge.entity.ChallengeMode;
 import targeter.aim.domain.file.entity.PostImage;
 import targeter.aim.domain.label.entity.Field;
 import targeter.aim.domain.label.entity.Tag;
 import targeter.aim.domain.user.entity.User;
+import targeter.aim.domain.file.entity.PostAttachedFile;
+import targeter.aim.domain.file.entity.PostAttachedImage;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -56,6 +62,7 @@ public class Post extends TimeStampedEntity {
     private ChallengeMode mode;
 
     @Column(name = "like_count", nullable = false)
+    @Builder.Default
     private Integer likeCount = 0;
 
     @OneToOne(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
@@ -82,6 +89,43 @@ public class Post extends TimeStampedEntity {
     private Set<Field> fields = new HashSet<>();
 
     @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
     private List<Comment> comments = new ArrayList<>();
 
+    @OneToOne(cascade = CascadeType.ALL, orphanRemoval = true)
+    @JoinColumn(name = "thumbnail_image_id")
+    private PostImage thumbnail;
+
+    @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    private List<PostAttachedImage> attachedImages = new ArrayList<>();
+
+    @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    private List<PostAttachedFile> attachedFiles = new ArrayList<>();
+
+    public void setThumbnail(PostImage image) {
+        this.thumbnail = image;
+        image.setPost(this);
+    }
+
+    public void addAttachedImage(PostAttachedImage image) {
+        this.attachedImages.add(image);
+        image.setPost(this);
+    }
+
+    public void addAttachedFile(PostAttachedFile file) {
+        this.attachedFiles.add(file);
+        file.setPost(this);
+    }
+
+    public void removeAttachedImage(PostAttachedImage image) {
+        this.attachedImages.remove(image);
+        image.setPost(null);
+    }
+
+    public void removeAttachedFile(PostAttachedFile file) {
+        this.attachedFiles.remove(file);
+        file.setPost(null);
+    }
 }
