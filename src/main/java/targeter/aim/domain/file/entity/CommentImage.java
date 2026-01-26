@@ -22,7 +22,7 @@ import java.util.UUID;
 public class CommentImage extends AttachedFile {
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "comment_id", nullable = false)
+    @JoinColumn(name = "comment_id")
     private Comment comment;
 
     public static CommentImage from(MultipartFile file, Comment comment) {
