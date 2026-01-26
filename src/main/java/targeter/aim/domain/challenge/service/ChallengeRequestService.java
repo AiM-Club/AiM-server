@@ -22,10 +22,6 @@ public class ChallengeRequestService {
     private final ChallengeRequestRepository challengeRequestRepository;
     private final ChallengeMemberRepository challengeMemberRepository;
 
-    /**
-     * VS 챌린지 신청/초대 목록 조회
-     * - page size는 요구사항대로 10 고정
-     */
     @Transactional(readOnly = true)
     public ChallengeRequestDto.ChallengeRequestPageResponse getVsRequestList(
             UserDetails userDetails,

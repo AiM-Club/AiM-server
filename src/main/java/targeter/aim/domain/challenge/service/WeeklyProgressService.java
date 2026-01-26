@@ -43,10 +43,6 @@ public class WeeklyProgressService {
         Challenge challenge = challengeRepository.findById(challengeId)
                 .orElseThrow(() -> new RestException(ErrorCode.GLOBAL_NOT_FOUND));
 
-        if (challenge.getMode() != ChallengeMode.VS) {
-            throw new RestException(ErrorCode.GLOBAL_BAD_REQUEST);
-        }
-
         List<WeeklyProgress> weeklyProgressList =
                 weeklyProgressRepository.findAllByChallengeAndUser(challenge, loginUser);
 
