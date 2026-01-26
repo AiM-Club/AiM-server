@@ -1,20 +1,21 @@
 package targeter.aim.domain.challenge.service;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.BeanUtils;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import targeter.aim.domain.challenge.dto.ChallengeRequestDto;
 import targeter.aim.domain.challenge.entity.*;
-import targeter.aim.domain.challenge.repository.ChallengeMemberRepository;
-import targeter.aim.domain.challenge.repository.ChallengeRepository;
-import targeter.aim.domain.challenge.repository.ChallengeRequestQueryRepository;
-import targeter.aim.domain.challenge.repository.ChallengeRequestRepository;
+import targeter.aim.domain.challenge.repository.*;
 import targeter.aim.domain.user.entity.User;
 import targeter.aim.system.exception.model.ErrorCode;
 import targeter.aim.system.exception.model.RestException;
 import targeter.aim.system.security.model.UserDetails;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -23,6 +24,7 @@ public class ChallengeRequestService {
     private final ChallengeRequestRepository challengeRequestRepository;
     private final ChallengeMemberRepository challengeMemberRepository;
     private final ChallengeRepository challengeRepository;
+    private final WeeklyProgressRepository weeklyProgressRepository;
 
     @Transactional
     public ChallengeRequestDto.SendRequestResponse sendRequest(Long challengeId, UserDetails userDetails) {
@@ -103,13 +105,15 @@ public class ChallengeRequestService {
         challengeRequest.validatePending();
 
         Challenge challenge = challengeRequest.getChallenge();
-        User requester = challengeRequest.getRequester();
 
-        if(challengeMemberRepository.existsById_ChallengeAndId_User(challenge, requester)) {
+        User hostUser = challengeRequest.getApplier();
+        User memberUser = challengeRequest.getRequester();
+
+        if(challengeMemberRepository.existsById_ChallengeAndId_User(challenge, memberUser)) {
             throw new RestException(ErrorCode.GLOBAL_CONFLICT, "이미 챌린지에 등록된 유저입니다.");
         }
 
-        ChallengeMemberId challengeMemberId = ChallengeMemberId.of(challenge, requester);
+        ChallengeMemberId challengeMemberId = ChallengeMemberId.of(challenge, memberUser);
 
         ChallengeMember challengeMember = ChallengeMember.builder()
                 .id(challengeMemberId)
@@ -119,10 +123,56 @@ public class ChallengeRequestService {
 
         challengeMemberRepository.save(challengeMember);
 
+        copyHostWeeklyProgressToMember(challenge, hostUser, memberUser);
+
         challenge.startVs();
         challengeRequest.approve();
 
         return ChallengeRequestDto.RequestAccessResponse.from(challengeRequest);
+    }
+
+    private void copyHostWeeklyProgressToMember(Challenge challenge, User hostUser, User memberUser) {
+
+        boolean memberAlreadyHas = weeklyProgressRepository.existsByChallengeAndUser(challenge, memberUser);
+        if (memberAlreadyHas) {
+            return;
+        }
+
+        List<WeeklyProgress> hostProgressList =
+                weeklyProgressRepository.findAllByChallengeAndUser(challenge, hostUser);
+
+        if (hostProgressList == null || hostProgressList.isEmpty()) {
+            // Host 주차 데이터가 없다면, 설계상 이상
+            throw new RestException(ErrorCode.GLOBAL_NOT_FOUND, "HOST의 주차별 진행 데이터가 없습니다.");
+        }
+
+        List<WeeklyProgress> toSave = new ArrayList<>();
+
+        for (WeeklyProgress src : hostProgressList) {
+            WeeklyProgress cloned = new WeeklyProgress();
+
+            BeanUtils.copyProperties(
+                    src,
+                    cloned,
+                    "id",
+                    "user",
+                    "challenge",
+                    "createdAt",
+                    "lastModifiedAt",
+                    "attachedImages",
+                    "attachedFiles"
+            );
+
+            cloned.setChallenge(challenge);
+            cloned.setUser(memberUser);
+
+            cloned.setAttachedFiles(new ArrayList<>());
+            cloned.setAttachedImages(new ArrayList<>());
+
+            toSave.add(cloned);
+        }
+
+        weeklyProgressRepository.saveAll(toSave);
     }
 
     @Transactional
