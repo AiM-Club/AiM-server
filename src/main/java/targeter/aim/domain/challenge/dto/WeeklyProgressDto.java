@@ -8,6 +8,7 @@ import lombok.NoArgsConstructor;
 import org.springframework.web.multipart.MultipartFile;
 import targeter.aim.domain.challenge.entity.Challenge;
 import targeter.aim.domain.challenge.entity.WeeklyProgress;
+import targeter.aim.domain.file.dto.FileDto;
 
 import java.time.LocalDate;
 import java.util.Comparator;
@@ -71,6 +72,12 @@ public class WeeklyProgressDto {
             @Schema(description = "주차별 챌린지 내용", example = "1주차에 진행할 챌린지 내용입니다. AI가 작성합니다.")
             private String content;
 
+            @Schema(description = "주차별 챌린지 인증 이미지")
+            private List<FileDto.FileResponse> proofImages;
+
+            @Schema(description = "주차별 챌린지 인증 파일")
+            private List<FileDto.FileResponse> proofFiles;
+
             @Schema(description = "스톱워치 기록(초), 만약 api를 다시 불러와도 최근 저장된 시간을 불러옴", example = "300")
             private Integer stopwatchTimeSeconds;
 
@@ -88,6 +95,12 @@ public class WeeklyProgressDto {
                         .weekEndDate(weekStart.plusDays(6))
                         .title(weeklyProgress.getTitle())
                         .content(weeklyProgress.getContent())
+                        .proofImages(weeklyProgress.getAttachedImages().stream()
+                                .map(FileDto.FileResponse::from)
+                                .toList())
+                        .proofFiles(weeklyProgress.getAttachedFiles().stream()
+                                .map(FileDto.FileResponse::from)
+                                .toList())
                         .stopwatchTimeSeconds(weeklyProgress.getStopwatchTimeSeconds())
                         .isComplete(weeklyProgress.isComplete())
                         .build();
