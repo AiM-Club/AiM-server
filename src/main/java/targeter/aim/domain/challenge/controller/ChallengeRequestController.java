@@ -20,6 +20,18 @@ public class ChallengeRequestController {
 
     private final ChallengeRequestService challengeRequestService;
 
+    @PostMapping("/send/{challengeId}")
+    @Operation(
+            summary = "VS 챌린지 모집 요청",
+            description = "해당 VS 모집글에 있는 VS 챌린지에 대결 요청을 보냅니다."
+    )
+    public ChallengeRequestDto.SendRequestResponse sendVsRequest(
+            @PathVariable Long challengeId,
+            @Parameter(hidden = true) @AuthenticationPrincipal UserDetails userDetails
+    ) {
+        return challengeRequestService.sendRequest(challengeId, userDetails);
+    }
+
     @GetMapping
     @Operation(
             summary = "VS 챌린지 신청/초대 목록 조회",

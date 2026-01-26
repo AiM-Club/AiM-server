@@ -6,6 +6,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.data.domain.Page;
+import targeter.aim.domain.challenge.entity.ApplyStatus;
 import targeter.aim.domain.challenge.entity.Challenge;
 import targeter.aim.domain.challenge.entity.ChallengeRequest;
 import targeter.aim.domain.label.dto.FieldDto;
@@ -15,6 +16,30 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 public class ChallengeRequestDto {
+
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Builder
+    @Schema(description = "VS 챌린지 초대 목록 조회 조건")
+    public static class SendRequestResponse {
+        @Schema(description = "생성된 요청 아이디", example = "1")
+        private Long requestId;
+
+        @Schema(description = "요청한 챌린지 아이디", example = "1")
+        private Long challengeId;
+
+        @Schema(description = "요청 상태", example = "PENDING")
+        private ApplyStatus status;
+
+        public static SendRequestResponse from(ChallengeRequest challengeRequest) {
+            return SendRequestResponse.builder()
+                    .requestId(challengeRequest.getId())
+                    .challengeId(challengeRequest.getChallenge().getId())
+                    .status(challengeRequest.getApplyStatus())
+                    .build();
+        }
+    }
 
     @Data
     @NoArgsConstructor
