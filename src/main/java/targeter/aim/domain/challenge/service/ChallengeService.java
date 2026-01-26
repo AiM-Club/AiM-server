@@ -38,6 +38,7 @@ public class ChallengeService {
     private final ChallengeRepository challengeRepository;
     private final ChallengeMemberRepository challengeMemberRepository;
     private final WeeklyProgressRepository weeklyProgressRepository;
+    private final ChallengeLikedRepository challengeLikedRepository;
     private final UserRepository userRepository;
     private final TagRepository tagRepository;
     private final FieldRepository fieldRepository;
@@ -301,9 +302,15 @@ public class ChallengeService {
                         myPercent
                 );
 
+        boolean isLiked = false;
+        if(loginUserId != null) {
+            isLiked = challengeLikedRepository.existsByUserAndChallenge(userDetails.getUser(), challenge);
+        }
+
         // 10) DTO 반환
         return ChallengeDto.VsChallengeOverviewResponse.from(
                 challenge,
+                isLiked,
                 dominance,
                 me, myProgressRate, mySuccessRate,
                 opponent, oppoProgressRate, oppoSuccessRate
@@ -408,8 +415,14 @@ public class ChallengeService {
                 successEndWeek
         );
 
+        boolean isLiked = false;
+        if(loginUserId != null) {
+            isLiked = challengeLikedRepository.existsByUserAndChallenge(userDetails.getUser(), challenge);
+        }
+
         return ChallengeDto.SoloChallengeOverviewResponse.from(
                 challenge,
+                isLiked,
                 host,
                 progressRate,
                 successRate

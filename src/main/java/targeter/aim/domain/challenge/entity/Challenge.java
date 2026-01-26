@@ -51,6 +51,10 @@ public class Challenge extends TimeStampedEntity {
     @Column(nullable = false)
     private ChallengeMode mode;
 
+    @Column(name = "like_count", nullable = false)
+    @Builder.Default
+    private Integer likeCount = 0;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private ChallengeStatus status;

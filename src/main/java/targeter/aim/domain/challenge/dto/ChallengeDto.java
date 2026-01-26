@@ -335,12 +335,12 @@ public class ChallengeDto {
         @Schema(description = "참여자 정보")
         private Participants participants;
 
-        public static VsChallengeOverviewResponse from(Challenge challenge,
+        public static VsChallengeOverviewResponse from(Challenge challenge, Boolean isLiked,
                                                        Dominance dominance,
                                                        User user, Integer myProgressRate, Integer mySuccessRate,
                                                        User opponent, Integer oppoProgressRate, Integer oppoSuccessRate) {
             return VsChallengeOverviewResponse.builder()
-                    .challengeInfo(ChallengeInfo.from(challenge))
+                    .challengeInfo(ChallengeInfo.from(challenge, isLiked))
                     .dominance(dominance)
                     .participants(Participants.from(user, myProgressRate, mySuccessRate, opponent, oppoProgressRate, oppoSuccessRate))
                     .build();
@@ -356,6 +356,12 @@ public class ChallengeDto {
 
             @Schema(description = "챌린지 이름", example = "챌린지 제목")
             private String name;
+
+            @Schema(description = "좋아요 여부", example = "true | false")
+            private Boolean isLiked;
+
+            @Schema(description = "좋아요수", example = "1")
+            private Integer likedCount;
 
             @Schema(description = "분야 목록")
             private List<FieldDto.FieldResponse> fields;
@@ -375,10 +381,12 @@ public class ChallengeDto {
             @Schema(description = "총 기간(주)", example = "4")
             private Integer totalWeeks;
 
-            public static ChallengeInfo from(Challenge challenge) {
+            public static ChallengeInfo from(Challenge challenge, boolean isLiked) {
                 return ChallengeInfo.builder()
                         .thumbnail(challenge.getChallengeImage() == null ? null : FileDto.FileResponse.from(challenge.getChallengeImage()))
                         .name(challenge.getName())
+                        .isLiked(isLiked)
+                        .likedCount(challenge.getLikeCount())
                         .fields(challenge.getFields().stream()
                                 .map(FieldDto.FieldResponse::from)
                                 .collect(Collectors.toList()))
@@ -526,13 +534,13 @@ public class ChallengeDto {
         private Me participant;
 
         public static SoloChallengeOverviewResponse from(
-                Challenge challenge,
+                Challenge challenge, Boolean isLiked,
                 User user,
                 Integer progressRate,
                 Integer successRate
         ) {
             return SoloChallengeOverviewResponse.builder()
-                    .challengeInfo(ChallengeInfo.from(challenge))
+                    .challengeInfo(ChallengeInfo.from(challenge, isLiked))
                     .participant(Me.from(user, progressRate, successRate))
                     .build();
         }
@@ -548,6 +556,12 @@ public class ChallengeDto {
 
             @Schema(description = "챌린지 이름", example = "챌린지 제목")
             private String name;
+
+            @Schema(description = "챌린지 좋아요 여부", example = "true | false")
+            private Boolean isLiked;
+
+            @Schema(description = "챌린지 좋아요수", example = "1")
+            private Integer likedCount;
 
             @Schema(description = "분야 목록")
             private List<FieldDto.FieldResponse> fields;
@@ -573,7 +587,7 @@ public class ChallengeDto {
             @Schema(description = "공개 여부", example = "PUBLIC")
             private ChallengeVisibility visibility;
 
-            public static ChallengeInfo from(Challenge challenge) {
+            public static ChallengeInfo from(Challenge challenge, boolean isLiked) {
                 return ChallengeInfo.builder()
                         .thumbnail(
                                 challenge.getChallengeImage() == null
@@ -581,6 +595,8 @@ public class ChallengeDto {
                                         : FileDto.FileResponse.from(challenge.getChallengeImage())
                         )
                         .name(challenge.getName())
+                        .isLiked(isLiked)
+                        .likedCount(challenge.getLikeCount())
                         .fields(
                                 challenge.getFields().stream()
                                         .map(FieldDto.FieldResponse::from)
