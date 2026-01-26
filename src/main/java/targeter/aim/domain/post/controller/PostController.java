@@ -6,15 +6,15 @@ import lombok.RequiredArgsConstructor;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.ModelAttribute;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import targeter.aim.domain.post.dto.PostDto;
 import targeter.aim.domain.post.service.PostService;
 import targeter.aim.system.security.annotation.NoJwtAuth;
 import targeter.aim.system.security.model.UserDetails;
+
+import java.util.Map;
 
 @RestController
 @RequiredArgsConstructor
@@ -36,5 +36,23 @@ public class PostController {
             @AuthenticationPrincipal UserDetails userDetails
     ) {
         return postService.getVsRecruits(condition, userDetails, pageable);
+    }
+
+    @PostMapping("/vs")
+    @Operation(
+            summary = "VS 챌린지 게시글 생성",
+            description = "VS 챌린지에 모집글을 생성합니다."
+    )
+    public ResponseEntity<Map<String, Long>> createVsPost(
+            @ModelAttribute PostDto.CreateChallengePostRequest request,
+            @AuthenticationPrincipal UserDetails userDetails
+    ) {
+
+        Long postId = postService.createChallengePost(
+                request,
+                userDetails.getUser().getId()
+        );
+
+        return ResponseEntity.ok(Map.of("postId", postId));
     }
 }

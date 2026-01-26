@@ -67,6 +67,12 @@ public enum ErrorCode {
     CHALLENGE_NOT_FOUND(404, "존재하지 않는 챌린지입니다."),
     CHALLENGE_INVALID_TIMER_ACTION(400, "지원하지 않는 타이머 액션입니다."),
     CHALLENGE_ALREADY_EXIST(409, "이미 존재하는 챌린지입니다."),
+    CHALLENGE_MODE_NOT_VS(400, "VS 모집글은 VS 챌린지에만 생성할 수 있습니다."),
+
+    // Post
+    POST_TITLE_INVALID(400, "제목은 15자 이하여야 합니다."),
+    POST_TAG_COUNT_INVALID(400, "태그는 1~3개까지 가능합니다."),
+    POST_FIELD_COUNT_INVALID(400, "분야는 1~3개까지 가능합니다."),
 
     // Post
     POST_NOT_FOUND(404, "존재하지 않는 게시글입니다."),
