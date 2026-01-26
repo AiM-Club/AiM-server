@@ -67,6 +67,7 @@ public enum ErrorCode {
     CHALLENGE_NOT_FOUND(404, "존재하지 않는 챌린지입니다."),
     CHALLENGE_INVALID_TIMER_ACTION(400, "지원하지 않는 타이머 액션입니다."),
     CHALLENGE_ALREADY_EXIST(409, "이미 존재하는 챌린지입니다."),
+    CHALLENGE_NEEDS_USER_ID(400, "해당 기능은 userId를 반드시 필요로 합니다."),
 
     // Post
     POST_NOT_FOUND(404, "존재하지 않는 게시글입니다."),

@@ -10,6 +10,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import targeter.aim.domain.challenge.dto.WeeklyProgressDto;
 import targeter.aim.domain.challenge.service.WeeklyProgressService;
+import targeter.aim.system.security.annotation.NoJwtAuth;
 import targeter.aim.system.security.model.UserDetails;
 
 @RestController
@@ -20,16 +21,18 @@ public class WeeklyProgressController {
 
     private final WeeklyProgressService weeklyProgressService;
 
+    @NoJwtAuth
     @GetMapping
     @Operation(
             summary = "챌린지 주차별 내용 리스트 조회",
-            description = "특정 챌린지의 주차별 내용을 리스트 형태로 전체 조회합니다."
+            description = "특정 유저의 특정 챌린지의 주차별 내용을 리스트 형태로 전체 조회합니다."
     )
     public WeeklyProgressDto.WeekProgressListResponse getWeeklyProgressList(
             @PathVariable Long challengeId,
+            @RequestParam Long userId,
             @AuthenticationPrincipal UserDetails userDetails
     ) {
-        return weeklyProgressService.getVsWeeklyProgressList(challengeId, userDetails);
+        return weeklyProgressService.getVsWeeklyProgressList(challengeId, userId, userDetails);
     }
 
     @PostMapping(value = "/proof", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)

@@ -6,14 +6,16 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 import targeter.aim.domain.challenge.dto.WeeklyProgressDto;
 import targeter.aim.domain.challenge.entity.Challenge;
-import targeter.aim.domain.challenge.entity.ChallengeMode;
+import targeter.aim.domain.challenge.entity.ChallengeVisibility;
 import targeter.aim.domain.challenge.entity.WeeklyProgress;
+import targeter.aim.domain.challenge.repository.ChallengeMemberRepository;
 import targeter.aim.domain.challenge.repository.ChallengeRepository;
 import targeter.aim.domain.challenge.repository.WeeklyProgressRepository;
 import targeter.aim.domain.file.entity.ChallengeProofAttachedFile;
 import targeter.aim.domain.file.entity.ChallengeProofImage;
 import targeter.aim.domain.file.handler.FileHandler;
 import targeter.aim.domain.user.entity.User;
+import targeter.aim.domain.user.repository.UserRepository;
 import targeter.aim.system.exception.model.ErrorCode;
 import targeter.aim.system.exception.model.RestException;
 import targeter.aim.system.security.model.UserDetails;
@@ -28,29 +30,57 @@ public class WeeklyProgressService {
 
     private final ChallengeRepository challengeRepository;
     private final WeeklyProgressRepository weeklyProgressRepository;
+    private final ChallengeMemberRepository challengeMemberRepository;
+    private final UserRepository userRepository;
     private final FileHandler fileHandler;
 
     @Transactional(readOnly = true)
     public WeeklyProgressDto.WeekProgressListResponse getVsWeeklyProgressList(
             Long challengeId,
+            Long userId,
             UserDetails userDetails
     ) {
-        if (userDetails == null) {
-            throw new RestException(ErrorCode.AUTH_LOGIN_REQUIRED);
+        if(userId == null){
+            throw new RestException(ErrorCode.CHALLENGE_NEEDS_USER_ID);
         }
-        User loginUser = userDetails.getUser();
 
         Challenge challenge = challengeRepository.findById(challengeId)
                 .orElseThrow(() -> new RestException(ErrorCode.GLOBAL_NOT_FOUND));
 
+        User targetUser = userRepository.findById(userId)
+                .orElseThrow(() -> new RestException(ErrorCode.USER_NOT_FOUND));
+
+        if (challenge.getVisibility() == ChallengeVisibility.PRIVATE) {
+            if (userDetails == null || userDetails.getUser() == null) {
+                throw new RestException(ErrorCode.AUTH_FORBIDDEN, "비공개 챌린지는 로그인 후 조회 가능합니다.");
+            }
+            User loginUser = userDetails.getUser();
+            boolean loginIsMember = challengeMemberRepository.existsById_ChallengeAndId_User(challenge, loginUser);
+            if (!loginIsMember) {
+                throw new RestException(ErrorCode.AUTH_FORBIDDEN, "멤버만 조회 가능합니다.");
+            }
+        }
+
+        validateUserBelongsToChallenge(challenge, targetUser);
+
         List<WeeklyProgress> weeklyProgressList =
-                weeklyProgressRepository.findAllByChallengeAndUser(challenge, loginUser);
+                weeklyProgressRepository.findAllByChallengeAndUser(challenge, targetUser);
 
         int currentWeek = calcCurrentWeek(challenge.getStartedAt(), challenge.getDurationWeek());
 
         return WeeklyProgressDto.WeekProgressListResponse.from(
                 challenge, currentWeek, weeklyProgressList
         );
+    }
+
+    private void validateUserBelongsToChallenge(Challenge challenge, User user) {
+        boolean isMember = challengeMemberRepository.existsById_ChallengeAndId_User(challenge, user);
+
+        boolean isHost = (challenge.getHost() != null && challenge.getHost().getId().equals(user.getId()));
+
+        if (!isMember && !isHost) {
+            throw new RestException(ErrorCode.AUTH_FORBIDDEN, "해당 유저는 챌린지 참여자가 아닙니다.");
+        }
     }
 
     private int calcCurrentWeek(LocalDate startedAt, int totalWeeks) {
