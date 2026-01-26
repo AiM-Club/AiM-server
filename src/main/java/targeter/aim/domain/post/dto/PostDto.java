@@ -3,6 +3,7 @@ package targeter.aim.domain.post.dto;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 import org.springframework.data.domain.Page;
+import org.springframework.web.multipart.MultipartFile;
 import targeter.aim.domain.file.dto.FileDto;
 import targeter.aim.domain.user.dto.UserDto;
 
@@ -111,4 +112,40 @@ public class PostDto {
             );
         }
     }
+
+    @Data
+    @AllArgsConstructor
+    @NoArgsConstructor
+    @Builder
+    @Schema(description = "VS 챌린지 모집 게시글 생성 요청 DTO")
+    public static class CreateChallengePostRequest {
+
+        @Schema(description = "챌린지 ID")
+        private Long challengeId;
+
+        @Schema(description = "모집 게시글 썸네일 이미지")
+        private MultipartFile thumbnail;
+
+        @Schema(description = "모집 게시글 제목 (최대 15자)")
+        private String title;
+
+        @Schema(description = "챌린지 태그")
+        private List<String> tags;
+
+        @Schema(description = "챌린지 분야")
+        private List<String> fields;
+
+        @Schema(description = "직무명")
+        private String job;
+
+        @Schema(description = "모집 게시글 본문 내용")
+        private String contents;
+
+        @Schema(description = "첨부 파일 목록")
+        private List<MultipartFile> files;
+
+        @Schema(description = "첨부 이미지 목록")
+        private List<MultipartFile> images;
+    }
+
 }
