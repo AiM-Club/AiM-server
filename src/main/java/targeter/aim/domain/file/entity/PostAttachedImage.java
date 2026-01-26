@@ -22,7 +22,7 @@ import java.util.UUID;
 public class PostAttachedImage extends AttachedFile {
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "post_id", nullable = false)
+    @JoinColumn(name = "post_id")
     private Post post;
 
     public static PostAttachedImage from(MultipartFile file, Post post) {

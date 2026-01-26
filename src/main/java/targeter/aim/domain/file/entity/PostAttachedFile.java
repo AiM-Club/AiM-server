@@ -21,7 +21,7 @@ import java.util.UUID;
 public class PostAttachedFile extends AttachedFile {
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "post_id", nullable = false)
+    @JoinColumn(name = "post_id")
     private Post post;
 
     public static PostAttachedFile from(MultipartFile file, Post post) {
