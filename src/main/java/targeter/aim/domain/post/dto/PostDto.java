@@ -4,10 +4,8 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 import org.springframework.data.domain.Page;
 import org.springframework.web.multipart.MultipartFile;
-import targeter.aim.domain.file.dto.FileDto;
-import targeter.aim.domain.user.dto.UserDto;
+import targeter.aim.domain.post.entity.Post;
 
-import java.time.LocalDate;
 import java.util.List;
 
 public class PostDto {
@@ -146,6 +144,23 @@ public class PostDto {
 
         @Schema(description = "첨부 이미지 목록")
         private List<MultipartFile> images;
+    }
+
+    @Data
+    @AllArgsConstructor
+    @NoArgsConstructor
+    @Builder
+    @Schema(description = "게시글 아이디 응답 DTO")
+    public static class PostIdResponse {
+
+        @Schema(description = "게시글 id", example = "1")
+        private Long postId;
+
+        public static PostIdResponse from(Post post) {
+            return PostIdResponse.builder()
+                    .postId(post.getId())
+                    .build();
+        }
     }
 
 }
