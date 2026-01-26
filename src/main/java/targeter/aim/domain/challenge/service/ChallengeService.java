@@ -190,11 +190,6 @@ public class ChallengeService {
             Long challengeId,
             UserDetails userDetails
     ) {
-        if (userDetails == null) {
-            throw new RestException(ErrorCode.AUTH_LOGIN_REQUIRED);
-        }
-        Long loginUserId = userDetails.getUser().getId();
-
         Challenge challenge = challengeRepository.findById(challengeId)
                 .orElseThrow(() -> new RestException(ErrorCode.GLOBAL_NOT_FOUND));
 
@@ -204,29 +199,47 @@ public class ChallengeService {
 
         List<ChallengeMember> members = challengeMemberRepository.findAllById_Challenge(challenge);
 
-        boolean isMember = members.stream()
-                .anyMatch(m -> m.getId().getUser().getId().equals(loginUserId));
-
-        if (challenge.getVisibility() == ChallengeVisibility.PRIVATE && !isMember) {
-            throw new RestException(ErrorCode.AUTH_FORBIDDEN);
-        }
-
-        User me = userRepository.findById(loginUserId)
-                .orElseThrow(() -> new RestException(ErrorCode.USER_NOT_FOUND));
-
-        User opponent = members.stream()
+        User hostUser = members.stream()
+                .filter(m -> m.getRole() == MemberRole.HOST)
                 .map(m -> m.getId().getUser())
-                .filter(u -> !u.getId().equals(loginUserId))
+                .findFirst()
+                .orElseThrow(() -> new RestException(ErrorCode.GLOBAL_NOT_FOUND, "HOST 멤버가 존재하지 않습니다."));
+
+        User memberUser = members.stream()
+                .filter(m -> m.getRole() == MemberRole.MEMBER)
+                .map(m -> m.getId().getUser())
                 .findFirst()
                 .orElse(null);
+
+        Long loginUserId = (userDetails == null) ? null : userDetails.getUser().getId();
+
+        if (challenge.getVisibility() == ChallengeVisibility.PRIVATE) {
+            if (loginUserId == null) {
+                throw new RestException(ErrorCode.AUTH_AUTHENTICATION_FAILED);
+            }
+            boolean isMember = members.stream()
+                    .anyMatch(m -> m.getId().getUser().getId().equals(loginUserId));
+
+            if (!isMember) {
+                throw new RestException(ErrorCode.AUTH_FORBIDDEN);
+            }
+        }
+
+        User me = hostUser;
+        User opponent = memberUser;
+
+        if(loginUserId != null && memberUser != null && loginUserId.equals(memberUser.getId())) {
+            me = memberUser;
+            opponent = hostUser;
+        }
 
         int totalWeeks = challenge.getDurationWeek();
         int currentWeek = calcCurrentWeek(challenge.getStartedAt(), totalWeeks);
 
         // 6) userIds 구성 (상대 없으면 나만)
-        List<Long> userIds = (opponent == null)
-                ? List.of(me.getId())
-                : List.of(me.getId(), opponent.getId());
+        List<Long> userIds = (memberUser == null)
+                ? List.of(hostUser.getId())
+                : List.of(hostUser.getId(), memberUser.getId());
 
         // 7) (진도율) 완료주차/전체주차 %
         Map<Long, Long> completedTotalMap =
@@ -296,6 +309,7 @@ public class ChallengeService {
                 opponent, oppoProgressRate, oppoSuccessRate
         );
     }
+
 
     private int calcCurrentWeek(LocalDate startedAt, int totalWeeks) {
         long days = Duration.between(startedAt.atStartOfDay(), LocalDate.now().atStartOfDay()).toDays();

@@ -4,6 +4,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -31,7 +32,7 @@ public class WeeklyProgressController {
         return weeklyProgressService.getVsWeeklyProgressList(challengeId, userDetails);
     }
 
-    @PostMapping("/proof")
+    @PostMapping(value = "/proof", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @Operation(
             summary = "주차별 챌린지 인증샷 업로드",
             description = "주차별로 챌린지 인증샷을 업로드합니다."
