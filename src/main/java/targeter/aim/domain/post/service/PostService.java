@@ -29,7 +29,6 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
-@Transactional
 public class PostService {
 
     private final PostRepository postRepository;
@@ -77,6 +76,7 @@ public class PostService {
         }
     }
 
+    @Transactional
     public Long createChallengePost(
             PostDto.CreateChallengePostRequest request,
             Long userId
