@@ -1,11 +1,13 @@
 package targeter.aim.domain.challenge.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.web.multipart.MultipartFile;
 import targeter.aim.domain.challenge.entity.WeeklyComment;
 import targeter.aim.domain.file.dto.FileDto;
 import targeter.aim.domain.user.dto.UserDto;
@@ -122,6 +124,31 @@ public class WeeklyCommentDto {
     @AllArgsConstructor
     @NoArgsConstructor
     @Builder
+    @Schema(description = "챌린지 주차별 댓글 생성 요청")
+    public static class WeeklyCommentCreateRequest {
+        @Schema(description = "부모 댓글 아이디(대댓글의 경우메만 사용", example = "10")
+        private Long parentCommentId;
+
+        @Schema(description = "댓글 내용", example = "댓글 내용입니다.")
+        private String content;
+
+        @Schema(description = "첨부 이미지 목록")
+        private List<MultipartFile> attachedImages;
+
+        @Schema(description = "첨부 파일 목록")
+        private List<MultipartFile> attachedFiles;
+
+        public WeeklyComment toEntity() {
+            return WeeklyComment.builder()
+                    .content(content)
+                    .build();
+        }
+    }
+
+    @Data
+    @AllArgsConstructor
+    @NoArgsConstructor
+    @Builder
     @Schema(description = "챌린지 주차별 댓글 생성 응답")
     public static class WeeklyCommentCreateResponse {
         @Schema(description = "챌린지 아이디", example = "1")
@@ -129,5 +156,11 @@ public class WeeklyCommentDto {
 
         @Schema(description = "주차별 진행상황 아이디", example = "1")
         private Long weeksId;
+
+        @Schema(description = "댓글 아이디", example = "1")
+        private Long commentId;
+
+        @Schema(description = "댓글 깊이(댓글이면 1, 대댓글이면 2", example = "1 | 2")
+        private Integer depth;
     }
 }
