@@ -4,8 +4,11 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 import org.springframework.data.domain.Page;
 import org.springframework.web.multipart.MultipartFile;
+import targeter.aim.domain.file.dto.FileDto;
 import targeter.aim.domain.post.entity.Post;
+import targeter.aim.domain.user.dto.UserDto;
 
+import java.time.LocalDate;
 import java.util.List;
 
 public class PostDto {
