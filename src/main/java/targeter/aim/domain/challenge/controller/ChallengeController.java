@@ -68,6 +68,18 @@ public class ChallengeController {
         return challengeService.getVsChallengeOverview(challengeId, userDetails);
     }
 
+    @NoJwtAuth("VS 결과는 비로그인 유저도 열람 가능")
+    @GetMapping("/vs/{challengeId}/result")
+    @Operation(
+            summary = "VS 챌린지 최종 결과 조회",
+            description = "VS 챌린지 최종 승리자 정보를 반환합니다."
+    )
+    public ChallengeDto.VsResultResponse getVsResult(
+            @PathVariable Long challengeId
+    ) {
+        return challengeService.getVsChallengeResult(challengeId);
+    }
+
     @GetMapping("/solo")
     @Operation(
             summary = "SOLO 챌린지 목록 조회",
