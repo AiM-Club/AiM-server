@@ -334,6 +334,92 @@ public class ChallengeService {
     }
 
     @Transactional(readOnly = true)
+    public ChallengeDto.VsResultResponse getVsChallengeResult(Long challengeId) {
+        Challenge challenge = challengeRepository.findById(challengeId)
+                .orElseThrow(() -> new RestException(ErrorCode.GLOBAL_NOT_FOUND));
+
+        if (challenge.getMode() != ChallengeMode.VS) {
+            throw new RestException(ErrorCode.GLOBAL_BAD_REQUEST);
+        }
+
+        List<ChallengeMember> members = challengeMemberRepository.findAllById_Challenge(challenge);
+
+        User hostUser = members.stream()
+                .filter(m -> m.getRole() == MemberRole.HOST)
+                .map(m -> m.getId().getUser())
+                .findFirst()
+                .orElseThrow(() -> new RestException(ErrorCode.GLOBAL_NOT_FOUND, "HOST 멤버가 존재하지 않습니다."));
+
+        User memberUser = members.stream()
+                .filter(m -> m.getRole() == MemberRole.MEMBER)
+                .map(m -> m.getId().getUser())
+                .findFirst()
+                .orElse(null);
+
+        if(memberUser == null) {
+            throw new RestException(ErrorCode.GLOBAL_BAD_REQUEST);
+        }
+
+        List<WeeklyProgress> hostWeeks = weeklyProgressRepository.findAllByChallengeAndUser(challenge, hostUser);
+
+        int hostSuccessWeeks = (int) hostWeeks.stream()
+                .filter(w -> w.getWeeklyStatus() == WeeklyStatus.SUCCESS)
+                .count();
+
+        int hostTotalElapsed = hostWeeks.stream()
+                .map(WeeklyProgress::getElapsedTimeSeconds)
+                .filter(Objects::nonNull)
+                .mapToInt(Integer::intValue)
+                .sum();
+
+        List<WeeklyProgress> memberWeeks = weeklyProgressRepository.findAllByChallengeAndUser(challenge, memberUser);
+
+        int memberSuccessWeeks = (int) memberWeeks.stream()
+                .filter(w -> w.getWeeklyStatus() == WeeklyStatus.SUCCESS)
+                .count();
+
+        int memberTotalElapsed = memberWeeks.stream()
+                .map(WeeklyProgress::getElapsedTimeSeconds)
+                .filter(Objects::nonNull)
+                .mapToInt(Integer::intValue)
+                .sum();
+
+        // ===== 승자 판정 =====
+        Long winnerId = decideWinner(
+                hostUser.getId(), memberUser.getId(),
+                hostSuccessWeeks, memberSuccessWeeks,
+                hostTotalElapsed, memberTotalElapsed
+        );
+
+        User winner = winnerId.equals(hostUser.getId()) ? hostUser : memberUser;
+
+        return ChallengeDto.VsResultResponse.from(challenge, winner);
+    }
+
+    /**
+     * 승자 규칙:
+     * 1) 성공 주차 수
+     * 2) 총 elapsed
+     * 3) userId 작은 사람
+     */
+    private Long decideWinner(
+            Long hostId,
+            Long memberId,
+            int hostSuccessWeeks,
+            int memberSuccessWeeks,
+            int hostTotalElapsed,
+            int memberTotalElapsed
+    ) {
+        if (hostSuccessWeeks != memberSuccessWeeks) {
+            return hostSuccessWeeks > memberSuccessWeeks ? hostId : memberId;
+        }
+        if (hostTotalElapsed != memberTotalElapsed) {
+            return hostTotalElapsed > memberTotalElapsed ? hostId : memberId;
+        }
+        return hostId;
+    }
+
+    @Transactional(readOnly = true)
     public ChallengeDto.ChallengePageResponse getSoloChallenges(
             ChallengeDto.SoloChallengeListRequest request,
             UserDetails userDetails

@@ -1,26 +1,31 @@
 package targeter.aim.domain.post.entity;
 
 import jakarta.persistence.*;
-import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
+import lombok.experimental.SuperBuilder;
 import targeter.aim.common.auditor.TimeStampedEntity;
+import targeter.aim.domain.file.entity.ChallengeCommentAttachedFile;
+import targeter.aim.domain.file.entity.ChallengeCommentImage;
+import targeter.aim.domain.file.entity.CommentAttachedFile;
+import targeter.aim.domain.file.entity.CommentImage;
 import targeter.aim.domain.user.entity.User;
 
 import java.util.ArrayList;
 import java.util.List;
 
 @Entity
-@Table(name = "comment")
 @Getter
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
-@AllArgsConstructor(access = AccessLevel.PRIVATE)
+@Setter
+@SuperBuilder
+@NoArgsConstructor
+@AllArgsConstructor
+@Table(name = "comment")
 public class Comment extends TimeStampedEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "comment_id")
+    @Setter(AccessLevel.NONE)
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -44,29 +49,31 @@ public class Comment extends TimeStampedEntity {
     @Column(nullable = false)
     private Integer depth;
 
-    // 댓글
-    public static Comment createRoot(User user, Post post, String contents) {
-        return new Comment(
-                null,
-                null,
-                new ArrayList<>(),
-                user,
-                post,
-                contents,
-                1
-        );
+    @OneToMany(mappedBy = "comment", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    private List<CommentImage> attachedImages = new ArrayList<>();
+
+    public void addAttachedImage(CommentImage image) {
+        this.attachedImages.add(image);
+        image.setComment(this);
     }
 
-    //  대댓글
-    public static Comment createChild(User user, Post post, Comment parent, String contents) {
-        return new Comment(
-                null,
-                parent,
-                new ArrayList<>(),
-                user,
-                post,
-                contents,
-                parent.depth + 1
-        );
+    public void removeAttachedImage(CommentImage image) {
+        this.attachedImages.remove(image);
+        image.setComment(null);
+    }
+
+    @OneToMany(mappedBy = "comment", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    private List<CommentAttachedFile> attachedFiles = new ArrayList<>();
+
+    public void addAttachedFile(CommentAttachedFile file) {
+        this.attachedFiles.add(file);
+        file.setComment(this);
+    }
+
+    public void removeAttachedFile(CommentAttachedFile file) {
+        this.attachedFiles.remove(file);
+        file.setComment(null);
     }
 }

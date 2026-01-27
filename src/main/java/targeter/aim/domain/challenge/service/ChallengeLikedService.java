@@ -34,10 +34,14 @@ public class ChallengeLikedService {
 
         if (exists) {
             challengeLikedRepository.deleteByUserAndChallenge(user, challenge);
+            challenge.subtractLikedCount();
+            challengeRepository.save(challenge);
             return false;
         }
 
         challengeLikedRepository.save(new ChallengeLiked(user, challenge));
+        challenge.addLikedCount();
+        challengeRepository.save(challenge);
         return true;
     }
 }

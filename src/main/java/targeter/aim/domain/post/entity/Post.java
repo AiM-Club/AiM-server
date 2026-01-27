@@ -128,4 +128,12 @@ public class Post extends TimeStampedEntity {
         this.attachedFiles.remove(file);
         file.setPost(null);
     }
+
+    public void addLikedCount() {
+        this.likeCount++;
+    }
+
+    public void subtractLikedCount() {
+        this.likeCount--;
+    }
 }

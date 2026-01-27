@@ -524,6 +524,27 @@ public class ChallengeDto {
     @AllArgsConstructor
     @NoArgsConstructor
     @Builder
+    @Schema(description = "VS챌린지 최종 결과 응답")
+    public static class VsResultResponse {
+        private Long challengeId;
+
+        private Integer durationWeeks;
+
+        private UserDto.UserResponse winnerInfo;
+
+        public static VsResultResponse from(Challenge challenge, User user) {
+            return VsResultResponse.builder()
+                    .challengeId(challenge.getId())
+                    .durationWeeks(challenge.getDurationWeek())
+                    .winnerInfo(UserDto.UserResponse.from(user))
+                    .build();
+        }
+    }
+
+    @Data
+    @AllArgsConstructor
+    @NoArgsConstructor
+    @Builder
     @Schema(description = "SOLO 챌린지 상세 Overview 응답 (챌린지 정보 + 주최자 정보)")
     public static class SoloChallengeOverviewResponse {
 
