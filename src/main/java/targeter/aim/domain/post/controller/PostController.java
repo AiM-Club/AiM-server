@@ -55,4 +55,21 @@ public class PostController {
 
         return ResponseEntity.ok(Map.of("postId", postId));
     }
+
+    @NoJwtAuth
+    @GetMapping("/vs/{postId}")
+    @Operation(
+            summary = "VS 챌린지 모집글 상세 조회",
+            description = "특정 VS 챌린지 모집글의 상세 정보를 조회합니다."
+    )
+    public PostDto.PostVsDetailResponse getVsPostDetail(
+            @PathVariable Long postId,
+            @AuthenticationPrincipal UserDetails userDetails
+    ) {
+        return postService.getVsPostDetail(
+                postId,
+                userDetails
+        );
+    }
+
 }
