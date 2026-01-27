@@ -7,6 +7,8 @@ import targeter.aim.common.auditor.TimeStampedEntity;
 import targeter.aim.domain.file.entity.ChallengeProofAttachedFile;
 import targeter.aim.domain.file.entity.ChallengeProofImage;
 import targeter.aim.domain.user.entity.User;
+import targeter.aim.system.exception.model.ErrorCode;
+import targeter.aim.system.exception.model.RestException;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -43,8 +45,16 @@ public class WeeklyProgress extends TimeStampedEntity {
     @Column(columnDefinition = "TEXT")
     private String content;
 
-    @Column(name = "stopwatch_time_seconds")
-    private Integer stopwatchTimeSeconds;
+    @Column(name = "target_time_seconds")
+    private Integer targetTimeSeconds;
+
+    @Column(name = "elapsed_time_seconds", nullable = false)
+    @Builder.Default
+    private Integer elapsedTimeSeconds = 0;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "weekly_status", nullable = false)
+    private WeeklyStatus weeklyStatus = WeeklyStatus.PENDING;
 
     @Column(name = "is_complete", nullable = false)
     private Boolean isComplete;
@@ -85,5 +95,22 @@ public class WeeklyProgress extends TimeStampedEntity {
         return Boolean.TRUE.equals(this.isComplete);
     }
 
+    public void addElapsedTime(Integer seconds) {
+        if(seconds < 0) throw new RestException(ErrorCode.GLOBAL_BAD_REQUEST, "초는 0초 이상 넘겨줘야 함.");
+        this.elapsedTimeSeconds = (this.elapsedTimeSeconds == null ? 0 : this.elapsedTimeSeconds ) + seconds;
+    }
 
+    public boolean meetsEightyPercents() {
+        if(this.targetTimeSeconds == null || this.targetTimeSeconds <= 0) return false;
+        int elapsed = this.elapsedTimeSeconds == null ? 0 : this.elapsedTimeSeconds;
+        return elapsed * 10 >= this.targetTimeSeconds * 8;
+    }
+
+    public void decideWeeklyStatusOnComplete() {
+        if(this.targetTimeSeconds == null || this.targetTimeSeconds <= 0) {
+            this.weeklyStatus = WeeklyStatus.FAIL;
+            return;
+        }
+        this.weeklyStatus = meetsEightyPercents() ? WeeklyStatus.SUCCESS : WeeklyStatus.FAIL;
+    }
 }

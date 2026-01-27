@@ -93,10 +93,11 @@ public class ChallengeTimerService {
 
         long elapsedSeconds = sessionManager.stop(challenge.getId(), user.getId());
 
-        progress.setStopwatchTimeSeconds((int) elapsedSeconds);
+        progress.addElapsedTime((int) elapsedSeconds);  // 진행시간 저장 후 더하기
+        progress.decideWeeklyStatusOnComplete();        // 성공여부 체크
         progress.complete();
 
-        return progress.getStopwatchTimeSeconds();
+        return progress.getElapsedTimeSeconds();
     }
 
 }

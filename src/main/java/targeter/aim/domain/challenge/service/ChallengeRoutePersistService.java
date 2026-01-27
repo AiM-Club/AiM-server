@@ -72,7 +72,9 @@ public class ChallengeRoutePersistService {
                     .weekNumber(week.getWeekNumber())
                     .title(week.getTitle())
                     .content(week.getContent())
-                    .stopwatchTimeSeconds(week.getTargetSeconds())
+                    .targetTimeSeconds(week.getTargetSeconds())
+                    .elapsedTimeSeconds(0)
+                    .weeklyStatus(WeeklyStatus.PENDING)
                     .isComplete(false)
                     .build();
             weeklyProgressRepository.save(progress);
