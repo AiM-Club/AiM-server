@@ -13,6 +13,10 @@ import targeter.aim.domain.file.entity.PostAttachedFile;
 import targeter.aim.domain.file.entity.PostAttachedImage;
 import targeter.aim.domain.file.entity.PostImage;
 import targeter.aim.domain.file.handler.FileHandler;
+import targeter.aim.domain.label.entity.Field;
+import targeter.aim.domain.label.entity.Tag;
+import targeter.aim.domain.label.repository.FieldRepository;
+import targeter.aim.domain.label.repository.TagRepository;
 import targeter.aim.domain.post.dto.PostDto;
 import targeter.aim.domain.post.repository.PostQueryRepository;
 import targeter.aim.domain.post.repository.PostSortType;
@@ -36,6 +40,8 @@ public class PostService {
     private final PostQueryRepository postQueryRepository;
     private final ChallengeRepository challengeRepository;
     private final FileHandler fileHandler;
+    private final FieldRepository fieldRepository;
+    private final TagRepository tagRepository;
 
     @Transactional(readOnly = true)
     public PostDto.VSRecruitPageResponse getVsRecruits(
@@ -109,6 +115,9 @@ public class PostService {
 
         Post saved = postRepository.save(post);
 
+        saveFields(request.getFields(), saved);
+        saveTags(request.getTags(), saved);
+
         saveThumbnail(request.getThumbnail(), saved);
         saveAttachedImages(request.getImages(), saved);
         saveAttachedFiles(request.getFiles(), saved);
@@ -147,4 +156,62 @@ public class PostService {
             fileHandler.saveFile(file, attachedFile);
         });
     }
+
+    private void saveFields(List<String> fields, Post post) {
+        if (fields == null || fields.isEmpty()) return;
+
+        fields.forEach(name -> {
+            Field field = fieldRepository.findByName(name)
+                    .orElseGet(() -> fieldRepository.save(
+                            Field.builder()
+                                    .name(name)
+                                    .build()
+                    ));
+
+            post.addField(field);
+        });
+    }
+
+    private void saveTags(List<String> tags, Post post) {
+        if (tags == null || tags.isEmpty()) return;
+
+        tags.forEach(name -> {
+            Tag tag = tagRepository.findByName(name)
+                    .orElseGet(() -> tagRepository.save(
+                            Tag.builder()
+                                    .name(name)
+                                    .build()
+                    ));
+
+            post.addTag(tag);
+        });
+    }
+
+    @Transactional(readOnly = true)
+    public PostDto.PostVsDetailResponse getVsPostDetail(
+            Long postId,
+            UserDetails userDetails
+    ) {
+
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() -> new RestException(ErrorCode.POST_NOT_FOUND));
+
+        if (post.getType() != PostType.VS_RECRUIT) {
+            throw new RestException(ErrorCode.POST_NOT_FOUND);
+        }
+
+        Long userId = userDetails != null
+                ? userDetails.getUser().getId()
+                : null;
+
+        PostDto.PostVsDetailResponse response =
+                postQueryRepository.findVsPostDetail(postId, userId);
+
+        if (response == null) {
+            throw new RestException(ErrorCode.POST_NOT_FOUND);
+        }
+
+        return response;
+    }
+
 }
