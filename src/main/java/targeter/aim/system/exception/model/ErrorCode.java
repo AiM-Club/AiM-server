@@ -78,6 +78,7 @@ public enum ErrorCode {
 
     // Comment
     COMMENT_CONTENT_EMPTY(400, "댓글 내용은 비어 있을 수 없습니다."),
+    COMMENT_NOT_FOUND(404, "존재하지 않는 댓글입니다."),
 
     // Other
     INTERNAL_SERVER_ERROR(500, "오류가 발생했습니다.");
