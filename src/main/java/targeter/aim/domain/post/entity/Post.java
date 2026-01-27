@@ -104,6 +104,14 @@ public class Post extends TimeStampedEntity {
     @Builder.Default
     private List<PostAttachedFile> attachedFiles = new ArrayList<>();
 
+    public void addField(Field field) {
+        this.fields.add(field);
+    }
+
+    public void addTag(Tag tag) {
+        this.tags.add(tag);
+    }
+
     public void setThumbnail(PostImage image) {
         this.thumbnail = image;
         image.setPost(this);
