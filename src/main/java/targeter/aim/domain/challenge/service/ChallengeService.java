@@ -254,12 +254,12 @@ public class ChallengeService {
         //    - 현재주차는 "진행 중인 주차"까지 포함해서 분모로 잡는다 (요구사항/정책에 따라 바꿔도 됨)
         int successEndWeek = Math.max(currentWeek, 1);
 
-        Map<Long, Long> completedUpToCurrentMap =
-                safeMap(weeklyProgressQueryRepository.completedCountByUsers(challengeId, userIds, successEndWeek));
+        Map<Long, Long> successUpToCurrentMap =
+                safeMap(weeklyProgressQueryRepository.successCountByUsers(challengeId, userIds, successEndWeek));
 
-        int mySuccessRate = percent(completedUpToCurrentMap.getOrDefault(me.getId(), 0L), successEndWeek);
+        int mySuccessRate = percent(successUpToCurrentMap.getOrDefault(me.getId(), 0L), successEndWeek);
         int oppoSuccessRate = opponent == null ? 0
-                : percent(completedUpToCurrentMap.getOrDefault(opponent.getId(), 0L), successEndWeek);
+                : percent(successUpToCurrentMap.getOrDefault(opponent.getId(), 0L), successEndWeek);
 
         // 9) (우세현황) 지난주차까지 기준 성공률로 막대폭 산정
         int dominanceEndWeek = Math.max(currentWeek - 1, 0);
@@ -268,12 +268,12 @@ public class ChallengeService {
         int oppoDominanceRate = 0;
 
         if (dominanceEndWeek > 0) {
-            Map<Long, Long> completedUpToPrevMap =
-                    safeMap(weeklyProgressQueryRepository.completedCountByUsers(challengeId, userIds, dominanceEndWeek));
+            Map<Long, Long> successUpToPrevMap =
+                    safeMap(weeklyProgressQueryRepository.successCountByUsers(challengeId, userIds, dominanceEndWeek));
 
-            myDominanceRate = percent(completedUpToPrevMap.getOrDefault(me.getId(), 0L), dominanceEndWeek);
+            myDominanceRate = percent(successUpToPrevMap.getOrDefault(me.getId(), 0L), dominanceEndWeek);
             oppoDominanceRate = opponent == null ? 0
-                    : percent(completedUpToPrevMap.getOrDefault(opponent.getId(), 0L), dominanceEndWeek);
+                    : percent(successUpToPrevMap.getOrDefault(opponent.getId(), 0L), dominanceEndWeek);
         }
 
         int myPercent;
