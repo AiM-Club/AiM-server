@@ -35,6 +35,8 @@ public class PostLikedService {
 
         if(exists) {
             postLikedRepository.deleteByPostAndUser(post, user);
+            post.subtractLikedCount();
+            postRepository.save(post);
             return PostLikedDto.PostLikedResponse.builder()
                     .id(post.getId())
                     .isLiked(false)
@@ -42,6 +44,8 @@ public class PostLikedService {
         }
 
         postLikedRepository.save(new PostLiked(user, post));
+        post.addLikedCount();
+        postRepository.save(post);
 
         return PostLikedDto.PostLikedResponse.builder()
                 .id(post.getId())

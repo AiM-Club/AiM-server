@@ -113,4 +113,12 @@ public class Challenge extends TimeStampedEntity {
 
         this.status = ChallengeStatus.IN_PROGRESS;
     }
+
+    public void addLikedCount() {
+        this.likeCount++;
+    }
+
+    public void subtractLikedCount() {
+        this.likeCount--;
+    }
 }
