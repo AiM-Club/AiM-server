@@ -570,4 +570,18 @@ public class ChallengeService {
 
         challengeRepository.delete(challenge);
     }
+
+    @Transactional(readOnly = true)
+    public List<ChallengeDto.ChallengeToPostResponse> getChallengeToPost(ChallengeMode challengeMode, UserDetails userDetails) {
+        if(userDetails == null) {
+            throw new RestException(ErrorCode.AUTH_LOGIN_REQUIRED);
+        }
+        Long loginUserId = userDetails.getUser().getId();
+
+        List<Challenge> challenges = challengeQueryRepository.findSimpleMyChallenges(loginUserId, challengeMode);
+
+        return challenges.stream()
+                .map(ChallengeDto.ChallengeToPostResponse::from) // DTO의 factory method 사용
+                .collect(Collectors.toList());
+    }
 }
