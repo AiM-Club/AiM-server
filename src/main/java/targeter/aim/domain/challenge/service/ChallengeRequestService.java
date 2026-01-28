@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.beans.BeanUtils;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import targeter.aim.domain.challenge.dto.ChallengeRequestDto;
@@ -78,17 +79,12 @@ public class ChallengeRequestService {
     @Transactional(readOnly = true)
     public ChallengeRequestDto.ChallengeRequestPageResponse getVsRequestList(
             UserDetails userDetails,
-            int page,
+            Pageable pageable,
             ChallengeRequestDto.RequestListCondition condition
     ) {
         if (userDetails == null || userDetails.getUser() == null) {
             throw new RestException(ErrorCode.AUTH_AUTHENTICATION_FAILED);
         }
-        if (page < 0) {
-            throw new RestException(ErrorCode.GLOBAL_BAD_REQUEST);
-        }
-
-        PageRequest pageable = PageRequest.of(page, 10);
 
         Page<ChallengeRequestDto.RequestListResponse> result =
                 queryRepository.paginateVsRequests(userDetails, pageable, condition);
