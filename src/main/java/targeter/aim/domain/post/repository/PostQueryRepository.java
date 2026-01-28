@@ -344,7 +344,7 @@ public class PostQueryRepository {
                 .job(p.getJob())
                 .startDate(p.getStartedAt())
                 .totalWeeks(p.getDurationWeek())
-                .isLiked(Boolean.TRUE.equals(tuple.get(1, Boolean.class)))
+                .liked(Boolean.TRUE.equals(tuple.get(1, Boolean.class)))
                 .likeCount(
                         tuple.get(2, Long.class) == null
                                 ? 0L
@@ -372,4 +372,57 @@ public class PostQueryRepository {
                 .limit(limit)                               // 개수 제한 (예: 10개)
                 .fetch();
     }
+
+    public List<PostDto.HotVsPostResponse> findTop10HotVsPosts() {
+        LocalDateTime threeMonthsAgo = LocalDateTime.now().minusMonths(3);
+
+        List<Tuple> tuples = queryFactory
+                .select(
+                        post,
+                        postLiked.count()
+                )
+                .from(post)
+                .leftJoin(postLiked)
+                .on(postLiked.post.eq(post))
+                .where(
+                        post.type.eq(PostType.VS_RECRUIT),
+                        post.createdAt.goe(threeMonthsAgo)
+                )
+                .groupBy(post.id)
+                .orderBy(
+                        postLiked.count().desc(),
+                        post.createdAt.desc()
+                )
+                .limit(10)
+                .fetch();
+
+        if (tuples.isEmpty()) {
+            return List.of();
+        }
+
+        List<Long> postIds = tuples.stream()
+                .map(t -> t.get(post).getId())
+                .toList();
+
+        Map<Long, List<String>> fieldMap = fetchFields(postIds);
+
+        return tuples.stream()
+                .map(tuple -> {
+                    Post p = tuple.get(post);
+
+                    List<String> fields = fieldMap
+                            .getOrDefault(p.getId(), List.of())
+                            .stream()
+                            .limit(3)
+                            .toList();
+
+                    return new PostDto.HotVsPostResponse(
+                            p.getId(),
+                            p.getTitle(),
+                            fields
+                    );
+                })
+                .toList();
+    }
+
 }
