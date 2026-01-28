@@ -14,6 +14,7 @@ import targeter.aim.domain.post.service.PostService;
 import targeter.aim.system.security.annotation.NoJwtAuth;
 import targeter.aim.system.security.model.UserDetails;
 
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -70,6 +71,16 @@ public class PostController {
                 postId,
                 userDetails
         );
+    }
+
+    @NoJwtAuth
+    @GetMapping("/vs/top")
+    @Operation(
+            summary = "HOT VS 모집글 Top10 조회",
+            description = " 홈 화면에 노출되는 HOT VS 모집글을 조회합니다."
+    )
+    public List<PostDto.HotVsPostResponse> getHotVsPosts() {
+        return postService.getTop10HotVsPosts();
     }
 
 }
