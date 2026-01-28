@@ -214,4 +214,9 @@ public class PostService {
         return response;
     }
 
+    @Transactional(readOnly = true)
+    public List<PostDto.HotVsPostResponse> getTop10HotVsPosts() {
+        return postQueryRepository.findTop10HotVsPosts();
+    }
+
 }
