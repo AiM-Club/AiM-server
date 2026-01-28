@@ -25,6 +25,7 @@ import java.util.Set;
 @Entity
 @Table(name = "post")
 @Getter
+@Setter
 @SuperBuilder
 @AllArgsConstructor
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -33,6 +34,7 @@ public class Post extends TimeStampedEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "post_id")
+    @Setter(AccessLevel.NONE)
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -103,14 +105,6 @@ public class Post extends TimeStampedEntity {
     @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     private List<PostAttachedFile> attachedFiles = new ArrayList<>();
-
-    public void addField(Field field) {
-        this.fields.add(field);
-    }
-
-    public void addTag(Tag tag) {
-        this.tags.add(tag);
-    }
 
     public void setThumbnail(PostImage image) {
         this.thumbnail = image;

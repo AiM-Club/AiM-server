@@ -470,4 +470,16 @@ public class ChallengeQueryRepository {
         );
     }
 
+    public List<Challenge> findSimpleMyChallenges(Long userId, ChallengeMode mode) {
+        return queryFactory
+                .selectFrom(challenge)
+                .join(challengeMember)
+                .on(challengeMember.id.challenge.eq(challenge))
+                .where(
+                        challengeMember.id.user.id.eq(userId), // 내가 참여한
+                        challenge.mode.eq(mode)                // 모드 일치 (VS/SOLO)
+                )
+                .orderBy(challenge.startedAt.desc())       // 최신순 정렬
+                .fetch();                                  // List로 반환
+    }
 }

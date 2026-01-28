@@ -685,4 +685,36 @@ public class ChallengeDto {
             }
         }
     }
+
+    @Data
+    @AllArgsConstructor
+    @NoArgsConstructor
+    @Builder
+    @Schema(description = "게시글용 챌린지 목록 응답")
+    public static class ChallengeToPostResponse {
+        @Schema(description = "챌린지 아이디", example = "1")
+        private Long challengeId;
+
+        @Schema(description = "챌린지 이름", example = "챌린지 제목")
+        private String name;
+
+        @Schema(description = "챌린지 시작일", example = "2026-01-01")
+        private LocalDate startedAt;
+
+        @Schema(description = "챌린지 기간(주)", example = "4")
+        private Integer durationWeek;
+
+        @Schema(description = "챌린지 모드(확인용)", example = "VS | SOLO", allowableValues = { "VS", "SOLO" })
+        private ChallengeMode mode;
+
+        public static ChallengeToPostResponse from(Challenge challenge) {
+            return ChallengeToPostResponse.builder()
+                    .challengeId(challenge.getId())
+                    .name(challenge.getName())
+                    .startedAt(challenge.getStartedAt())
+                    .durationWeek(challenge.getDurationWeek())
+                    .mode(challenge.getMode())
+                    .build();
+        }
+    }
 }

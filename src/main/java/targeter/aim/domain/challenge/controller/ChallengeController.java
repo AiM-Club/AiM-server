@@ -14,10 +14,13 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import targeter.aim.domain.challenge.dto.ChallengeDto;
 import targeter.aim.domain.challenge.dto.ChallengeLikedDto;
+import targeter.aim.domain.challenge.entity.ChallengeMode;
 import targeter.aim.domain.challenge.service.ChallengeLikedService;
 import targeter.aim.domain.challenge.service.ChallengeService;
 import targeter.aim.system.security.annotation.NoJwtAuth;
 import targeter.aim.system.security.model.UserDetails;
+
+import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
@@ -129,5 +132,17 @@ public class ChallengeController {
             @AuthenticationPrincipal UserDetails userDetails
     ) {
         challengeService.deleteChallenge(challengeId, userDetails);
+    }
+
+    @GetMapping("/my-list")
+    @Operation(
+            summary = "내가 참여한 챌린지 리스트 조회(게시글 작성용)",
+            description = "내가 참여한 챌린지를 Mode에 맞춰 출력합니다. 게시글 작성 시 이용됩니다."
+    )
+    public List<ChallengeDto.ChallengeToPostResponse> getChallengeForPost(
+            @RequestParam ChallengeMode mode,
+            @AuthenticationPrincipal UserDetails userDetails
+    ) {
+        return challengeService.getChallengeToPost(mode, userDetails);
     }
 }

@@ -6,6 +6,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
+import targeter.aim.domain.ai.llm.dto.RoutePayload;
+import targeter.aim.domain.challenge.dto.ChallengeDto;
 import targeter.aim.domain.challenge.entity.Challenge;
 import targeter.aim.domain.challenge.entity.ChallengeMode;
 import targeter.aim.domain.challenge.repository.ChallengeRepository;
@@ -29,7 +31,10 @@ import targeter.aim.system.exception.model.ErrorCode;
 import targeter.aim.system.exception.model.RestException;
 import targeter.aim.system.security.model.UserDetails;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -39,9 +44,10 @@ public class PostService {
     private final UserRepository userRepository;
     private final PostQueryRepository postQueryRepository;
     private final ChallengeRepository challengeRepository;
-    private final FileHandler fileHandler;
-    private final FieldRepository fieldRepository;
     private final TagRepository tagRepository;
+    private final FieldRepository fieldRepository;
+
+    private final FileHandler fileHandler;
 
     @Transactional(readOnly = true)
     public PostDto.VSRecruitPageResponse getVsRecruits(
@@ -115,14 +121,46 @@ public class PostService {
 
         Post saved = postRepository.save(post);
 
-        saveFields(request.getFields(), saved);
-        saveTags(request.getTags(), saved);
+        updatePostLabels(saved, request.getTags(), request.getFields());
 
         saveThumbnail(request.getThumbnail(), saved);
         saveAttachedImages(request.getImages(), saved);
         saveAttachedFiles(request.getFiles(), saved);
 
         return saved.getId();
+    }
+
+    @Transactional
+    public PostDto.CreatePostResponse createQnAPost (
+            PostDto.CreatePostRequest request,
+            UserDetails userDetails
+    ) {
+        if (userDetails == null) {
+            throw new RestException(ErrorCode.AUTH_LOGIN_REQUIRED);
+        }
+        User user = userDetails.getUser();
+
+        Challenge challenge = challengeRepository.findById(request.getChallengeId())
+                .orElseThrow(() -> new RestException(ErrorCode.CHALLENGE_NOT_FOUND));
+
+        if(!challenge.getStartedAt().isEqual(request.getStartedAt()) || !challenge.getDurationWeek().equals(request.getDurationWeek())) {
+            throw new RestException(ErrorCode.GLOBAL_CONFLICT, "입력한 챌린지와 게시글의 정보가 다릅니다.");
+        }
+
+        Post saved = request.toEntity();
+        saved.setUser(user);
+        saved.setMode(challenge.getMode());
+        saved.setType(PostType.Q_AND_A);
+
+        saveThumbnail(request.getThumbnail(), saved);
+        saveAttachedImages(request.getImages(), saved);
+        saveAttachedFiles(request.getFiles(), saved);
+
+        // 4. 태그 / 분야 연관관계 매핑
+        updatePostLabels(saved, request.getTags(), request.getFields());
+        postRepository.save(saved);
+
+        return PostDto.CreatePostResponse.from(saved);
     }
 
     private void saveThumbnail(MultipartFile thumbnail, Post post) {
@@ -157,34 +195,24 @@ public class PostService {
         });
     }
 
-    private void saveFields(List<String> fields, Post post) {
-        if (fields == null || fields.isEmpty()) return;
+    private void updatePostLabels(Post post, List<String> tagNames, List<String> fieldNames) {
+        if (tagNames != null) {
+            Set<Tag> tags = tagNames.stream()
+                    .map(String::trim)
+                    .map(name -> tagRepository.findByName(name)
+                            .orElseGet(() -> tagRepository.save(Tag.builder().name(name).build())))
+                    .collect(Collectors.toSet());
+            post.setTags(tags);
+        }
 
-        fields.forEach(name -> {
-            Field field = fieldRepository.findByName(name)
-                    .orElseGet(() -> fieldRepository.save(
-                            Field.builder()
-                                    .name(name)
-                                    .build()
-                    ));
+        if (fieldNames != null) {
+            List<String> trimFieldNames = fieldNames.stream()
+                    .map(String::trim)
+                    .collect(Collectors.toList());
+            List<Field> existFields = fieldRepository.findAllByNameIn(trimFieldNames);
 
-            post.addField(field);
-        });
-    }
-
-    private void saveTags(List<String> tags, Post post) {
-        if (tags == null || tags.isEmpty()) return;
-
-        tags.forEach(name -> {
-            Tag tag = tagRepository.findByName(name)
-                    .orElseGet(() -> tagRepository.save(
-                            Tag.builder()
-                                    .name(name)
-                                    .build()
-                    ));
-
-            post.addTag(tag);
-        });
+            post.setFields(new HashSet<>(existFields));
+        }
     }
 
     @Transactional(readOnly = true)

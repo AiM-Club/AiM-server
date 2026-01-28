@@ -1,11 +1,14 @@
 package targeter.aim.domain.post.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -24,21 +27,7 @@ public class PostController {
 
     private final PostService postService;
 
-    @NoJwtAuth
-    @GetMapping("/vs")
-    @Operation(
-            summary = "VS 모집글 목록 조회",
-            description = "VS 모집글 목록을 정렬 조건에 따라 페이지네이션 조회합니다. 홈 화면의 경우 size = 8로 요청해야 합니다."
-    )
-    public PostDto.VSRecruitPageResponse getVsRecruits(
-            @ModelAttribute @ParameterObject PostDto.ListSearchCondition condition,
-            @PageableDefault(size = 16) @ParameterObject Pageable pageable,
-            @AuthenticationPrincipal UserDetails userDetails
-    ) {
-        return postService.getVsRecruits(condition, userDetails, pageable);
-    }
-
-    @PostMapping("/vs")
+    @PostMapping(value = "/vs", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @Operation(
             summary = "VS 챌린지 게시글 생성",
             description = "VS 챌린지에 모집글을 생성합니다."
@@ -57,6 +46,20 @@ public class PostController {
     }
 
     @NoJwtAuth
+    @GetMapping("/vs")
+    @Operation(
+            summary = "VS 모집글 목록 조회",
+            description = "VS 모집글 목록을 정렬 조건에 따라 페이지네이션 조회합니다. 홈 화면의 경우 size = 8로 요청해야 합니다."
+    )
+    public PostDto.VSRecruitPageResponse getVsRecruits(
+            @ModelAttribute @ParameterObject PostDto.ListSearchCondition condition,
+            @PageableDefault(size = 16) @ParameterObject Pageable pageable,
+            @AuthenticationPrincipal UserDetails userDetails
+    ) {
+        return postService.getVsRecruits(condition, userDetails, pageable);
+    }
+
+    @NoJwtAuth
     @GetMapping("/vs/{postId}")
     @Operation(
             summary = "VS 챌린지 모집글 상세 조회",
@@ -72,4 +75,15 @@ public class PostController {
         );
     }
 
+    @PostMapping(value = "/qna", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @Operation(
+            summary = "QnA 게시글 생성",
+            description = "QnA 게시글을 생성합니다."
+    )
+    public PostDto.CreatePostResponse createPost(
+            @Valid @ModelAttribute PostDto.CreatePostRequest request,
+            @Parameter(hidden = true) @AuthenticationPrincipal UserDetails userDetails
+    ) {
+        return postService.createQnAPost(request, userDetails);
+    }
 }
