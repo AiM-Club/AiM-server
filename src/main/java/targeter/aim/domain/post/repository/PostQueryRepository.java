@@ -344,7 +344,7 @@ public class PostQueryRepository {
                 .job(p.getJob())
                 .startDate(p.getStartedAt())
                 .totalWeeks(p.getDurationWeek())
-                .liked(Boolean.TRUE.equals(tuple.get(1, Boolean.class)))
+                .isLiked(Boolean.TRUE.equals(tuple.get(1, Boolean.class)))
                 .likeCount(
                         tuple.get(2, Long.class) == null
                                 ? 0L
