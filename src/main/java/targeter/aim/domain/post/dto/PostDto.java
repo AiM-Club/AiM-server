@@ -210,4 +210,19 @@ public class PostDto {
         private List<FileDto.FileResponse> attachedFiles;
     }
 
+    @Getter
+    @AllArgsConstructor
+    @Schema(description = "HOT VS 모집글 응답 DTO")
+    public static class HotVsPostResponse {
+
+        @Schema(description = "게시글 ID", example = "1")
+        private Long postId;
+
+        @Schema(description = "모집글 제목", example = "VS 챌린지 모집합니다")
+        private String title;
+
+        @Schema(description = "분야 리스트", example = "[\"IT\", \"BUSINESS\"]")
+        private List<String> fields;
+    }
+
 }
