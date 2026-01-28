@@ -156,7 +156,38 @@ public class PostService {
         saveAttachedImages(request.getImages(), saved);
         saveAttachedFiles(request.getFiles(), saved);
 
-        // 4. 태그 / 분야 연관관계 매핑
+        updatePostLabels(saved, request.getTags(), request.getFields());
+        postRepository.save(saved);
+
+        return PostDto.CreatePostResponse.from(saved);
+    }
+
+    @Transactional
+    public PostDto.CreatePostResponse createReviewPost (
+            PostDto.CreatePostRequest request,
+            UserDetails userDetails
+    ) {
+        if (userDetails == null) {
+            throw new RestException(ErrorCode.AUTH_LOGIN_REQUIRED);
+        }
+        User user = userDetails.getUser();
+
+        Challenge challenge = challengeRepository.findById(request.getChallengeId())
+                .orElseThrow(() -> new RestException(ErrorCode.CHALLENGE_NOT_FOUND));
+
+        if(!challenge.getStartedAt().isEqual(request.getStartedAt()) || !challenge.getDurationWeek().equals(request.getDurationWeek())) {
+            throw new RestException(ErrorCode.GLOBAL_CONFLICT, "입력한 챌린지와 게시글의 정보가 다릅니다.");
+        }
+
+        Post saved = request.toEntity();
+        saved.setUser(user);
+        saved.setMode(challenge.getMode());
+        saved.setType(PostType.REVIEW);
+
+        saveThumbnail(request.getThumbnail(), saved);
+        saveAttachedImages(request.getImages(), saved);
+        saveAttachedFiles(request.getFiles(), saved);
+
         updatePostLabels(saved, request.getTags(), request.getFields());
         postRepository.save(saved);
 

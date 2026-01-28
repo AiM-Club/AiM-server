@@ -80,10 +80,22 @@ public class PostController {
             summary = "QnA 게시글 생성",
             description = "QnA 게시글을 생성합니다."
     )
-    public PostDto.CreatePostResponse createPost(
+    public PostDto.CreatePostResponse createQnaPost(
             @Valid @ModelAttribute PostDto.CreatePostRequest request,
             @Parameter(hidden = true) @AuthenticationPrincipal UserDetails userDetails
     ) {
         return postService.createQnAPost(request, userDetails);
+    }
+
+    @PostMapping(value = "/review", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @Operation(
+            summary = "후기 게시글 생성",
+            description = "후기 게시글을 생성합니다."
+    )
+    public PostDto.CreatePostResponse createReviewPost(
+            @Valid @ModelAttribute PostDto.CreatePostRequest request,
+            @Parameter(hidden = true) @AuthenticationPrincipal UserDetails userDetails
+    ) {
+        return postService.createReviewPost(request, userDetails);
     }
 }
