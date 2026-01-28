@@ -6,8 +6,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
-import targeter.aim.domain.ai.llm.dto.RoutePayload;
-import targeter.aim.domain.challenge.dto.ChallengeDto;
 import targeter.aim.domain.challenge.entity.Challenge;
 import targeter.aim.domain.challenge.entity.ChallengeMode;
 import targeter.aim.domain.challenge.repository.ChallengeRepository;
@@ -281,4 +279,10 @@ public class PostService {
                 .map(PostDto.HotReviewResponse::from)
                 .collect(Collectors.toList());
     }
+
+    @Transactional(readOnly = true)
+    public List<PostDto.HotVsPostResponse> getTop10HotVsPosts() {
+        return postQueryRepository.findTop10HotVsPosts();
+    }
+
 }
