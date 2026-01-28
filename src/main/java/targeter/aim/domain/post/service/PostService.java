@@ -273,4 +273,12 @@ public class PostService {
         return response;
     }
 
+    @Transactional(readOnly = true)
+    public List<PostDto.HotReviewResponse> getHotReview() {
+        List<Post> hotReviews = postQueryRepository.findTopLikedReviewInLast3Months(10);
+
+        return hotReviews.stream()
+                .map(PostDto.HotReviewResponse::from)
+                .collect(Collectors.toList());
+    }
 }

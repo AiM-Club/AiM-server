@@ -88,7 +88,7 @@ public class PostDto {
         private String job;
 
         @Schema(description = "좋아요 여부(좋아요 했으면 true)", example = "true | false")
-        private Boolean liked;
+        private Boolean isLiked;
 
         @Schema(description = "좋아요수", example = "1")
         private Integer likeCount;
@@ -247,7 +247,7 @@ public class PostDto {
         private Integer totalWeeks;
 
         @Schema(description = "좋아요 여부")
-        private boolean liked;
+        private Boolean isLiked;
 
         @Schema(description = "좋아요 수")
         private Long likeCount;
@@ -262,4 +262,27 @@ public class PostDto {
         private List<FileDto.FileResponse> attachedFiles;
     }
 
+    @Data
+    @AllArgsConstructor
+    @NoArgsConstructor
+    @Builder
+    @Schema(description = "HOT 후기글 목록 조회 응답")
+    public static class HotReviewResponse {
+        @Schema(description = "후기글 아이디", example = "1")
+        private Long postId;
+
+        @Schema(description = "후기글 제목", example = "게시글 제목")
+        private String title;
+
+        @Schema(description = "좋아요 수", example = "1")
+        private Integer likeCount;
+
+        public static HotReviewResponse from(Post post) {
+            return HotReviewResponse.builder()
+                    .postId(post.getId())
+                    .title(post.getTitle())
+                    .likeCount(post.getLikeCount())
+                    .build();
+        }
+    }
 }

@@ -17,6 +17,7 @@ import targeter.aim.domain.post.service.PostService;
 import targeter.aim.system.security.annotation.NoJwtAuth;
 import targeter.aim.system.security.model.UserDetails;
 
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -97,5 +98,15 @@ public class PostController {
             @Parameter(hidden = true) @AuthenticationPrincipal UserDetails userDetails
     ) {
         return postService.createReviewPost(request, userDetails);
+    }
+
+    @NoJwtAuth
+    @GetMapping("/review/top")
+    @Operation(
+            summary = "HOT 후기글 조회",
+            description = "최근 3개월 내 좋아요 수가 가장 많은 10개 후기글을 조회합니다."
+    )
+    public List<PostDto.HotReviewResponse> getHotReview() {
+        return postService.getHotReview();
     }
 }
