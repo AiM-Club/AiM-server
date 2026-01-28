@@ -17,6 +17,7 @@ import targeter.aim.domain.post.service.PostService;
 import targeter.aim.system.security.annotation.NoJwtAuth;
 import targeter.aim.system.security.model.UserDetails;
 
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -80,10 +81,32 @@ public class PostController {
             summary = "QnA 게시글 생성",
             description = "QnA 게시글을 생성합니다."
     )
-    public PostDto.CreatePostResponse createPost(
+    public PostDto.CreatePostResponse createQnaPost(
             @Valid @ModelAttribute PostDto.CreatePostRequest request,
             @Parameter(hidden = true) @AuthenticationPrincipal UserDetails userDetails
     ) {
         return postService.createQnAPost(request, userDetails);
+    }
+
+    @PostMapping(value = "/review", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @Operation(
+            summary = "후기 게시글 생성",
+            description = "후기 게시글을 생성합니다."
+    )
+    public PostDto.CreatePostResponse createReviewPost(
+            @Valid @ModelAttribute PostDto.CreatePostRequest request,
+            @Parameter(hidden = true) @AuthenticationPrincipal UserDetails userDetails
+    ) {
+        return postService.createReviewPost(request, userDetails);
+    }
+
+    @NoJwtAuth
+    @GetMapping("/review/top")
+    @Operation(
+            summary = "HOT 후기글 조회",
+            description = "최근 3개월 내 좋아요 수가 가장 많은 10개 후기글을 조회합니다."
+    )
+    public List<PostDto.HotReviewResponse> getHotReview() {
+        return postService.getHotReview();
     }
 }

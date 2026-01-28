@@ -27,6 +27,7 @@ import targeter.aim.domain.user.dto.UserDto;
 import targeter.aim.domain.user.entity.User;
 import targeter.aim.system.security.model.UserDetails;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -260,7 +261,7 @@ public class PostQueryRepository {
                 .fields(fieldMap.getOrDefault(p.getId(), List.of()))
                 .tags(tagMap.getOrDefault(p.getId(), List.of()))
                 .job(p.getJob())
-                .liked(Boolean.TRUE.equals(tuple.get(1, Boolean.class)))
+                .isLiked(Boolean.TRUE.equals(tuple.get(1, Boolean.class)))
                 .likeCount(tuple.get(2, Long.class) == null ? 0 : tuple.get(2, Long.class).intValue())
                 .build();
     }
@@ -343,7 +344,7 @@ public class PostQueryRepository {
                 .job(p.getJob())
                 .startDate(p.getStartedAt())
                 .totalWeeks(p.getDurationWeek())
-                .liked(Boolean.TRUE.equals(tuple.get(1, Boolean.class)))
+                .isLiked(Boolean.TRUE.equals(tuple.get(1, Boolean.class)))
                 .likeCount(
                         tuple.get(2, Long.class) == null
                                 ? 0L
@@ -353,5 +354,22 @@ public class PostQueryRepository {
                 .attachedImages(attachedImages)
                 .attachedFiles(attachedFiles)
                 .build();
+    }
+
+    public List<Post> findTopLikedReviewInLast3Months(int limit) {
+        LocalDateTime threeMonthsAgo = LocalDateTime.now().minusMonths(3);
+
+        return queryFactory
+                .selectFrom(post)
+                .where(
+                        post.type.eq(PostType.REVIEW),      // 후기글만
+                        post.createdAt.goe(threeMonthsAgo)  // 최근 3개월 내
+                )
+                .orderBy(
+                        post.likeCount.desc(),              // 좋아요 많은 순
+                        post.createdAt.desc()               // (동점일 경우 최신순)
+                )
+                .limit(limit)                               // 개수 제한 (예: 10개)
+                .fetch();
     }
 }
