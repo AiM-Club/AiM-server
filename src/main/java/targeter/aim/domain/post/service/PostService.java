@@ -121,43 +121,13 @@ public class PostService {
 
         Post saved = postRepository.save(post);
 
+        updatePostLabels(saved, request.getTags(), request.getFields());
+
         saveThumbnail(request.getThumbnail(), saved);
         saveAttachedImages(request.getImages(), saved);
         saveAttachedFiles(request.getFiles(), saved);
 
         return saved.getId();
-    }
-
-    private void saveThumbnail(MultipartFile thumbnail, Post post) {
-        if (thumbnail == null || thumbnail.isEmpty()) return;
-
-        PostImage postImage = PostImage.from(thumbnail, post);
-        post.setThumbnail(postImage);
-        fileHandler.saveFile(thumbnail, postImage);
-    }
-
-    private void saveAttachedImages(List<MultipartFile> images, Post post) {
-        if (images == null || images.isEmpty()) return;
-
-        images.forEach(image -> {
-            if (image == null || image.isEmpty()) return;
-
-            PostAttachedImage imageFile = PostAttachedImage.from(image, post);
-            post.addAttachedImage(imageFile);
-            fileHandler.saveFile(image, imageFile);
-        });
-    }
-
-    private void saveAttachedFiles(List<MultipartFile> files, Post post) {
-        if (files == null || files.isEmpty()) return;
-
-        files.forEach(file -> {
-            if (file == null || file.isEmpty()) return;
-
-            PostAttachedFile attachedFile = PostAttachedFile.from(file, post);
-            post.addAttachedFile(attachedFile);
-            fileHandler.saveFile(file, attachedFile);
-        });
     }
 
     @Transactional
@@ -193,6 +163,38 @@ public class PostService {
         return PostDto.CreatePostResponse.from(saved);
     }
 
+    private void saveThumbnail(MultipartFile thumbnail, Post post) {
+        if (thumbnail == null || thumbnail.isEmpty()) return;
+
+        PostImage postImage = PostImage.from(thumbnail, post);
+        post.setThumbnail(postImage);
+        fileHandler.saveFile(thumbnail, postImage);
+    }
+
+    private void saveAttachedImages(List<MultipartFile> images, Post post) {
+        if (images == null || images.isEmpty()) return;
+
+        images.forEach(image -> {
+            if (image == null || image.isEmpty()) return;
+
+            PostAttachedImage imageFile = PostAttachedImage.from(image, post);
+            post.addAttachedImage(imageFile);
+            fileHandler.saveFile(image, imageFile);
+        });
+    }
+
+    private void saveAttachedFiles(List<MultipartFile> files, Post post) {
+        if (files == null || files.isEmpty()) return;
+
+        files.forEach(file -> {
+            if (file == null || file.isEmpty()) return;
+
+            PostAttachedFile attachedFile = PostAttachedFile.from(file, post);
+            post.addAttachedFile(attachedFile);
+            fileHandler.saveFile(file, attachedFile);
+        });
+    }
+
     private void updatePostLabels(Post post, List<String> tagNames, List<String> fieldNames) {
         if (tagNames != null) {
             Set<Tag> tags = tagNames.stream()
@@ -212,4 +214,32 @@ public class PostService {
             post.setFields(new HashSet<>(existFields));
         }
     }
+
+    @Transactional(readOnly = true)
+    public PostDto.PostVsDetailResponse getVsPostDetail(
+            Long postId,
+            UserDetails userDetails
+    ) {
+
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() -> new RestException(ErrorCode.POST_NOT_FOUND));
+
+        if (post.getType() != PostType.VS_RECRUIT) {
+            throw new RestException(ErrorCode.POST_NOT_FOUND);
+        }
+
+        Long userId = userDetails != null
+                ? userDetails.getUser().getId()
+                : null;
+
+        PostDto.PostVsDetailResponse response =
+                postQueryRepository.findVsPostDetail(postId, userId);
+
+        if (response == null) {
+            throw new RestException(ErrorCode.POST_NOT_FOUND);
+        }
+
+        return response;
+    }
+
 }

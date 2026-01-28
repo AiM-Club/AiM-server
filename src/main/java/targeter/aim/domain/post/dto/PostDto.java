@@ -217,4 +217,49 @@ public class PostDto {
                     .build();
         }
     }
+
+    @Data
+    @AllArgsConstructor
+    @NoArgsConstructor
+    @Builder
+    @Schema(description = "VS 챌린지 모집 게시글 상세 조회 응답 DTO")
+    public static class PostVsDetailResponse {
+
+        @Schema(description = "썸네일 이미지")
+        private FileDto.FileResponse thumbnail;
+
+        @Schema(description = "모집글 제목")
+        private String title;
+
+        @Schema(description = "태그 리스트")
+        private List<String> tags;
+
+        @Schema(description = "분야 리스트")
+        private List<String> fields;
+
+        @Schema(description = "직무")
+        private String job;
+
+        @Schema(description = "챌린지 시작일")
+        private LocalDate startDate;
+
+        @Schema(description = "총 진행 기간(주)")
+        private Integer totalWeeks;
+
+        @Schema(description = "좋아요 여부")
+        private boolean liked;
+
+        @Schema(description = "좋아요 수")
+        private Long likeCount;
+
+        @Schema(description = "모집글 본문 내용")
+        private String content;
+
+        @Schema(description = "첨부 이미지 목록")
+        private List<FileDto.FileResponse> attachedImages;
+
+        @Schema(description = "첨부 파일 목록")
+        private List<FileDto.FileResponse> attachedFiles;
+    }
+
 }

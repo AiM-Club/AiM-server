@@ -14,6 +14,8 @@ import org.springframework.stereotype.Repository;
 import targeter.aim.domain.file.dto.FileDto;
 import targeter.aim.domain.file.entity.PostImage;
 import targeter.aim.domain.file.entity.ProfileImage;
+import targeter.aim.domain.file.entity.QPostAttachedFile;
+import targeter.aim.domain.file.entity.QPostAttachedImage;
 import targeter.aim.domain.label.entity.QField;
 import targeter.aim.domain.label.entity.QTag;
 import targeter.aim.domain.post.dto.PostDto;
@@ -138,7 +140,7 @@ public class PostQueryRepository {
 
     // 제목 + 분야 + 태그 검색 조건설정
     private BooleanExpression keywordCondition(String keyword) {
-        if(keyword == null || keyword.isBlank()) return null;
+        if (keyword == null || keyword.isBlank()) return null;
 
         String k = keyword.trim();
 
@@ -172,20 +174,16 @@ public class PostQueryRepository {
     // 정렬
     private void applySorting(JPAQuery<?> query, PostSortType sortType) {
         switch (sortType) {
-            case LATEST ->
-                    query.orderBy(post.createdAt.desc());
+            case LATEST -> query.orderBy(post.createdAt.desc());
 
-            case OLDEST ->
-                    query.orderBy(post.createdAt.asc());
+            case OLDEST -> query.orderBy(post.createdAt.asc());
 
-            case LIKED ->
-                query.orderBy(post.likeCount.desc());
+            case LIKED -> query.orderBy(post.likeCount.desc());
 
-            case TITLE ->
-                    query.orderBy(
-                            post.title.asc(),
-                            post.createdAt.desc()
-                    );
+            case TITLE -> query.orderBy(
+                    post.title.asc(),
+                    post.createdAt.desc()
+            );
         }
     }
 
@@ -264,6 +262,96 @@ public class PostQueryRepository {
                 .job(p.getJob())
                 .liked(Boolean.TRUE.equals(tuple.get(1, Boolean.class)))
                 .likeCount(tuple.get(2, Long.class) == null ? 0 : tuple.get(2, Long.class).intValue())
+                .build();
+    }
+
+    public PostDto.PostVsDetailResponse findVsPostDetail(
+            Long postId,
+            Long userId
+    ) {
+        Tuple tuple = queryFactory
+                .select(
+                        post,
+                        userId != null
+                                ? JPAExpressions.selectOne()
+                                .from(postLiked)
+                                .where(
+                                        postLiked.post.eq(post)
+                                                .and(postLiked.user.id.eq(userId))
+                                ).exists()
+                                : Expressions.FALSE,
+                        JPAExpressions.select(postLiked.count())
+                                .from(postLiked)
+                                .where(postLiked.post.eq(post))
+                )
+                .from(post)
+                .leftJoin(post.postImage).fetchJoin()
+                .where(
+                        post.id.eq(postId),
+                        post.type.eq(PostType.VS_RECRUIT)
+                )
+                .fetchOne();
+
+
+        if (tuple == null) {
+            return null;
+        }
+
+        Post p = tuple.get(0, Post.class);
+
+        List<String> fields = queryFactory
+                .select(field.name)
+                .from(post)
+                .join(post.fields, field)
+                .where(post.id.eq(postId))
+                .fetch();
+
+        List<String> tags = queryFactory
+                .select(tag.name)
+                .from(post)
+                .join(post.tags, tag)
+                .where(post.id.eq(postId))
+                .fetch();
+
+        List<FileDto.FileResponse> attachedImages =
+                queryFactory
+                        .selectFrom(QPostAttachedImage.postAttachedImage)
+                        .where(QPostAttachedImage.postAttachedImage.post.id.eq(postId))
+                        .fetch()
+                        .stream()
+                        .map(FileDto.FileResponse::from)
+                        .toList();
+
+        List<FileDto.FileResponse> attachedFiles =
+                queryFactory
+                        .selectFrom(QPostAttachedFile.postAttachedFile)
+                        .where(QPostAttachedFile.postAttachedFile.post.id.eq(postId))
+                        .fetch()
+                        .stream()
+                        .map(FileDto.FileResponse::from)
+                        .toList();
+
+        return PostDto.PostVsDetailResponse.builder()
+                .thumbnail(
+                        p.getPostImage() != null
+                                ? FileDto.FileResponse.from(p.getPostImage())
+                                : null
+                )
+                .title(p.getTitle())
+                .tags(tags)
+                .fields(fields)
+                .job(p.getJob())
+                .startDate(p.getStartedAt())
+                .totalWeeks(p.getDurationWeek())
+                .liked(Boolean.TRUE.equals(tuple.get(1, Boolean.class)))
+                .likeCount(
+                        tuple.get(2, Long.class) == null
+                                ? 0L
+                                : tuple.get(2, Long.class)
+                )
+                .content(p.getContent())
+                .attachedImages(attachedImages)
+                .attachedFiles(attachedFiles)
                 .build();
     }
 }
