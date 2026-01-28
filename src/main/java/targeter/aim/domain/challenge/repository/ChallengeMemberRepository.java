@@ -16,6 +16,8 @@ public interface ChallengeMemberRepository extends JpaRepository<ChallengeMember
 
     Optional<ChallengeMember> findFirstById_ChallengeAndRole(Challenge challenge, MemberRole role);
 
+    Optional<ChallengeMember> findById_ChallengeAndId_User(Challenge challenge, User user);
+
     long countById_ChallengeAndRole(Challenge challenge, MemberRole role);
 
     boolean existsById_ChallengeAndId_User(Challenge challenge, User user);

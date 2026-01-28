@@ -20,7 +20,7 @@ import targeter.aim.domain.label.repository.TagRepository;
 import targeter.aim.domain.label.service.FieldService;
 import targeter.aim.domain.label.service.TagService;
 import targeter.aim.domain.user.entity.User;
-import targeter.aim.domain.user.repository.UserRepository;
+import targeter.aim.domain.user.service.UserService;
 import targeter.aim.system.exception.model.ErrorCode;
 import targeter.aim.system.exception.model.RestException;
 import targeter.aim.system.security.model.UserDetails;
@@ -39,7 +39,6 @@ public class ChallengeService {
     private final ChallengeMemberRepository challengeMemberRepository;
     private final WeeklyProgressRepository weeklyProgressRepository;
     private final ChallengeLikedRepository challengeLikedRepository;
-    private final UserRepository userRepository;
     private final TagRepository tagRepository;
     private final FieldRepository fieldRepository;
 
@@ -50,6 +49,7 @@ public class ChallengeService {
     private final ChallengeRouteGenerationService generationService;
     private final ChallengeCleanupService cleanupService;
     private final TagService tagService;
+    private final UserService userService;
     private final FieldService fieldService;
     private final FileHandler fileHandler;
 
@@ -333,7 +333,7 @@ public class ChallengeService {
         return map == null ? Map.of() : map;
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public ChallengeDto.VsResultResponse getVsChallengeResult(Long challengeId) {
         Challenge challenge = challengeRepository.findById(challengeId)
                 .orElseThrow(() -> new RestException(ErrorCode.GLOBAL_NOT_FOUND));
@@ -372,6 +372,10 @@ public class ChallengeService {
                 .mapToInt(Integer::intValue)
                 .sum();
 
+        ChallengeMember hostMember = members.stream()
+                .filter(m -> m.getRole() == MemberRole.HOST).findFirst().get();
+        processSettlement(hostMember, hostSuccessWeeks, challenge.getDurationWeek());
+
         List<WeeklyProgress> memberWeeks = weeklyProgressRepository.findAllByChallengeAndUser(challenge, memberUser);
 
         int memberSuccessWeeks = (int) memberWeeks.stream()
@@ -383,6 +387,10 @@ public class ChallengeService {
                 .filter(Objects::nonNull)
                 .mapToInt(Integer::intValue)
                 .sum();
+
+        ChallengeMember opponentMember = members.stream()
+                .filter(m -> m.getRole() == MemberRole.MEMBER).findFirst().get();
+        processSettlement(opponentMember, memberSuccessWeeks, challenge.getDurationWeek());
 
         // ===== 승자 판정 =====
         Long winnerId = decideWinner(
@@ -400,7 +408,7 @@ public class ChallengeService {
      * 승자 규칙:
      * 1) 성공 주차 수
      * 2) 총 elapsed
-     * 3) userId 작은 사람
+     * 3) host
      */
     private Long decideWinner(
             Long hostId,
@@ -417,6 +425,69 @@ public class ChallengeService {
             return hostTotalElapsed > memberTotalElapsed ? hostId : memberId;
         }
         return hostId;
+    }
+
+    private void processSettlement(ChallengeMember member, int successWeeks, int totalDurationWeeks) {
+        // 이미 정산된 경우(결과가 있는 경우) 중복 실행 방지
+        if (member.getResult() != null) {
+            return;
+        }
+
+        // 달성률 계산 (0.0 ~ 1.0)
+        double rate = (double) successWeeks / totalDurationWeeks;
+
+        // 80% 이상이면 SUCCESS, 아니면 FAIL 저장
+        boolean isSuccess = rate >= 0.8;
+        member.setResult(isSuccess ? ChallengeResult.SUCCESS : ChallengeResult.FAIL);
+
+        // 변경사항 저장 (JPA Dirty Checking이 동작하지만, 확실한 순서를 위해 flush 권장)
+        challengeMemberRepository.saveAndFlush(member);
+
+        // 레벨업 서비스 호출
+        userService.checkAndApplyLevelUp(member.getId().getUser());
+    }
+
+    @Transactional
+    public void settleAllFinishedChallenges() {
+        List<Challenge> activeChallenges = challengeRepository.findAllByStatus(ChallengeStatus.IN_PROGRESS);
+
+        LocalDate today = LocalDate.now();
+        int count = 0;
+
+        for (Challenge challenge : activeChallenges) {
+            LocalDate endDate = challenge.getStartedAt().plusWeeks(challenge.getDurationWeek());
+
+            if (!today.isBefore(endDate)) {
+                try {
+                    // 챌린지에 속한 모든 멤버(Host, Member)를 가져옴
+                    List<ChallengeMember> members = challengeMemberRepository.findAllById_Challenge(challenge);
+
+                    for (ChallengeMember member : members) {
+                        // 각 멤버별로 정산 수행 (SOLO는 Host만, VS는 Host/Guest 모두 루프 돔)
+                        calculateAndSettle(challenge, member);
+                    }
+
+                    // 4. 챌린지 상태 "완료"로 변경
+                    challenge.setStatus(ChallengeStatus.COMPLETED);
+                    count++;
+                } catch (Exception e) {
+                    log.error("챌린지 자동 정산 실패 (ID: {}): {}", challenge.getId(), e.getMessage());
+                }
+            }
+        }
+        log.info("[Scheduler] 총 {}건의 챌린지 정산 및 종료 처리 완료", count);
+    }
+
+    private void calculateAndSettle(Challenge challenge, ChallengeMember member) {
+        User user = member.getId().getUser();
+
+        List<WeeklyProgress> weeks = weeklyProgressRepository.findAllByChallengeAndUser(challenge, user);
+
+        int successWeeks = (int) weeks.stream()
+                .filter(w -> w.getWeeklyStatus() == WeeklyStatus.SUCCESS)
+                .count();
+
+        processSettlement(member, successWeeks, challenge.getDurationWeek());
     }
 
     @Transactional(readOnly = true)
