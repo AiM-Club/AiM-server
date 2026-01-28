@@ -6,6 +6,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.web.multipart.MultipartFile;
 import targeter.aim.domain.file.dto.FileDto;
 import targeter.aim.domain.post.entity.Post;
+import targeter.aim.domain.post.entity.PostType;
 import targeter.aim.domain.user.dto.UserDto;
 
 import java.time.LocalDate;
@@ -153,17 +154,67 @@ public class PostDto {
     @AllArgsConstructor
     @NoArgsConstructor
     @Builder
-    @Schema(description = "게시글 아이디 응답 DTO")
-    public static class PostIdResponse {
+    @Schema(description = "QnA/후기 생성 요청 DTO")
+    public static class CreatePostRequest {
 
-        @Schema(description = "게시글 id", example = "1")
-        private Long postId;
+        @Schema(description = "QnA/후기 썸네일 이미지")
+        private MultipartFile thumbnail;
 
-        public static PostIdResponse from(Post post) {
-            return PostIdResponse.builder()
-                    .postId(post.getId())
+        @Schema(description = "QnA/후기 제목 (최대 15자)")
+        private String title;
+
+        @Schema(description = "챌린지 태그")
+        private List<String> tags;
+
+        @Schema(description = "챌린지 분야")
+        private List<String> fields;
+
+        @Schema(description = "직무명")
+        private String job;
+
+        @Schema(description = "챌린지 시작일", example = "2026-01-01")
+        private LocalDate startedAt;
+
+        @Schema(description = "챌린지 기간(주)", example = "4")
+        private Integer durationWeek;
+
+        @Schema(description = "챌린지 ID")
+        private Long challengeId;
+
+        @Schema(description = "Qna/후기 게시글 본문 내용")
+        private String content;
+
+        @Schema(description = "첨부 파일 목록")
+        private List<MultipartFile> files;
+
+        @Schema(description = "첨부 이미지 목록")
+        private List<MultipartFile> images;
+
+        public Post toEntity() {
+            return Post.builder()
+                    .title(title)
+                    .job(job)
+                    .startedAt(startedAt)
+                    .durationWeek(durationWeek)
+                    .content(content)
                     .build();
         }
     }
 
+    @Data
+    @AllArgsConstructor
+    @NoArgsConstructor
+    @Builder
+    @Schema(description = "게시글 생성 응답 DTO")
+    public static class CreatePostResponse {
+
+        @Schema(description = "게시글 id", example = "1")
+        private Long postId;
+
+        public static CreatePostResponse from(Post post) {
+            return CreatePostResponse.builder()
+                    .postId(post.getId())
+                    .build();
+        }
+    }
 }

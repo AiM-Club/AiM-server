@@ -1,11 +1,14 @@
 package targeter.aim.domain.post.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -54,5 +57,17 @@ public class PostController {
         );
 
         return ResponseEntity.ok(Map.of("postId", postId));
+    }
+
+    @PostMapping(value = "/qna", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @Operation(
+            summary = "QnA 게시글 생성",
+            description = "QnA 게시글을 생성합니다."
+    )
+    public PostDto.CreatePostResponse createPost(
+            @Valid @ModelAttribute PostDto.CreatePostRequest request,
+            @Parameter(hidden = true) @AuthenticationPrincipal UserDetails userDetails
+    ) {
+        return postService.createQnAPost(request, userDetails);
     }
 }

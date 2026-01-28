@@ -25,6 +25,7 @@ import java.util.Set;
 @Entity
 @Table(name = "post")
 @Getter
+@Setter
 @SuperBuilder
 @AllArgsConstructor
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -33,6 +34,7 @@ public class Post extends TimeStampedEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "post_id")
+    @Setter(AccessLevel.NONE)
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
