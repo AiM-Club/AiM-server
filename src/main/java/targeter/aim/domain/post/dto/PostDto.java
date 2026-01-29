@@ -4,13 +4,17 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 import org.springframework.data.domain.Page;
 import org.springframework.web.multipart.MultipartFile;
+import targeter.aim.domain.challenge.entity.Challenge;
 import targeter.aim.domain.file.dto.FileDto;
+import targeter.aim.domain.label.dto.FieldDto;
+import targeter.aim.domain.label.dto.TagDto;
 import targeter.aim.domain.post.entity.Post;
 import targeter.aim.domain.post.entity.PostType;
 import targeter.aim.domain.user.dto.UserDto;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class PostDto {
 
@@ -224,6 +228,14 @@ public class PostDto {
     @Builder
     @Schema(description = "VS 챌린지 모집 게시글 상세 조회 응답 DTO")
     public static class PostVsDetailResponse {
+        @Schema(description = "VS 챌린지 아이디", example = "1")
+        private Long challengeId;
+
+        @Schema(description = "작성자 아이디", example = "1")
+        private Long writerId;
+
+        @Schema(description = "작성자 닉네임", example = "닉네임")
+        private String nickname;
 
         @Schema(description = "썸네일 이미지")
         private FileDto.FileResponse thumbnail;
@@ -232,10 +244,10 @@ public class PostDto {
         private String title;
 
         @Schema(description = "태그 리스트")
-        private List<String> tags;
+        private List<TagDto.TagResponse> tags;
 
         @Schema(description = "분야 리스트")
-        private List<String> fields;
+        private List<FieldDto.FieldResponse> fields;
 
         @Schema(description = "직무")
         private String job;
@@ -250,7 +262,7 @@ public class PostDto {
         private Boolean isLiked;
 
         @Schema(description = "좋아요 수")
-        private Long likeCount;
+        private Integer likeCount;
 
         @Schema(description = "모집글 본문 내용")
         private String content;
@@ -260,6 +272,34 @@ public class PostDto {
 
         @Schema(description = "첨부 파일 목록")
         private List<FileDto.FileResponse> attachedFiles;
+
+        public static PostVsDetailResponse from(Post post, Challenge challenge, boolean isLiked) {
+            return PostVsDetailResponse.builder()
+                    .challengeId(challenge.getId())
+                    .writerId(post.getUser().getId())
+                    .nickname(post.getUser().getNickname())
+                    .thumbnail((post.getThumbnail() == null) ? null : FileDto.FileResponse.from(post.getThumbnail()))
+                    .title(post.getTitle())
+                    .tags(challenge.getTags().stream()
+                            .map(TagDto.TagResponse::from)
+                            .collect(Collectors.toList()))
+                    .fields(challenge.getFields().stream()
+                            .map(FieldDto.FieldResponse::from)
+                            .collect(Collectors.toList()))
+                    .job(challenge.getJob())
+                    .startDate(post.getStartedAt())
+                    .totalWeeks(post.getDurationWeek())
+                    .isLiked(isLiked)
+                    .likeCount(post.getLikeCount())
+                    .content(post.getContent())
+                    .attachedImages(post.getAttachedImages().stream()
+                            .map(FileDto.FileResponse::from)
+                            .toList())
+                    .attachedFiles(post.getAttachedFiles().stream()
+                            .map(FileDto.FileResponse::from)
+                            .toList())
+                    .build();
+        }
     }
 
     @Data

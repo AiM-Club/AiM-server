@@ -18,6 +18,7 @@ import targeter.aim.domain.label.entity.Tag;
 import targeter.aim.domain.label.repository.FieldRepository;
 import targeter.aim.domain.label.repository.TagRepository;
 import targeter.aim.domain.post.dto.PostDto;
+import targeter.aim.domain.post.repository.PostLikedRepository;
 import targeter.aim.domain.post.repository.PostQueryRepository;
 import targeter.aim.domain.post.repository.PostSortType;
 import targeter.aim.domain.post.entity.Post;
@@ -44,6 +45,7 @@ public class PostService {
     private final ChallengeRepository challengeRepository;
     private final TagRepository tagRepository;
     private final FieldRepository fieldRepository;
+    private final PostLikedRepository postLikedRepository;
 
     private final FileHandler fileHandler;
 
@@ -257,18 +259,20 @@ public class PostService {
             throw new RestException(ErrorCode.POST_NOT_FOUND);
         }
 
-        Long userId = userDetails != null
-                ? userDetails.getUser().getId()
-                : null;
-
-        PostDto.PostVsDetailResponse response =
-                postQueryRepository.findVsPostDetail(postId, userId);
-
-        if (response == null) {
-            throw new RestException(ErrorCode.POST_NOT_FOUND);
+        boolean isLiked = false;
+        if (userDetails != null) {
+            User user = userDetails.getUser();
+            isLiked = postLikedRepository.existsByPostAndUser(post, user);
         }
 
-        return response;
+        Challenge relatedChallenge = challengeRepository.findFirstByHostAndStartedAtAndJobAndModeOrderByIdDesc(
+                post.getUser(),
+                post.getStartedAt(),
+                post.getJob(),
+                post.getMode()
+        ).orElseThrow(() -> new RestException(ErrorCode.CHALLENGE_NOT_FOUND, "게시글 정보와 맞는 챌린지를 찾을 수 없습니다."));
+
+        return PostDto.PostVsDetailResponse.from(post, relatedChallenge, isLiked);
     }
 
     @Transactional(readOnly = true)

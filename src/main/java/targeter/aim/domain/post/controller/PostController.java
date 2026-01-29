@@ -68,12 +68,9 @@ public class PostController {
     )
     public PostDto.PostVsDetailResponse getVsPostDetail(
             @PathVariable Long postId,
-            @AuthenticationPrincipal UserDetails userDetails
+            @Parameter(hidden = true) @AuthenticationPrincipal UserDetails userDetails
     ) {
-        return postService.getVsPostDetail(
-                postId,
-                userDetails
-        );
+        return postService.getVsPostDetail(postId, userDetails);
     }
 
     @PostMapping(value = "/qna", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)

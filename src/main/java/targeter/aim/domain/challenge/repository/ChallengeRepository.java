@@ -17,5 +17,12 @@ public interface ChallengeRepository extends JpaRepository<Challenge, Long> {
             User host, String name, LocalDate startedAt, ChallengeMode mode, ChallengeVisibility visibility
     );
 
+    Optional<Challenge> findFirstByHostAndStartedAtAndJobAndModeOrderByIdDesc(
+            User host,
+            LocalDate startedAt,
+            String job,
+            ChallengeMode mode
+    );
+
     List<Challenge> findAllByStatus(ChallengeStatus status);
 }
