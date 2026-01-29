@@ -1,6 +1,7 @@
 package targeter.aim.domain.challenge.repository;
 
 import com.querydsl.core.Tuple;
+import com.querydsl.core.types.OrderSpecifier;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.core.types.dsl.Expressions;
 import com.querydsl.jpa.JPAExpressions;
@@ -482,4 +483,102 @@ public class ChallengeQueryRepository {
                 .orderBy(challenge.startedAt.desc())       // 최신순 정렬
                 .fetch();                                  // List로 반환
     }
+
+
+//     내가 참여한 전체 챌린지 목록 조회
+    public Page<ChallengeDto.ChallengeListResponse> paginateMyAllChallenges(
+            Long userId,
+            Pageable pageable,
+            String sort,
+            String order
+    ) {
+        // 1. 기본 조회 쿼리
+        JPAQuery<Tuple> query = queryFactory
+                .select(
+                        challenge,
+                        JPAExpressions.selectOne()
+                                .from(challengeLiked)
+                                .where(
+                                        challengeLiked.challenge.eq(challenge)
+                                                .and(challengeLiked.user.id.eq(userId))
+                                ).exists(),
+                        JPAExpressions.select(challengeLiked.count())
+                                .from(challengeLiked)
+                                .where(challengeLiked.challenge.eq(challenge))
+                )
+                .from(challenge)
+                .join(challengeMember)
+                .on(
+                        challengeMember.id.challenge.eq(challenge),
+                        challengeMember.id.user.id.eq(userId)
+                )
+                .leftJoin(challenge.host).fetchJoin()
+                .leftJoin(challenge.host.tier).fetchJoin()
+                .leftJoin(challenge.host.profileImage).fetchJoin();
+
+        // 2. 정렬 적용
+        applyMyAllSorting(query, sort, order);
+
+        // 3. 페이징
+        List<Tuple> tuples = query
+                .offset(pageable.getOffset())
+                .limit(pageable.getPageSize())
+                .fetch();
+
+        // 4. count 쿼리
+        Long total = queryFactory
+                .select(challenge.count())
+                .from(challenge)
+                .join(challengeMember)
+                .on(
+                        challengeMember.id.challenge.eq(challenge),
+                        challengeMember.id.user.id.eq(userId)
+                )
+                .fetchOne();
+
+        return new PageImpl<>(
+                enrichDetails(tuples),
+                pageable,
+                total == null ? 0 : total
+        );
+    }
+
+    private void applyMyAllSorting(
+            JPAQuery<?> query,
+            String sort,
+            String order
+    ) {
+        boolean isAsc = "asc".equalsIgnoreCase(order);
+
+        switch (sort) {
+
+            case "end_date" -> {
+                OrderSpecifier<?> orderSpecifier =
+                        isAsc ? challenge.startedAt.asc()
+                                : challenge.startedAt.desc();
+                query.orderBy(orderSpecifier);
+            }
+
+            case "title" -> {
+                OrderSpecifier<?> orderSpecifier =
+                        isAsc ? challenge.name.asc()
+                                : challenge.name.desc();
+                query.orderBy(orderSpecifier, challenge.createdAt.desc());
+            }
+
+            case "created_at" -> {
+                OrderSpecifier<?> orderSpecifier =
+                        isAsc ? challenge.createdAt.asc()
+                                : challenge.createdAt.desc();
+                query.orderBy(orderSpecifier);
+            }
+
+            default -> {
+                OrderSpecifier<?> orderSpecifier = challenge.createdAt.desc();
+                query.orderBy(orderSpecifier);
+            }
+        }
+    }
+
+
 }
