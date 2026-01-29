@@ -351,6 +351,9 @@ public class ChallengeDto {
         @NoArgsConstructor
         @Builder
         public static class ChallengeInfo {
+            @Schema(description = "작성자 아이디", example = "1")
+            private Long writerId;
+
             @Schema(description = "챌린지 썸네일")
             private FileDto.FileResponse thumbnail;
 
@@ -383,6 +386,7 @@ public class ChallengeDto {
 
             public static ChallengeInfo from(Challenge challenge, boolean isLiked) {
                 return ChallengeInfo.builder()
+                        .writerId(challenge.getHost().getId())
                         .thumbnail(challenge.getChallengeImage() == null ? null : FileDto.FileResponse.from(challenge.getChallengeImage()))
                         .name(challenge.getName())
                         .isLiked(isLiked)
@@ -572,6 +576,9 @@ public class ChallengeDto {
         @Builder
         public static class ChallengeInfo {
 
+            @Schema(description = "작성자 아이디", example = "1")
+            private Long writerId;
+
             @Schema(description = "챌린지 썸네일")
             private FileDto.FileResponse thumbnail;
 
@@ -610,6 +617,7 @@ public class ChallengeDto {
 
             public static ChallengeInfo from(Challenge challenge, boolean isLiked) {
                 return ChallengeInfo.builder()
+                        .writerId(challenge.getHost().getId())
                         .thumbnail(
                                 challenge.getChallengeImage() == null
                                         ? null
@@ -698,6 +706,15 @@ public class ChallengeDto {
         @Schema(description = "챌린지 이름", example = "챌린지 제목")
         private String name;
 
+        @Schema(description = "직무", example = "직무")
+        private String job;
+
+        @Schema(description = "분야 목록")
+        private List<FieldDto.FieldResponse> fields;
+
+        @Schema(description = "태그 목록")
+        private List<TagDto.TagResponse> tags;
+
         @Schema(description = "챌린지 시작일", example = "2026-01-01")
         private LocalDate startedAt;
 
@@ -711,6 +728,17 @@ public class ChallengeDto {
             return ChallengeToPostResponse.builder()
                     .challengeId(challenge.getId())
                     .name(challenge.getName())
+                    .job(challenge.getJob())
+                    .fields(
+                            challenge.getFields().stream()
+                                    .map(FieldDto.FieldResponse::from)
+                                    .collect(Collectors.toList())
+                    )
+                    .tags(
+                            challenge.getTags().stream()
+                                    .map(TagDto.TagResponse::from)
+                                    .collect(Collectors.toList())
+                    )
                     .startedAt(challenge.getStartedAt())
                     .durationWeek(challenge.getDurationWeek())
                     .mode(challenge.getMode())
