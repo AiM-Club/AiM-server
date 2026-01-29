@@ -102,7 +102,7 @@ public class ChallengeRequestDto {
     @NoArgsConstructor
     @AllArgsConstructor
     @Builder
-    @Schema(description = "VS 챌린지 초대 목록 조회 응답")
+    @Schema(description = "신청한 VS 챌린지 조회 응답")
     public static class RequestedChallengeResponse {
         private String name;
 
