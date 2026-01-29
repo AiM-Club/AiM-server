@@ -150,9 +150,6 @@ public class CommentDto {
         @Schema(description = "게시글 아이디", example = "1")
         private Long postId;
 
-        @Schema(description = "주차별 진행상황 아이디", example = "1")
-        private Long weeksId;
-
         @Schema(description = "댓글 아이디", example = "1")
         private Long commentId;
 
