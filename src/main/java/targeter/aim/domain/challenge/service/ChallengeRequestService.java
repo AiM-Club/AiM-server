@@ -86,10 +86,23 @@ public class ChallengeRequestService {
             throw new RestException(ErrorCode.AUTH_AUTHENTICATION_FAILED);
         }
 
-        Page<ChallengeRequestDto.RequestListResponse> result =
-                queryRepository.paginateVsRequests(userDetails, pageable, condition);
+        String keyword = normalizeKeyword(condition.getKeyword());
+
+        Page<ChallengeRequestDto.RequestListResponse> result;
+
+        if (keyword != null) {
+            result = queryRepository.paginateByKeyword(userDetails, pageable, condition, keyword);
+        } else {
+            result = queryRepository.paginateVsRequests(userDetails, pageable, condition);
+        }
 
         return ChallengeRequestDto.ChallengeRequestPageResponse.from(result);
+    }
+
+    private String normalizeKeyword(String keyword) {
+        if (keyword == null) return null;
+        String k = keyword.trim();
+        return k.isEmpty() ? null : k;
     }
 
     @Transactional

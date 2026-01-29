@@ -14,6 +14,7 @@ import targeter.aim.domain.challenge.dto.ChallengeRequestDto;
 import targeter.aim.domain.challenge.entity.ApplyStatus;
 import targeter.aim.domain.challenge.entity.Challenge;
 import targeter.aim.domain.challenge.entity.ChallengeRequest;
+import targeter.aim.domain.challenge.entity.QChallenge;
 import targeter.aim.domain.label.dto.FieldDto;
 import targeter.aim.domain.label.entity.Field;
 import targeter.aim.domain.label.entity.QField;
@@ -40,6 +41,15 @@ public class ChallengeRequestQueryRepository {
             Pageable pageable,
             ChallengeRequestDto.RequestListCondition condition
     ) {
+        return paginateByKeyword(userDetails, pageable, condition, null);
+    }
+
+    public Page<ChallengeRequestDto.RequestListResponse> paginateByKeyword(
+            UserDetails userDetails,
+            Pageable pageable,
+            ChallengeRequestDto.RequestListCondition condition,
+            String keyword
+    ) {
         if (userDetails == null || userDetails.getUser() == null) {
             return new PageImpl<>(List.of(), pageable, 0);
         }
@@ -47,7 +57,7 @@ public class ChallengeRequestQueryRepository {
         Long hostId = userDetails.getUser().getId();
 
         // 1) base query (컬렉션 fetch join 금지 -> fields는 별도 조회)
-        JPAQuery<ChallengeRequest> baseQuery = buildBaseQuery(hostId, condition);
+        JPAQuery<ChallengeRequest> baseQuery = buildBaseQuery(hostId, keyword);
         applySorting(baseQuery, condition);
 
         List<ChallengeRequest> requests = baseQuery
@@ -56,7 +66,7 @@ public class ChallengeRequestQueryRepository {
                 .fetch();
 
         // 2) count query
-        Long total = buildCountQuery(hostId, condition).fetchOne();
+        Long total = buildCountQuery(hostId, keyword).fetchOne();
         long totalElements = total == null ? 0 : total;
 
         if (requests.isEmpty()) {
@@ -79,10 +89,12 @@ public class ChallengeRequestQueryRepository {
         return new PageImpl<>(content, pageable, totalElements);
     }
 
-    private JPAQuery<ChallengeRequest> buildBaseQuery(Long hostId, ChallengeRequestDto.RequestListCondition condition) {
-        BooleanExpression keywordPredicate = keywordCondition(condition == null ? null : condition.getKeyword());
+    private JPAQuery<ChallengeRequest> buildBaseQuery(
+            Long hostId,
+            String keyword) {
+        BooleanExpression keywordPredicate = keywordCondition(keyword);
 
-        JPAQuery<ChallengeRequest> query = queryFactory
+        return queryFactory
                 .selectFrom(challengeRequest)
                 .join(challengeRequest.requester).fetchJoin()
                 .join(challengeRequest.requester.tier).fetchJoin()
@@ -93,12 +105,12 @@ public class ChallengeRequestQueryRepository {
                         challengeRequest.applyStatus.eq(ApplyStatus.PENDING),
                         keywordPredicate
                 );
-
-        return query;
     }
 
-    private JPAQuery<Long> buildCountQuery(Long hostId, ChallengeRequestDto.RequestListCondition condition) {
-        BooleanExpression keywordPredicate = keywordCondition(condition == null ? null : condition.getKeyword());
+    private JPAQuery<Long> buildCountQuery(
+            Long hostId,
+            String keyword) {
+        BooleanExpression keywordPredicate = keywordCondition(keyword);
 
         return queryFactory
                 .select(challengeRequest.count())
@@ -120,17 +132,16 @@ public class ChallengeRequestQueryRepository {
         BooleanExpression inChallengeTitle = challenge.name.containsIgnoreCase(k);
 
         // fields 검색(존재 여부 서브쿼리)
-        QField f = new QField("f");
-        var c = new com.querydsl.core.types.dsl.EntityPathBase<>(Challenge.class, "c"); // alias 용도(아래에서 QChallenge 새로 만듦)
-        var cField = new targeter.aim.domain.challenge.entity.QChallenge("cField");
+        QChallenge subChallenge = new QChallenge("subChallenge");
+        QField subField = new QField("subField");
 
         BooleanExpression inField = JPAExpressions
                 .selectOne()
-                .from(cField)
-                .join(cField.fields, f)
+                .from(subChallenge)
+                .join(subChallenge.fields, subField)
                 .where(
-                        cField.id.eq(challenge.id),
-                        f.name.containsIgnoreCase(k)
+                        subChallenge.id.eq(challenge.id),
+                        subField.name.containsIgnoreCase(k)
                 )
                 .exists();
 
@@ -149,8 +160,6 @@ public class ChallengeRequestQueryRepository {
     }
 
     private Map<Long, List<FieldDto.FieldResponse>> fetchFieldMap(List<Long> challengeIds) {
-        // challenge-field 매핑 테이블 통해 fields 조회
-        // (엔티티 관계가 challenge.fields로 잡혀있으니 join(challenge.fields, field) 가능)
         List<com.querydsl.core.Tuple> tuples = queryFactory
                 .select(challenge.id, field)
                 .from(challenge)
