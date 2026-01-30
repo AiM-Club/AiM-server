@@ -33,20 +33,14 @@ public class PostController {
 
     @PostMapping(value = "/vs", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @Operation(
-            summary = "VS 챌린지 게시글 생성",
+            summary = "VS 챌린지 모집글 생성",
             description = "VS 챌린지에 모집글을 생성합니다."
     )
-    public ResponseEntity<Map<String, Long>> createVsPost(
+    public PostDto.PostIdResponse createVsPost(
             @ModelAttribute PostDto.CreateChallengePostRequest request,
             @AuthenticationPrincipal UserDetails userDetails
     ) {
-
-        Long postId = postService.createChallengePost(
-                request,
-                userDetails.getUser().getId()
-        );
-
-        return ResponseEntity.ok(Map.of("postId", postId));
+        return postService.createChallengePost(request, userDetails);
     }
 
     @NoJwtAuth

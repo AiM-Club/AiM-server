@@ -255,8 +255,6 @@ public class PostQueryRepository {
                                 ? FileDto.FileResponse.from(profileImage)
                                 : null)
                         .build())
-                .startDate(p.getStartedAt())
-                .duration(p.getDurationWeek() + "주")
                 .name(p.getTitle())
                 .fields(fieldMap.getOrDefault(p.getId(), List.of()))
                 .tags(tagMap.getOrDefault(p.getId(), List.of()))

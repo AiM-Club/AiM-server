@@ -129,9 +129,6 @@ public class PostDto {
     @Schema(description = "VS 챌린지 모집 게시글 생성 요청 DTO")
     public static class CreateChallengePostRequest {
 
-        @Schema(description = "챌린지 ID")
-        private Long challengeId;
-
         @Schema(description = "모집 게시글 썸네일 이미지")
         private MultipartFile thumbnail;
 
@@ -147,14 +144,31 @@ public class PostDto {
         @Schema(description = "직무명")
         private String job;
 
-        @Schema(description = "모집 게시글 본문 내용")
-        private String contents;
+        @Schema(description = "챌린지 ID")
+        private Long challengeId;
 
-        @Schema(description = "첨부 파일 목록")
-        private List<MultipartFile> files;
+        @Schema(description = "챌린지 시작일", example = "2026-01-01")
+        private LocalDate startedAt;
+
+        @Schema(description = "챌린지 기간(주)", example = "4")
+        private Integer durationWeek;
+
+        @Schema(description = "모집 게시글 본문 내용")
+        private String content;
 
         @Schema(description = "첨부 이미지 목록")
-        private List<MultipartFile> images;
+        private List<MultipartFile> attachedImages;
+
+        @Schema(description = "첨부 파일 목록")
+        private List<MultipartFile> attachedFiles;
+
+        public Post toEntity() {
+            return Post.builder()
+                    .title(title)
+                    .content(content)
+                    .job(job)
+                    .build();
+        }
     }
 
     @Data
@@ -200,15 +214,11 @@ public class PostDto {
         @Schema(description = "첨부 파일 목록")
         private List<MultipartFile> attachedFiles;
 
-
         public Post toEntity() {
             return Post.builder()
                     .title(title)
-                    .job(job)
-                    .startedAt(startedAt)
-                    .durationWeek(durationWeek)
-                    .mode(mode)
                     .content(content)
+                    .job(job)
                     .build();
         }
     }
@@ -286,12 +296,11 @@ public class PostDto {
 
         public static PostVsDetailResponse from(
                 Post post,
-                Challenge challenge,
                 boolean isLiked
         ) {
             return PostVsDetailResponse.builder()
-                    .challengeId(post.getChallengeId())
-                    .challengeName(challenge.getName())
+                    .challengeId(post.getChallenge().getId())
+                    .challengeName(post.getChallenge().getName())
                     .writerId(post.getUser().getId())
                     .nickname(post.getUser().getNickname())
                     .thumbnail(post.getThumbnail() == null
@@ -305,8 +314,8 @@ public class PostDto {
                             .map(FieldDto.FieldResponse::from)
                             .toList())
                     .job(post.getJob())
-                    .startDate(post.getStartedAt())
-                    .totalWeeks(post.getDurationWeek())
+                    .startDate(post.getChallenge().getStartedAt())
+                    .totalWeeks(post.getChallenge().getDurationWeek())
                     .isLiked(isLiked)
                     .likeCount(post.getLikeCount())
                     .content(post.getContent())
@@ -404,19 +413,6 @@ public class PostDto {
         public void applyTo(Post post, Set<Tag> resolvedTags, Set<Field> resolvedFields) {
             if(title != null) {
                 post.setTitle(title);
-            }
-            if(startedAt != null) {
-                post.setStartedAt(startedAt);
-            }
-            if(durationWeek != null) {
-                post.setDurationWeek(durationWeek);
-            }
-            if(job != null) {
-                post.setJob(job);
-            }
-
-            if(mode != null) {
-                post.setMode(mode);
             }
             if(tags != null) {
                 post.getTags().clear();
