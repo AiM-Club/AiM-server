@@ -12,6 +12,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import targeter.aim.domain.challenge.dto.ChallengeDto;
 import targeter.aim.domain.post.dto.PostDto;
 import targeter.aim.domain.post.service.PostService;
 import targeter.aim.system.security.annotation.NoJwtAuth;
@@ -117,4 +118,16 @@ public class PostController {
         return postService.getTop10HotVsPosts();
     }
 
+    @PatchMapping(value = "/{postId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @Operation(
+            summary = "게시글 수정",
+            description = "해당 id의 게시글을 수정합니다."
+    )
+    public PostDto.PostIdResponse updatePost(
+            @PathVariable Long postId,
+            @ModelAttribute @Valid @ParameterObject PostDto.UpdatePostRequest request,
+            @AuthenticationPrincipal UserDetails userDetails
+    ) {
+        return postService.updatePost(postId, userDetails, request);
+    }
 }

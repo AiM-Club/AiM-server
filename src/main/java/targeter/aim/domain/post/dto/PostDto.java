@@ -5,15 +5,18 @@ import lombok.*;
 import org.springframework.data.domain.Page;
 import org.springframework.web.multipart.MultipartFile;
 import targeter.aim.domain.challenge.entity.Challenge;
+import targeter.aim.domain.challenge.entity.ChallengeMode;
 import targeter.aim.domain.file.dto.FileDto;
 import targeter.aim.domain.label.dto.FieldDto;
 import targeter.aim.domain.label.dto.TagDto;
+import targeter.aim.domain.label.entity.Field;
+import targeter.aim.domain.label.entity.Tag;
 import targeter.aim.domain.post.entity.Post;
-import targeter.aim.domain.post.entity.PostType;
 import targeter.aim.domain.user.dto.UserDto;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 public class PostDto {
@@ -185,14 +188,18 @@ public class PostDto {
         @Schema(description = "챌린지 ID")
         private Long challengeId;
 
+        @Schema(description = "챌린지 모드")
+        private ChallengeMode mode;
+
         @Schema(description = "Qna/후기 게시글 본문 내용")
         private String content;
 
-        @Schema(description = "첨부 파일 목록")
-        private List<MultipartFile> files;
-
         @Schema(description = "첨부 이미지 목록")
-        private List<MultipartFile> images;
+        private List<MultipartFile> attachedImages;
+
+        @Schema(description = "첨부 파일 목록")
+        private List<MultipartFile> attachedFiles;
+
 
         public Post toEntity() {
             return Post.builder()
@@ -200,6 +207,7 @@ public class PostDto {
                     .job(job)
                     .startedAt(startedAt)
                     .durationWeek(durationWeek)
+                    .mode(mode)
                     .content(content)
                     .build();
         }
@@ -340,4 +348,90 @@ public class PostDto {
         private List<String> fields;
     }
 
+    @Data
+    @AllArgsConstructor
+    @NoArgsConstructor
+    @Builder
+    @Schema(description = "QnA/후기 수정 요청 DTO")
+    public static class UpdatePostRequest {
+
+        @Schema(description = "QnA/후기 썸네일 이미지")
+        private MultipartFile thumbnail;
+
+        @Schema(description = "QnA/후기 제목 (최대 15자)")
+        private String title;
+
+        @Schema(description = "챌린지 태그")
+        private List<String> tags;
+
+        @Schema(description = "챌린지 분야")
+        private List<String> fields;
+
+        @Schema(description = "직무명")
+        private String job;
+
+        @Schema(description = "챌린지 시작일", example = "2026-01-01")
+        private LocalDate startedAt;
+
+        @Schema(description = "챌린지 기간(주)", example = "4")
+        private Integer durationWeek;
+
+        @Schema(description = "챌린지 ID")
+        private Long challengeId;
+
+        @Schema(description = "챌린지 모드", example = "VS | SOLO")
+        private ChallengeMode mode;
+
+        @Schema(description = "Qna/후기 게시글 본문 내용")
+        private String content;
+
+        @Schema(description = "첨부 이미지 목록")
+        private List<MultipartFile> attachedImages;
+
+        @Schema(description = "첨부 파일 목록")
+        private List<MultipartFile> attachedFiles;
+
+        public void applyTo(Post post, Set<Tag> resolvedTags, Set<Field> resolvedFields) {
+            if(title != null) {
+                post.setTitle(title);
+            }
+            if(startedAt != null) {
+                post.setStartedAt(startedAt);
+            }
+            if(durationWeek != null) {
+                post.setDurationWeek(durationWeek);
+            }
+            if(job != null) {
+                post.setJob(job);
+            }
+
+            if(mode != null) {
+                post.setMode(mode);
+            }
+            if(tags != null) {
+                post.getTags().clear();
+                if(resolvedTags != null) post.getTags().addAll(resolvedTags);
+            }
+            if(fields != null) {
+                post.getFields().clear();
+                if(resolvedFields != null) post.getFields().addAll(resolvedFields);
+            }
+        }
+    }
+
+    @Data
+    @AllArgsConstructor
+    @NoArgsConstructor
+    @Builder
+    @Schema(description = "게시글 아이디 응답 DTO")
+    public static class PostIdResponse {
+        @Schema(description = "게시글 id", example = "1")
+        private Long postId;
+
+        public static PostDto.PostIdResponse from(Post post) {
+            return PostIdResponse.builder()
+                    .postId(post.getId())
+                    .build();
+        }
+    }
 }

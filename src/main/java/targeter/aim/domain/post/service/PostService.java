@@ -6,9 +6,11 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
+import targeter.aim.domain.challenge.dto.ChallengeDto;
 import targeter.aim.domain.challenge.entity.Challenge;
 import targeter.aim.domain.challenge.entity.ChallengeMode;
 import targeter.aim.domain.challenge.repository.ChallengeRepository;
+import targeter.aim.domain.file.entity.ChallengeImage;
 import targeter.aim.domain.file.entity.PostAttachedFile;
 import targeter.aim.domain.file.entity.PostAttachedImage;
 import targeter.aim.domain.file.entity.PostImage;
@@ -17,6 +19,8 @@ import targeter.aim.domain.label.entity.Field;
 import targeter.aim.domain.label.entity.Tag;
 import targeter.aim.domain.label.repository.FieldRepository;
 import targeter.aim.domain.label.repository.TagRepository;
+import targeter.aim.domain.label.service.FieldService;
+import targeter.aim.domain.label.service.TagService;
 import targeter.aim.domain.post.dto.PostDto;
 import targeter.aim.domain.post.repository.PostLikedRepository;
 import targeter.aim.domain.post.repository.PostQueryRepository;
@@ -47,6 +51,8 @@ public class PostService {
     private final FieldRepository fieldRepository;
     private final PostLikedRepository postLikedRepository;
 
+    private final TagService tagService;
+    private final FieldService fieldService;
     private final FileHandler fileHandler;
 
     @Transactional(readOnly = true)
@@ -149,12 +155,11 @@ public class PostService {
 
         Post saved = request.toEntity();
         saved.setUser(user);
-        saved.setMode(challenge.getMode());
         saved.setType(PostType.Q_AND_A);
 
         saveThumbnail(request.getThumbnail(), saved);
-        saveAttachedImages(request.getImages(), saved);
-        saveAttachedFiles(request.getFiles(), saved);
+        saveAttachedImages(request.getAttachedImages(), saved);
+        saveAttachedFiles(request.getAttachedFiles(), saved);
 
         updatePostLabels(saved, request.getTags(), request.getFields());
         postRepository.save(saved);
@@ -181,12 +186,11 @@ public class PostService {
 
         Post saved = request.toEntity();
         saved.setUser(user);
-        saved.setMode(challenge.getMode());
         saved.setType(PostType.REVIEW);
 
         saveThumbnail(request.getThumbnail(), saved);
-        saveAttachedImages(request.getImages(), saved);
-        saveAttachedFiles(request.getFiles(), saved);
+        saveAttachedImages(request.getAttachedImages(), saved);
+        saveAttachedFiles(request.getAttachedFiles(), saved);
 
         updatePostLabels(saved, request.getTags(), request.getFields());
         postRepository.save(saved);
@@ -289,4 +293,54 @@ public class PostService {
         return postQueryRepository.findTop10HotVsPosts();
     }
 
+    @Transactional
+    public PostDto.PostIdResponse updatePost(
+            Long postId,
+            UserDetails userDetails,
+            PostDto.UpdatePostRequest request
+    ) {
+        if (userDetails == null) {
+            throw new RestException(ErrorCode.AUTH_LOGIN_REQUIRED);
+        }
+
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() -> new RestException(ErrorCode.POST_NOT_FOUND));
+
+        post.canUpdateBy(userDetails);
+
+        if(request.getChallengeId() != null) {
+            Challenge challenge = challengeRepository.findById(request.getChallengeId())
+                    .orElseThrow(() -> new RestException(ErrorCode.CHALLENGE_NOT_FOUND));
+
+            request.setJob(challenge.getJob());
+            request.setStartedAt(challenge.getStartedAt());
+            request.setDurationWeek(challenge.getDurationWeek());
+            request.setMode(challenge.getMode());
+        }
+
+        // 분야 처리
+        Set<Tag> resolvedTags = null;
+        if(request.getTags() != null) {
+            resolvedTags = tagService.findOrCreateByNames(request.getTags());
+        }
+
+        Set<Field> resolvedFields = null;
+        if(request.getFields() != null) {
+            resolvedFields = fieldService.findFieldByName(request.getFields());
+        }
+
+        request.applyTo(post, resolvedTags, resolvedFields);
+
+        if (request.getThumbnail() != null && !request.getThumbnail().isEmpty()) {
+            if (post.getThumbnail() != null) {
+                fileHandler.deleteIfExists(post.getThumbnail());
+            }
+
+            PostImage newImage = PostImage.from(request.getThumbnail(), post);
+            fileHandler.saveFile(request.getThumbnail(), newImage);
+            post.setThumbnail(newImage);
+        }
+
+        return PostDto.PostIdResponse.from(post);
+    }
 }

@@ -15,6 +15,9 @@ import targeter.aim.domain.label.entity.Tag;
 import targeter.aim.domain.user.entity.User;
 import targeter.aim.domain.file.entity.PostAttachedFile;
 import targeter.aim.domain.file.entity.PostAttachedImage;
+import targeter.aim.system.exception.model.ErrorCode;
+import targeter.aim.system.exception.model.RestException;
+import targeter.aim.system.security.model.UserDetails;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -105,6 +108,22 @@ public class Post extends TimeStampedEntity {
     @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     private List<PostAttachedFile> attachedFiles = new ArrayList<>();
+
+    public void canUpdateBy(UserDetails user) {
+        if(this.user.getId().equals(user.getUser().getId())) {
+            return;
+        }
+
+        throw new RestException(ErrorCode.AUTH_FORBIDDEN);
+    }
+
+    public void canDeleteBy(UserDetails user) {
+        if(this.user.getId().equals(user.getUser().getId())) {
+            return;
+        }
+
+        throw new RestException(ErrorCode.AUTH_FORBIDDEN);
+    }
 
     public void setThumbnail(PostImage image) {
         this.thumbnail = image;
