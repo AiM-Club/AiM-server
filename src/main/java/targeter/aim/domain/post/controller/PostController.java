@@ -2,12 +2,14 @@ package targeter.aim.domain.post.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -129,5 +131,19 @@ public class PostController {
             @AuthenticationPrincipal UserDetails userDetails
     ) {
         return postService.updatePost(postId, userDetails, request);
+    }
+
+    @DeleteMapping("/{postId}")
+    @Operation(
+            summary = "게시글 삭제",
+            description = "해당 id의 게시글를 삭제합니다."
+    )
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    @ApiResponse(responseCode = "204", description = "게시글 삭제 성공")
+    public void deletePost(
+            @PathVariable Long postId,
+            @AuthenticationPrincipal UserDetails userDetails
+    ) {
+        postService.deletePost(postId, userDetails);
     }
 }

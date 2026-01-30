@@ -343,4 +343,21 @@ public class PostService {
 
         return PostDto.PostIdResponse.from(post);
     }
+
+    @Transactional
+    public void deletePost(Long postId, UserDetails userDetails) {
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() -> new RestException(ErrorCode.POST_NOT_FOUND));
+
+        post.canDeleteBy(userDetails);
+
+        if(post.getThumbnail() != null) {
+            fileHandler.deleteIfExists(post.getThumbnail());
+        }
+
+        post.getTags().clear();
+        post.getFields().clear();
+
+        postRepository.delete(post);
+    }
 }
