@@ -482,8 +482,7 @@ public class ChallengeQueryRepository {
                 .orderBy(challenge.startedAt.desc())       // 최신순 정렬
                 .fetch();                                  // List로 반환
     }
-
-
+    
     public Page<ChallengeDto.ChallengeListResponse> paginateMyAllChallenges(
             Long userId,
             Pageable pageable,
@@ -513,7 +512,35 @@ public class ChallengeQueryRepository {
                 .leftJoin(challenge.host.tier).fetchJoin()
                 .leftJoin(challenge.host.profileImage).fetchJoin();
 
-        applyMyAllSorting(query, sortType, sortOrder);
+        if (sortType == AllChallengeSortType.END_DATE) {
+            List<Tuple> tuples = query.fetch();
+            List<ChallengeDto.ChallengeListResponse> all = enrichDetails(tuples);
+
+            List<ChallengeDto.ChallengeListResponse> sorted =
+                    all.stream()
+                            .sorted(
+                                    sortOrder == SortOrder.ASC
+                                            ? Comparator.comparing(this::endDate)
+                                            : Comparator.comparing(this::endDate).reversed()
+                            )
+                            .toList();
+
+            return slice(sorted, pageable);
+        }
+
+        boolean isAsc = sortOrder == SortOrder.ASC;
+
+        switch (sortType) {
+            case TITLE ->
+                    query.orderBy(
+                            isAsc ? challenge.name.asc() : challenge.name.desc(),
+                            challenge.createdAt.desc()
+                    );
+            case CREATED_AT ->
+                    query.orderBy(
+                            isAsc ? challenge.createdAt.asc() : challenge.createdAt.desc()
+                    );
+        }
 
         List<Tuple> tuples = query
                 .offset(pageable.getOffset())
@@ -535,37 +562,6 @@ public class ChallengeQueryRepository {
                 pageable,
                 total == null ? 0 : total
         );
-    }
-
-    private void applyMyAllSorting(
-            JPAQuery<?> query,
-            AllChallengeSortType sortType,
-            SortOrder order
-    ) {
-        boolean isAsc = order == SortOrder.ASC;
-
-        switch (sortType) {
-
-            case END_DATE ->
-                    query.orderBy(
-                        isAsc ? challenge.startedAt.asc()
-                                : challenge.startedAt.desc()
-                );
-
-            case TITLE ->
-                    query.orderBy(
-                            isAsc ? challenge.name.asc()
-                                    : challenge.name.desc(),
-                            challenge.createdAt.desc()
-                    );
-
-            case CREATED_AT ->
-                    query.orderBy(
-                            isAsc ? challenge.createdAt.asc()
-                                    : challenge.createdAt.desc()
-                    );
-
-        }
     }
 
 }
