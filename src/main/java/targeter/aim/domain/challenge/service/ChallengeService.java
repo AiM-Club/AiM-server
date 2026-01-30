@@ -670,7 +670,7 @@ public class ChallengeService {
 
         Long userId = userDetails.getUser().getId();
 
-        return challengeQueryRepository.paginateMyAllChallenges(
+        return challengeQueryRepository.paginateAllChallenges(
                 userId,
                 pageable,
                 sortType,

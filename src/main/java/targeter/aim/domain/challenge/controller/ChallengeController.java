@@ -167,5 +167,4 @@ public class ChallengeController {
         return ChallengeDto.ChallengePageResponse.from(page);
     }
 
-
 }

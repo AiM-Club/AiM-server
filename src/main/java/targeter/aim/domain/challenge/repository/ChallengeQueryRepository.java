@@ -482,8 +482,8 @@ public class ChallengeQueryRepository {
                 .orderBy(challenge.startedAt.desc())       // 최신순 정렬
                 .fetch();                                  // List로 반환
     }
-    
-    public Page<ChallengeDto.ChallengeListResponse> paginateMyAllChallenges(
+
+    public Page<ChallengeDto.ChallengeListResponse> paginateAllChallenges(
             Long userId,
             Pageable pageable,
             AllChallengeSortType sortType,
