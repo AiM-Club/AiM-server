@@ -656,4 +656,21 @@ public class ChallengeService {
                 .map(ChallengeDto.ChallengeToPostResponse::from) // DTO의 factory method 사용
                 .collect(Collectors.toList());
     }
+
+    // 내가 참여한 전체 챌린지 목록 조회
+    public Page<ChallengeDto.ChallengeListResponse> getMyAllChallenges(
+            UserDetails userDetails,
+            Pageable pageable,
+            String sort,
+            String order
+    ) {
+        Long userId = userDetails.getUser().getId();
+
+        return challengeQueryRepository.paginateMyAllChallenges(
+                userId,
+                pageable,
+                sort,
+                order
+        );
+    }
 }

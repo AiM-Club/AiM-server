@@ -143,4 +143,27 @@ public class ChallengeController {
     ) {
         return challengeService.getChallengeToPost(mode, userDetails);
     }
+
+    @GetMapping("/all")
+    @Operation(
+            summary = "내가 참여한 전체 챌린지 목록 조회",
+            description = "로그인한 사용자가 참여한 모든 SOLO/VS 챌린지를 정렬 조건과 함께 조회합니다."
+    )
+    public ChallengeDto.ChallengePageResponse getMyAllChallenges(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @RequestParam(defaultValue = "created_at") String sort,
+            @RequestParam(defaultValue = "desc") String order,
+            @ParameterObject Pageable pageable
+    ) {
+        var page = challengeService.getMyAllChallenges(
+                userDetails,
+                pageable,
+                sort,
+                order
+        );
+
+        return ChallengeDto.ChallengePageResponse.from(page);
+    }
+
+
 }
