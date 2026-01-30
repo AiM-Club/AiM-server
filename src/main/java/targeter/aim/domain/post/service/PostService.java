@@ -367,6 +367,7 @@ public class PostService {
         post.getTags().clear();
         post.getFields().clear();
 
+        postLikedRepository.deleteByPost(post);
         postRepository.delete(post);
     }
 }

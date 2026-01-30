@@ -639,6 +639,7 @@ public class ChallengeService {
         challenge.getTags().clear();
         challenge.getFields().clear();
 
+        challengeLikedRepository.deleteByChallenge(challenge);
         challengeRepository.delete(challenge);
     }
 
