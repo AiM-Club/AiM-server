@@ -35,6 +35,8 @@ import java.util.stream.Stream;
 import static targeter.aim.domain.challenge.entity.QChallenge.challenge;
 import static targeter.aim.domain.challenge.entity.QChallengeLiked.challengeLiked;
 import static targeter.aim.domain.challenge.entity.QChallengeMember.challengeMember;
+import static targeter.aim.domain.challenge.repository.MyChallengeSortType.CREATED_AT;
+import static targeter.aim.domain.challenge.repository.MyChallengeSortType.TITLE;
 import static targeter.aim.domain.label.entity.QField.field;
 import static targeter.aim.domain.label.entity.QTag.tag;
 
@@ -485,14 +487,12 @@ public class ChallengeQueryRepository {
     }
 
 
-//     내가 참여한 전체 챌린지 목록 조회
     public Page<ChallengeDto.ChallengeListResponse> paginateMyAllChallenges(
             Long userId,
             Pageable pageable,
-            String sort,
-            String order
+            MyChallengeSortType sortType,
+            SortOrder sortOrder
     ) {
-        // 1. 기본 조회 쿼리
         JPAQuery<Tuple> query = queryFactory
                 .select(
                         challenge,
@@ -516,16 +516,13 @@ public class ChallengeQueryRepository {
                 .leftJoin(challenge.host.tier).fetchJoin()
                 .leftJoin(challenge.host.profileImage).fetchJoin();
 
-        // 2. 정렬 적용
-        applyMyAllSorting(query, sort, order);
+        applyMyAllSorting(query, sortType, sortOrder);
 
-        // 3. 페이징
         List<Tuple> tuples = query
                 .offset(pageable.getOffset())
                 .limit(pageable.getPageSize())
                 .fetch();
 
-        // 4. count 쿼리
         Long total = queryFactory
                 .select(challenge.count())
                 .from(challenge)
@@ -545,40 +542,33 @@ public class ChallengeQueryRepository {
 
     private void applyMyAllSorting(
             JPAQuery<?> query,
-            String sort,
-            String order
+            MyChallengeSortType sortType,
+            SortOrder order
     ) {
-        boolean isAsc = "asc".equalsIgnoreCase(order);
+        boolean isAsc = order == SortOrder.ASC;
 
-        switch (sort) {
+        switch (sortType) {
 
-            case "end_date" -> {
-                OrderSpecifier<?> orderSpecifier =
+            case END_DATE ->
+                    query.orderBy(
                         isAsc ? challenge.startedAt.asc()
-                                : challenge.startedAt.desc();
-                query.orderBy(orderSpecifier);
-            }
+                                : challenge.startedAt.desc()
+                );
 
-            case "title" -> {
-                OrderSpecifier<?> orderSpecifier =
-                        isAsc ? challenge.name.asc()
-                                : challenge.name.desc();
-                query.orderBy(orderSpecifier, challenge.createdAt.desc());
-            }
+            case TITLE ->
+                    query.orderBy(
+                            isAsc ? challenge.name.asc()
+                                    : challenge.name.desc(),
+                            challenge.createdAt.desc()
+                    );
 
-            case "created_at" -> {
-                OrderSpecifier<?> orderSpecifier =
-                        isAsc ? challenge.createdAt.asc()
-                                : challenge.createdAt.desc();
-                query.orderBy(orderSpecifier);
-            }
+            case CREATED_AT ->
+                    query.orderBy(
+                            isAsc ? challenge.createdAt.asc()
+                                    : challenge.createdAt.desc()
+                    );
 
-            default -> {
-                OrderSpecifier<?> orderSpecifier = challenge.createdAt.desc();
-                query.orderBy(orderSpecifier);
-            }
         }
     }
-
 
 }

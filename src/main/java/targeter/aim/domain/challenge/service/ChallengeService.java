@@ -657,20 +657,24 @@ public class ChallengeService {
                 .collect(Collectors.toList());
     }
 
-    // 내가 참여한 전체 챌린지 목록 조회
+    @Transactional(readOnly = true)
     public Page<ChallengeDto.ChallengeListResponse> getMyAllChallenges(
             UserDetails userDetails,
             Pageable pageable,
-            String sort,
-            String order
+            MyChallengeSortType sortType,
+            SortOrder sortOrder
     ) {
+        if (userDetails == null) {
+            throw new RestException(ErrorCode.AUTH_LOGIN_REQUIRED);
+        }
+
         Long userId = userDetails.getUser().getId();
 
         return challengeQueryRepository.paginateMyAllChallenges(
                 userId,
                 pageable,
-                sort,
-                order
+                sortType,
+                sortOrder
         );
     }
 }

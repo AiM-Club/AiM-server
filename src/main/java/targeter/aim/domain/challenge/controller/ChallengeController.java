@@ -14,6 +14,8 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import targeter.aim.domain.challenge.dto.ChallengeDto;
 import targeter.aim.domain.challenge.entity.ChallengeMode;
+import targeter.aim.domain.challenge.repository.MyChallengeSortType;
+import targeter.aim.domain.challenge.repository.SortOrder;
 import targeter.aim.domain.challenge.service.ChallengeService;
 import targeter.aim.system.security.annotation.NoJwtAuth;
 import targeter.aim.system.security.model.UserDetails;
@@ -151,9 +153,9 @@ public class ChallengeController {
     )
     public ChallengeDto.ChallengePageResponse getMyAllChallenges(
             @AuthenticationPrincipal UserDetails userDetails,
-            @RequestParam(defaultValue = "created_at") String sort,
-            @RequestParam(defaultValue = "desc") String order,
-            @ParameterObject Pageable pageable
+            @RequestParam(defaultValue = "CREATED_AT") MyChallengeSortType sort,
+            @RequestParam(defaultValue = "DESC") SortOrder order,
+            @PageableDefault(size = 8) @ParameterObject Pageable pageable
     ) {
         var page = challengeService.getMyAllChallenges(
                 userDetails,
