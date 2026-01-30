@@ -75,6 +75,9 @@ public enum ErrorCode {
     POST_TITLE_INVALID(400, "제목은 15자 이하여야 합니다."),
     POST_TAG_COUNT_INVALID(400, "태그는 1~3개까지 가능합니다."),
     POST_FIELD_COUNT_INVALID(400, "분야는 1~3개까지 가능합니다."),
+    POST_NOT_MATCH_WITH_CHALLENGE_STARTED_AT(400, "입력한 요청값과 챌린지의 시작일이 다릅니다."),
+    POST_NOT_MATCH_WITH_CHALLENGE_DURATION(400, "입력한 요청값과 챌린지의 기간(주)와 다릅니다."),
+    POST_NOT_MATCH_WITH_CHALLENGE_MODE(400, "입력한 요청값과 챌린지의 모드가 다릅니다."),
 
     // Comment
     COMMENT_CONTENT_EMPTY(400, "댓글 내용은 비어 있을 수 없습니다."),

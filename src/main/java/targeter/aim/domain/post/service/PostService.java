@@ -6,9 +6,11 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
+import targeter.aim.domain.challenge.dto.ChallengeDto;
 import targeter.aim.domain.challenge.entity.Challenge;
 import targeter.aim.domain.challenge.entity.ChallengeMode;
 import targeter.aim.domain.challenge.repository.ChallengeRepository;
+import targeter.aim.domain.file.entity.ChallengeImage;
 import targeter.aim.domain.file.entity.PostAttachedFile;
 import targeter.aim.domain.file.entity.PostAttachedImage;
 import targeter.aim.domain.file.entity.PostImage;
@@ -17,6 +19,8 @@ import targeter.aim.domain.label.entity.Field;
 import targeter.aim.domain.label.entity.Tag;
 import targeter.aim.domain.label.repository.FieldRepository;
 import targeter.aim.domain.label.repository.TagRepository;
+import targeter.aim.domain.label.service.FieldService;
+import targeter.aim.domain.label.service.TagService;
 import targeter.aim.domain.post.dto.PostDto;
 import targeter.aim.domain.post.repository.PostLikedRepository;
 import targeter.aim.domain.post.repository.PostQueryRepository;
@@ -47,6 +51,8 @@ public class PostService {
     private final FieldRepository fieldRepository;
     private final PostLikedRepository postLikedRepository;
 
+    private final TagService tagService;
+    private final FieldService fieldService;
     private final FileHandler fileHandler;
 
     @Transactional(readOnly = true)
@@ -89,15 +95,18 @@ public class PostService {
     }
 
     @Transactional
-    public Long createChallengePost(
+    public PostDto.PostIdResponse createChallengePost(
             PostDto.CreateChallengePostRequest request,
-            Long userId
+            UserDetails userDetails
     ) {
+        if (userDetails == null) {
+            throw new RestException(ErrorCode.AUTH_LOGIN_REQUIRED);
+        }
+        User user = userDetails.getUser();
 
         Challenge challenge = challengeRepository.findById(request.getChallengeId())
                 .orElseThrow(() -> new RestException(ErrorCode.CHALLENGE_NOT_FOUND));
-
-        if (!challenge.getHost().getId().equals(userId)) {
+        if (!challenge.getHost().getId().equals(user.getId())) {
             throw new RestException(ErrorCode.AUTH_FORBIDDEN);
         }
 
@@ -105,30 +114,31 @@ public class PostService {
             throw new RestException(ErrorCode.CHALLENGE_MODE_NOT_VS);
         }
 
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RestException(ErrorCode.USER_NOT_FOUND));
+        validateVsRequestWithChallenge(request, challenge);
 
-        Post post = Post.builder()
-                .user(user)
-                .title(request.getTitle())
-                .job(request.getJob())
-                .startedAt(challenge.getStartedAt())
-                .durationWeek(challenge.getDurationWeek())
-                .content(request.getContents())
-                .mode(challenge.getMode())
-                .type(PostType.VS_RECRUIT)
-                .challengeId(challenge.getId())
-                .build();
+        Post saved = request.toEntity();
+        saved.setUser(user);
+        saved.setChallenge(challenge);
+        saved.setType(PostType.VS_RECRUIT);
 
-        Post saved = postRepository.save(post);
+        saveThumbnail(request.getThumbnail(), saved);
+        saveAttachedImages(request.getAttachedImages(), saved);
+        saveAttachedFiles(request.getAttachedFiles(), saved);
 
         updatePostLabels(saved, request.getTags(), request.getFields());
 
-        saveThumbnail(request.getThumbnail(), saved);
-        saveAttachedImages(request.getImages(), saved);
-        saveAttachedFiles(request.getFiles(), saved);
+        postRepository.save(saved);
 
-        return saved.getId();
+        return PostDto.PostIdResponse.from(saved);
+    }
+
+    private void validateVsRequestWithChallenge(PostDto.CreateChallengePostRequest request, Challenge challenge) {
+        if(!challenge.getStartedAt().isEqual(request.getStartedAt())) {
+            throw new RestException(ErrorCode.POST_NOT_MATCH_WITH_CHALLENGE_STARTED_AT);
+        }
+        if(!challenge.getDurationWeek().equals(request.getDurationWeek())) {
+            throw new RestException(ErrorCode.POST_NOT_MATCH_WITH_CHALLENGE_DURATION);
+        }
     }
 
     @Transactional
@@ -144,18 +154,16 @@ public class PostService {
         Challenge challenge = challengeRepository.findById(request.getChallengeId())
                 .orElseThrow(() -> new RestException(ErrorCode.CHALLENGE_NOT_FOUND));
 
-        if(!challenge.getStartedAt().isEqual(request.getStartedAt()) || !challenge.getDurationWeek().equals(request.getDurationWeek())) {
-            throw new RestException(ErrorCode.GLOBAL_CONFLICT, "입력한 챌린지와 게시글의 정보가 다릅니다.");
-        }
+        validateRequestWithChallenge(request, challenge);
 
         Post saved = request.toEntity();
         saved.setUser(user);
-        saved.setMode(challenge.getMode());
+        saved.setChallenge(challenge);
         saved.setType(PostType.Q_AND_A);
 
         saveThumbnail(request.getThumbnail(), saved);
-        saveAttachedImages(request.getImages(), saved);
-        saveAttachedFiles(request.getFiles(), saved);
+        saveAttachedImages(request.getAttachedImages(), saved);
+        saveAttachedFiles(request.getAttachedFiles(), saved);
 
         updatePostLabels(saved, request.getTags(), request.getFields());
         postRepository.save(saved);
@@ -176,18 +184,16 @@ public class PostService {
         Challenge challenge = challengeRepository.findById(request.getChallengeId())
                 .orElseThrow(() -> new RestException(ErrorCode.CHALLENGE_NOT_FOUND));
 
-        if(!challenge.getStartedAt().isEqual(request.getStartedAt()) || !challenge.getDurationWeek().equals(request.getDurationWeek())) {
-            throw new RestException(ErrorCode.GLOBAL_CONFLICT, "입력한 챌린지와 게시글의 정보가 다릅니다.");
-        }
+        validateRequestWithChallenge(request, challenge);
 
         Post saved = request.toEntity();
         saved.setUser(user);
-        saved.setMode(challenge.getMode());
+        saved.setChallenge(challenge);
         saved.setType(PostType.REVIEW);
 
         saveThumbnail(request.getThumbnail(), saved);
-        saveAttachedImages(request.getImages(), saved);
-        saveAttachedFiles(request.getFiles(), saved);
+        saveAttachedImages(request.getAttachedImages(), saved);
+        saveAttachedFiles(request.getAttachedFiles(), saved);
 
         updatePostLabels(saved, request.getTags(), request.getFields());
         postRepository.save(saved);
@@ -247,6 +253,18 @@ public class PostService {
         }
     }
 
+    private void validateRequestWithChallenge(PostDto.CreatePostRequest request, Challenge challenge) {
+        if(!challenge.getStartedAt().isEqual(request.getStartedAt())) {
+            throw new RestException(ErrorCode.POST_NOT_MATCH_WITH_CHALLENGE_STARTED_AT);
+        }
+        if(!challenge.getDurationWeek().equals(request.getDurationWeek())) {
+            throw new RestException(ErrorCode.POST_NOT_MATCH_WITH_CHALLENGE_DURATION);
+        }
+        if(!challenge.getMode().equals(request.getMode())) {
+            throw new RestException(ErrorCode.POST_NOT_MATCH_WITH_CHALLENGE_MODE);
+        }
+    }
+
     @Transactional(readOnly = true)
     public PostDto.PostVsDetailResponse getVsPostDetail(
             Long postId,
@@ -267,15 +285,7 @@ public class PostService {
             );
         }
 
-        Long challengeId = post.getChallengeId();
-        if (challengeId == null) {
-            throw new RestException(ErrorCode.CHALLENGE_NOT_FOUND);
-        }
-
-        Challenge challenge = challengeRepository.findById(challengeId)
-                .orElseThrow(() -> new RestException(ErrorCode.CHALLENGE_NOT_FOUND));
-
-        return PostDto.PostVsDetailResponse.from(post, challenge, isLiked);
+        return PostDto.PostVsDetailResponse.from(post, isLiked);
     }
 
     @Transactional(readOnly = true)
@@ -292,4 +302,72 @@ public class PostService {
         return postQueryRepository.findTop10HotVsPosts();
     }
 
+    @Transactional
+    public PostDto.PostIdResponse updatePost(
+            Long postId,
+            UserDetails userDetails,
+            PostDto.UpdatePostRequest request
+    ) {
+        if (userDetails == null) {
+            throw new RestException(ErrorCode.AUTH_LOGIN_REQUIRED);
+        }
+
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() -> new RestException(ErrorCode.POST_NOT_FOUND));
+
+        post.canUpdateBy(userDetails);
+
+        if(request.getChallengeId() != null) {
+            Challenge challenge = challengeRepository.findById(request.getChallengeId())
+                    .orElseThrow(() -> new RestException(ErrorCode.CHALLENGE_NOT_FOUND));
+
+            request.setJob(challenge.getJob());
+            request.setStartedAt(challenge.getStartedAt());
+            request.setDurationWeek(challenge.getDurationWeek());
+            request.setMode(challenge.getMode());
+        }
+
+        // 분야 처리
+        Set<Tag> resolvedTags = null;
+        if(request.getTags() != null) {
+            resolvedTags = tagService.findOrCreateByNames(request.getTags());
+        }
+
+        Set<Field> resolvedFields = null;
+        if(request.getFields() != null) {
+            resolvedFields = fieldService.findFieldByName(request.getFields());
+        }
+
+        request.applyTo(post, resolvedTags, resolvedFields);
+
+        if (request.getThumbnail() != null && !request.getThumbnail().isEmpty()) {
+            if (post.getThumbnail() != null) {
+                fileHandler.deleteIfExists(post.getThumbnail());
+            }
+
+            PostImage newImage = PostImage.from(request.getThumbnail(), post);
+            fileHandler.saveFile(request.getThumbnail(), newImage);
+            post.setThumbnail(newImage);
+        }
+
+        return PostDto.PostIdResponse.from(post);
+    }
+
+    @Transactional
+    public void deletePost(Long postId, UserDetails userDetails) {
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() -> new RestException(ErrorCode.POST_NOT_FOUND));
+
+        post.canDeleteBy(userDetails);
+
+        if(post.getThumbnail() != null) {
+            fileHandler.deleteIfExists(post.getThumbnail());
+        }
+
+        post.getTags().clear();
+        post.getFields().clear();
+
+        postLikedRepository.deleteByPost(post);
+        postRepository.delete(post);
+    }
 }

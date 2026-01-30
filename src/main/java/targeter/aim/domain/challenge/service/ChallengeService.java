@@ -176,12 +176,12 @@ public class ChallengeService {
         }
 
         if (fieldNames != null) {
-            Set<Field> fields = fieldNames.stream()
+            List<String> trimFieldNames = fieldNames.stream()
                     .map(String::trim)
-                    .map(name -> fieldRepository.findByName(name)
-                            .orElseGet(() -> fieldRepository.save(Field.builder().name(name).build())))
-                    .collect(Collectors.toSet());
-            challenge.setFields(fields);
+                    .collect(Collectors.toList());
+            List<Field> existFields = fieldRepository.findAllByNameIn(trimFieldNames);
+
+            challenge.setFields(new HashSet<>(existFields));
         }
     }
 
@@ -639,6 +639,7 @@ public class ChallengeService {
         challenge.getTags().clear();
         challenge.getFields().clear();
 
+        challengeLikedRepository.deleteByChallenge(challenge);
         challengeRepository.delete(challenge);
     }
 

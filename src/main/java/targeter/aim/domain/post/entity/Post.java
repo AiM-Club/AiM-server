@@ -8,6 +8,7 @@ import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import targeter.aim.domain.challenge.entity.Challenge;
 import targeter.aim.domain.challenge.entity.ChallengeMode;
 import targeter.aim.domain.file.entity.PostImage;
 import targeter.aim.domain.label.entity.Field;
@@ -15,6 +16,9 @@ import targeter.aim.domain.label.entity.Tag;
 import targeter.aim.domain.user.entity.User;
 import targeter.aim.domain.file.entity.PostAttachedFile;
 import targeter.aim.domain.file.entity.PostAttachedImage;
+import targeter.aim.system.exception.model.ErrorCode;
+import targeter.aim.system.exception.model.RestException;
+import targeter.aim.system.security.model.UserDetails;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -41,16 +45,13 @@ public class Post extends TimeStampedEntity {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "challenge_id", nullable = false)
+    private Challenge challenge;
+
     @Column(nullable = false)
     private String title;
-
-    private String job;
-
-    @Column(name = "started_at", nullable = false)
-    private LocalDate startedAt;
-
-    @Column(name = "duration_week", nullable = false)
-    private Integer durationWeek;
 
     @Lob
     @Column(nullable = false, columnDefinition = "LONGTEXT")
@@ -60,18 +61,12 @@ public class Post extends TimeStampedEntity {
     @Column(nullable = false)
     private PostType type;
 
-    @Enumerated(EnumType.STRING)
-    private ChallengeMode mode;
-
     @Column(name = "like_count", nullable = false)
     @Builder.Default
     private Integer likeCount = 0;
 
     @OneToOne(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
     private PostImage postImage;
-
-    @Column(name = "challenge_id")
-    private Long challengeId;
 
     @ManyToMany
     @JoinTable(
@@ -93,6 +88,9 @@ public class Post extends TimeStampedEntity {
     @ToString.Exclude
     private Set<Field> fields = new HashSet<>();
 
+    @Column(nullable = false)
+    private String job;
+
     @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     private List<Comment> comments = new ArrayList<>();
@@ -108,6 +106,22 @@ public class Post extends TimeStampedEntity {
     @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     private List<PostAttachedFile> attachedFiles = new ArrayList<>();
+
+    public void canUpdateBy(UserDetails user) {
+        if(this.user.getId().equals(user.getUser().getId())) {
+            return;
+        }
+
+        throw new RestException(ErrorCode.AUTH_FORBIDDEN);
+    }
+
+    public void canDeleteBy(UserDetails user) {
+        if(this.user.getId().equals(user.getUser().getId())) {
+            return;
+        }
+
+        throw new RestException(ErrorCode.AUTH_FORBIDDEN);
+    }
 
     public void setThumbnail(PostImage image) {
         this.thumbnail = image;

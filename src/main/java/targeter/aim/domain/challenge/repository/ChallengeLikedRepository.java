@@ -11,4 +11,6 @@ public interface ChallengeLikedRepository extends JpaRepository<ChallengeLiked, 
     boolean existsByUserAndChallenge(User user, Challenge challenge);
 
     void deleteByUserAndChallenge(User user, Challenge challenge);
+
+    void deleteByChallenge(Challenge challenge);
 }

@@ -11,4 +11,6 @@ public interface PostLikedRepository extends JpaRepository<PostLiked, PostLikedI
     boolean existsByPostAndUser(Post post, User user);
 
     void deleteByPostAndUser(Post post, User user);
+
+    void deleteByPost(Post post);
 }
