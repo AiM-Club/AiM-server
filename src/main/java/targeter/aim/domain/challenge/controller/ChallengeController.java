@@ -148,7 +148,7 @@ public class ChallengeController {
 
     @GetMapping("/all")
     @Operation(
-            summary = "내가 참여한 전체 챌린지 목록 조회",
+            summary = "ALL 챌린지 목록 조회",
             description = "로그인한 사용자가 참여한 모든 SOLO/VS 챌린지를 정렬 조건과 함께 조회합니다."
     )
     public ChallengeDto.ChallengePageResponse getMyAllChallenges(
