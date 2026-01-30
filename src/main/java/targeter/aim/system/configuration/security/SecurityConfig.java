@@ -41,6 +41,7 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .cors(cors -> cors.configurationSource(corsConfigSrc()))
                 .authorizeHttpRequests(auth -> auth
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers(
                                 "/api/auth/**",
                                 "/error",
@@ -69,6 +70,7 @@ public class SecurityConfig {
                     it.exclude("/api/auth/**", ApiPathPattern.METHODS.PATCH);
                     it.exclude("/api/auth/**", ApiPathPattern.METHODS.DELETE);
                     it.exclude("/api/auth/**", ApiPathPattern.METHODS.OPTIONS);
+                    it.exclude("/api/**", ApiPathPattern.METHODS.OPTIONS);
 
                     // 기존 유지
                     it.include("/api/**", ApiPathPattern.METHODS.GET);
@@ -76,7 +78,6 @@ public class SecurityConfig {
                     it.include("/api/**", ApiPathPattern.METHODS.PUT);
                     it.include("/api/**", ApiPathPattern.METHODS.PATCH);
                     it.include("/api/**", ApiPathPattern.METHODS.DELETE);
-                    it.include("/api/**", ApiPathPattern.METHODS.OPTIONS);
                 })
                 .configure(httpSecurity);
 
@@ -95,9 +96,8 @@ public class SecurityConfig {
         corsConfiguration.setAllowedMethods(
                 Arrays.asList("HEAD", "GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS")
         );
-        corsConfiguration.setAllowedHeaders(
-                Arrays.asList("Authorization", "Cache-Control", "Content-Type")
-        );
+        corsConfiguration.setAllowedHeaders(List.of("*"));
+        corsConfiguration.setExposedHeaders(List.of("Authorization"));
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", corsConfiguration);
