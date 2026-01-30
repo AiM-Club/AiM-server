@@ -73,6 +73,9 @@ public class Post extends TimeStampedEntity {
     @OneToOne(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
     private PostImage postImage;
 
+    @Column(name = "challenge_id")
+    private Long challengeId;
+
     @ManyToMany
     @JoinTable(
             name = "POST_TAG_MAPPING",

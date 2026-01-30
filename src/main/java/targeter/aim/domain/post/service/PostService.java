@@ -123,6 +123,7 @@ public class PostService {
                 .content(request.getContents())
                 .mode(challenge.getMode())
                 .type(PostType.VS_RECRUIT)
+                .challengeId(challenge.getId())
                 .build();
 
         Post saved = postRepository.save(post);
@@ -265,18 +266,20 @@ public class PostService {
 
         boolean isLiked = false;
         if (userDetails != null) {
-            User user = userDetails.getUser();
-            isLiked = postLikedRepository.existsByPostAndUser(post, user);
+            isLiked = postLikedRepository.existsByPostAndUser(
+                    post, userDetails.getUser()
+            );
         }
 
-        Challenge relatedChallenge = challengeRepository.findFirstByHostAndStartedAtAndJobAndModeOrderByIdDesc(
-                post.getUser(),
-                post.getStartedAt(),
-                post.getJob(),
-                post.getMode()
-        ).orElseThrow(() -> new RestException(ErrorCode.CHALLENGE_NOT_FOUND, "게시글 정보와 맞는 챌린지를 찾을 수 없습니다."));
+        Long challengeId = post.getChallengeId();
+        if (challengeId == null) {
+            throw new RestException(ErrorCode.CHALLENGE_NOT_FOUND);
+        }
 
-        return PostDto.PostVsDetailResponse.from(post, relatedChallenge, isLiked);
+        Challenge challenge = challengeRepository.findById(challengeId)
+                .orElseThrow(() -> new RestException(ErrorCode.CHALLENGE_NOT_FOUND));
+
+        return PostDto.PostVsDetailResponse.from(post, challenge, isLiked);
     }
 
     @Transactional(readOnly = true)

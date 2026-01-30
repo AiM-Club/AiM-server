@@ -239,6 +239,9 @@ public class PostDto {
         @Schema(description = "VS 챌린지 아이디", example = "1")
         private Long challengeId;
 
+        @Schema(description = "VS 챌린지 이름", example = "아침 루틴 챌린지")
+        private String challengeName;
+
         @Schema(description = "작성자 아이디", example = "1")
         private Long writerId;
 
@@ -281,20 +284,27 @@ public class PostDto {
         @Schema(description = "첨부 파일 목록")
         private List<FileDto.FileResponse> attachedFiles;
 
-        public static PostVsDetailResponse from(Post post, Challenge challenge, boolean isLiked) {
+        public static PostVsDetailResponse from(
+                Post post,
+                Challenge challenge,
+                boolean isLiked
+        ) {
             return PostVsDetailResponse.builder()
-                    .challengeId(challenge.getId())
+                    .challengeId(post.getChallengeId())
+                    .challengeName(challenge.getName())
                     .writerId(post.getUser().getId())
                     .nickname(post.getUser().getNickname())
-                    .thumbnail((post.getThumbnail() == null) ? null : FileDto.FileResponse.from(post.getThumbnail()))
+                    .thumbnail(post.getThumbnail() == null
+                            ? null
+                            : FileDto.FileResponse.from(post.getThumbnail()))
                     .title(post.getTitle())
-                    .tags(challenge.getTags().stream()
+                    .tags(post.getTags().stream()
                             .map(TagDto.TagResponse::from)
-                            .collect(Collectors.toList()))
-                    .fields(challenge.getFields().stream()
+                            .toList())
+                    .fields(post.getFields().stream()
                             .map(FieldDto.FieldResponse::from)
-                            .collect(Collectors.toList()))
-                    .job(challenge.getJob())
+                            .toList())
+                    .job(post.getJob())
                     .startDate(post.getStartedAt())
                     .totalWeeks(post.getDurationWeek())
                     .isLiked(isLiked)
