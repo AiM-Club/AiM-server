@@ -333,6 +333,96 @@ public class PostDto {
     @AllArgsConstructor
     @NoArgsConstructor
     @Builder
+    @Schema(description = "Q&A/후기 게시글 상세 조회 응답 DTO")
+    public static class PostDetailResponse {
+        @Schema(description = "VS 챌린지 아이디", example = "1")
+        private Long challengeId;
+
+        @Schema(description = "VS 챌린지 이름", example = "아침 루틴 챌린지")
+        private String challengeName;
+
+        @Schema(description = "작성자 아이디", example = "1")
+        private Long writerId;
+
+        @Schema(description = "작성자 닉네임", example = "닉네임")
+        private String nickname;
+
+        @Schema(description = "썸네일 이미지")
+        private FileDto.FileResponse thumbnail;
+
+        @Schema(description = "모집글 제목")
+        private String title;
+
+        @Schema(description = "태그 리스트")
+        private List<TagDto.TagResponse> tags;
+
+        @Schema(description = "분야 리스트")
+        private List<FieldDto.FieldResponse> fields;
+
+        @Schema(description = "직무")
+        private String job;
+
+        @Schema(description = "챌린지 시작일")
+        private LocalDate startDate;
+
+        @Schema(description = "총 진행 기간(주)")
+        private Integer totalWeeks;
+
+        @Schema(description = "챌린지 모드", example = "VS | SOLO")
+        private ChallengeMode mode;
+
+        @Schema(description = "좋아요 여부")
+        private Boolean isLiked;
+
+        @Schema(description = "좋아요 수")
+        private Integer likeCount;
+
+        @Schema(description = "모집글 본문 내용")
+        private String content;
+
+        @Schema(description = "첨부 이미지 목록")
+        private List<FileDto.FileResponse> attachedImages;
+
+        @Schema(description = "첨부 파일 목록")
+        private List<FileDto.FileResponse> attachedFiles;
+
+        public static PostDetailResponse from(Post post, boolean isLiked) {
+            return PostDetailResponse.builder()
+                    .challengeId(post.getChallenge().getId())
+                    .challengeName(post.getChallenge().getName())
+                    .writerId(post.getUser().getId())
+                    .nickname(post.getUser().getNickname())
+                    .thumbnail(post.getThumbnail() == null
+                            ? null
+                            : FileDto.FileResponse.from(post.getThumbnail()))
+                    .title(post.getTitle())
+                    .tags(post.getTags().stream()
+                            .map(TagDto.TagResponse::from)
+                            .toList())
+                    .fields(post.getFields().stream()
+                            .map(FieldDto.FieldResponse::from)
+                            .toList())
+                    .job(post.getJob())
+                    .startDate(post.getChallenge().getStartedAt())
+                    .totalWeeks(post.getChallenge().getDurationWeek())
+                    .mode(post.getChallenge().getMode())
+                    .isLiked(isLiked)
+                    .likeCount(post.getLikeCount())
+                    .content(post.getContent())
+                    .attachedImages(post.getAttachedImages().stream()
+                            .map(FileDto.FileResponse::from)
+                            .toList())
+                    .attachedFiles(post.getAttachedFiles().stream()
+                            .map(FileDto.FileResponse::from)
+                            .toList())
+                    .build();
+        }
+    }
+
+    @Data
+    @AllArgsConstructor
+    @NoArgsConstructor
+    @Builder
     @Schema(description = "HOT 후기글 목록 조회 응답")
     public static class HotReviewResponse {
         @Schema(description = "후기글 아이디", example = "1")
