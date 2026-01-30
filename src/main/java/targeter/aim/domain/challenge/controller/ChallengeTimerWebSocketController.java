@@ -121,7 +121,7 @@ public class ChallengeTimerWebSocketController {
                 ---
                 
                 ### 1. 연결 정보 (Connection)
-                - **Endpoint:** `ws://{host}/ws-stomp`
+                - **Endpoint:** `wss://{host}/ws-stomp`
                 - **Auth:** Header에 `Authorization: Bearer {accesstoken}` 포함 필수
                 
                 ### 2. 구독 (Subscribe)
