@@ -2,6 +2,7 @@ package targeter.aim.domain.user.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import targeter.aim.domain.challenge.entity.ChallengeResult;
@@ -12,6 +13,9 @@ import targeter.aim.domain.user.entity.User;
 import targeter.aim.domain.user.repository.UserRepository;
 import targeter.aim.system.exception.model.ErrorCode;
 import targeter.aim.system.exception.model.RestException;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @Slf4j
 @Service
@@ -35,7 +39,7 @@ public class UserService {
         int successCount = challengeMemberQueryRepository.countByUserAndResult(user, ChallengeResult.SUCCESS);
         int totalCount = challengeMemberQueryRepository.countFinishedChallenges(user);
 
-        if(totalCount == 0) return;
+        if (totalCount == 0) return;
 
         int currentLevel = user.getLevel() == null ? 1 : user.getLevel();
 
@@ -51,5 +55,18 @@ public class UserService {
         double term1 = (success / total) * (0.5 + 0.002 * level);
         double term2 = Math.min(success / (30.0 + 1.2 * level), 1.0) * (0.5 - 0.002 * level);
         return term1 + term2;
+    }
+
+    @Transactional(readOnly = true)
+    public List<UserDto.RankTop10Response> getTop10UserRank() {
+        List<User> users = userRepository
+                .findAllByOrderByLevelDescIdAsc(PageRequest.of(0, 10))
+                .getContent();
+
+        List<UserDto.RankTop10Response> result = new ArrayList<>();
+        for (int i = 0; i < users.size(); i++) {
+            result.add(UserDto.RankTop10Response.of(i + 1, users.get(i)));
+        }
+        return result;
     }
 }
