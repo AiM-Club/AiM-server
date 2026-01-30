@@ -1,7 +1,6 @@
 package targeter.aim.domain.challenge.repository;
 
 import com.querydsl.core.Tuple;
-import com.querydsl.core.types.OrderSpecifier;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.core.types.dsl.Expressions;
 import com.querydsl.jpa.JPAExpressions;
@@ -35,8 +34,6 @@ import java.util.stream.Stream;
 import static targeter.aim.domain.challenge.entity.QChallenge.challenge;
 import static targeter.aim.domain.challenge.entity.QChallengeLiked.challengeLiked;
 import static targeter.aim.domain.challenge.entity.QChallengeMember.challengeMember;
-import static targeter.aim.domain.challenge.repository.MyChallengeSortType.CREATED_AT;
-import static targeter.aim.domain.challenge.repository.MyChallengeSortType.TITLE;
 import static targeter.aim.domain.label.entity.QField.field;
 import static targeter.aim.domain.label.entity.QTag.tag;
 
@@ -490,7 +487,7 @@ public class ChallengeQueryRepository {
     public Page<ChallengeDto.ChallengeListResponse> paginateMyAllChallenges(
             Long userId,
             Pageable pageable,
-            MyChallengeSortType sortType,
+            AllChallengeSortType sortType,
             SortOrder sortOrder
     ) {
         JPAQuery<Tuple> query = queryFactory
@@ -542,7 +539,7 @@ public class ChallengeQueryRepository {
 
     private void applyMyAllSorting(
             JPAQuery<?> query,
-            MyChallengeSortType sortType,
+            AllChallengeSortType sortType,
             SortOrder order
     ) {
         boolean isAsc = order == SortOrder.ASC;

@@ -658,10 +658,10 @@ public class ChallengeService {
     }
 
     @Transactional(readOnly = true)
-    public Page<ChallengeDto.ChallengeListResponse> getMyAllChallenges(
+    public Page<ChallengeDto.ChallengeListResponse> getAllChallenges(
             UserDetails userDetails,
             Pageable pageable,
-            MyChallengeSortType sortType,
+            AllChallengeSortType sortType,
             SortOrder sortOrder
     ) {
         if (userDetails == null) {
