@@ -11,6 +11,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 public class UserDto {
+
     @Builder
     @NoArgsConstructor
     @AllArgsConstructor
@@ -77,6 +78,34 @@ public class UserDto {
                     .isNewUser(isNewUser)
                     .createdAt(user.getCreatedAt())
                     .lastModifiedAt(user.getLastModifiedAt())
+                    .build();
+        }
+    }
+
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Getter
+    public static class RankTop10Response {
+
+        @Schema(description = "순위", example = "1")
+        private Integer rank;
+
+        @Schema(description = "유저 아이디(DB PK)", example = "1")
+        private Long userId;
+
+        @Schema(description = "사용자 닉네임", example = "nickname")
+        private String nickname;
+
+        @Schema(description = "레벨", example = "10")
+        private Integer level;
+
+        public static RankTop10Response of(Integer rank, User user) {
+            return RankTop10Response.builder()
+                    .rank(rank)
+                    .userId(user.getId())
+                    .nickname(user.getNickname())
+                    .level(user.getLevel())
                     .build();
         }
     }
