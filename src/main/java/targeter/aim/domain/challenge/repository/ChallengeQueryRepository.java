@@ -482,4 +482,86 @@ public class ChallengeQueryRepository {
                 .orderBy(challenge.startedAt.desc())       // 최신순 정렬
                 .fetch();                                  // List로 반환
     }
+
+    public Page<ChallengeDto.ChallengeListResponse> paginateAllChallenges(
+            Long userId,
+            Pageable pageable,
+            AllChallengeSortType sortType,
+            SortOrder sortOrder
+    ) {
+        JPAQuery<Tuple> query = queryFactory
+                .select(
+                        challenge,
+                        JPAExpressions.selectOne()
+                                .from(challengeLiked)
+                                .where(
+                                        challengeLiked.challenge.eq(challenge)
+                                                .and(challengeLiked.user.id.eq(userId))
+                                ).exists(),
+                        JPAExpressions.select(challengeLiked.count())
+                                .from(challengeLiked)
+                                .where(challengeLiked.challenge.eq(challenge))
+                )
+                .from(challenge)
+                .join(challengeMember)
+                .on(
+                        challengeMember.id.challenge.eq(challenge),
+                        challengeMember.id.user.id.eq(userId)
+                )
+                .leftJoin(challenge.host).fetchJoin()
+                .leftJoin(challenge.host.tier).fetchJoin()
+                .leftJoin(challenge.host.profileImage).fetchJoin();
+
+        if (sortType == AllChallengeSortType.END_DATE) {
+            List<Tuple> tuples = query.fetch();
+            List<ChallengeDto.ChallengeListResponse> all = enrichDetails(tuples);
+
+            List<ChallengeDto.ChallengeListResponse> sorted =
+                    all.stream()
+                            .sorted(
+                                    sortOrder == SortOrder.ASC
+                                            ? Comparator.comparing(this::endDate)
+                                            : Comparator.comparing(this::endDate).reversed()
+                            )
+                            .toList();
+
+            return slice(sorted, pageable);
+        }
+
+        boolean isAsc = sortOrder == SortOrder.ASC;
+
+        switch (sortType) {
+            case TITLE ->
+                    query.orderBy(
+                            isAsc ? challenge.name.asc() : challenge.name.desc(),
+                            challenge.createdAt.desc()
+                    );
+            case CREATED_AT ->
+                    query.orderBy(
+                            isAsc ? challenge.createdAt.asc() : challenge.createdAt.desc()
+                    );
+        }
+
+        List<Tuple> tuples = query
+                .offset(pageable.getOffset())
+                .limit(pageable.getPageSize())
+                .fetch();
+
+        Long total = queryFactory
+                .select(challenge.count())
+                .from(challenge)
+                .join(challengeMember)
+                .on(
+                        challengeMember.id.challenge.eq(challenge),
+                        challengeMember.id.user.id.eq(userId)
+                )
+                .fetchOne();
+
+        return new PageImpl<>(
+                enrichDetails(tuples),
+                pageable,
+                total == null ? 0 : total
+        );
+    }
+
 }

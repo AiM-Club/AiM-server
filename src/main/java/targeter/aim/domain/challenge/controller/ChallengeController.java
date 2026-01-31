@@ -14,6 +14,8 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import targeter.aim.domain.challenge.dto.ChallengeDto;
 import targeter.aim.domain.challenge.entity.ChallengeMode;
+import targeter.aim.domain.challenge.repository.AllChallengeSortType;
+import targeter.aim.domain.challenge.repository.SortOrder;
 import targeter.aim.domain.challenge.service.ChallengeService;
 import targeter.aim.system.security.annotation.NoJwtAuth;
 import targeter.aim.system.security.model.UserDetails;
@@ -146,6 +148,28 @@ public class ChallengeController {
     ) {
         return challengeService.getChallengeToPost(mode, userDetails);
     }
+
+    @GetMapping("/all")
+    @Operation(
+            summary = "ALL 챌린지 목록 조회",
+            description = "로그인한 사용자가 참여한 모든 SOLO/VS 챌린지를 정렬 조건과 함께 조회합니다."
+    )
+    public ChallengeDto.ChallengePageResponse getAllChallenges(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @RequestParam(defaultValue = "CREATED_AT") AllChallengeSortType sort,
+            @RequestParam(defaultValue = "DESC") SortOrder order,
+            @PageableDefault(size = 8) @ParameterObject Pageable pageable
+    ) {
+        var page = challengeService.getAllChallenges(
+                userDetails,
+                pageable,
+                sort,
+                order
+        );
+
+        return ChallengeDto.ChallengePageResponse.from(page);
+    }
+
     @GetMapping("/records")
     @Operation(
             summary = "유저 챌린지 기록 조회",
