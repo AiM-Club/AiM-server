@@ -612,7 +612,7 @@ public class PostDto {
         private PostUserResponse user;
 
         @Schema(description = "게시글 제목", example = "제목")
-        private String title;
+        private String name;
 
         @Schema(description = "분야 리스트")
         private List<String> fields;

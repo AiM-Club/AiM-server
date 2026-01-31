@@ -593,7 +593,7 @@ public class PostQueryRepository {
                 .thumbnail(postImage != null
                         ? FileDto.FileResponse.from(postImage)
                         : null)
-                .title(p.getTitle())
+                .name(p.getTitle())
                 .job(p.getJob())
                 .fields(fieldMap.getOrDefault(p.getId(), List.of()))
                 .tags(tagMap.getOrDefault(p.getId(), List.of()))
