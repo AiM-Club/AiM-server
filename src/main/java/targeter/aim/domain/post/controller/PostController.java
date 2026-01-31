@@ -11,17 +11,14 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
-import targeter.aim.domain.challenge.dto.ChallengeDto;
 import targeter.aim.domain.post.dto.PostDto;
 import targeter.aim.domain.post.service.PostService;
 import targeter.aim.system.security.annotation.NoJwtAuth;
 import targeter.aim.system.security.model.UserDetails;
 
 import java.util.List;
-import java.util.Map;
 
 @RestController
 @RequiredArgsConstructor
@@ -138,6 +135,34 @@ public class PostController {
     )
     public List<PostDto.HotVsPostResponse> getHotVsPosts() {
         return postService.getTop10HotVsPosts();
+    }
+
+    @NoJwtAuth
+    @GetMapping("/hot/solo")
+    @Operation(
+            summary = "HOT SOLO 게시글 페이지네이션 조회",
+            description = "최근 3개월 내 QnA/후기 게시글 중 좋아요가 많은 SOLO 게시글을 페이지네이션 조회합니다."
+    )
+    public PostDto.HotPostPageResponse getHotSoloPosts(
+            @ModelAttribute @ParameterObject PostDto.ListSearchCondition condition,
+            @PageableDefault(size = 8) @ParameterObject Pageable pageable,
+            @AuthenticationPrincipal UserDetails userDetails
+    ) {
+        return postService.getHotSoloPosts(condition, userDetails, pageable);
+    }
+
+    @NoJwtAuth
+    @GetMapping("/hot/vs")
+    @Operation(
+            summary = "HOT VS 게시글 페이지네이션 조회",
+            description = "최근 3개월 내 QnA/후기 게시글 중 좋아요가 많은 VS 게시글을 페이지네이션 조회합니다."
+    )
+    public PostDto.HotPostPageResponse getHotVsPosts(
+            @ModelAttribute @ParameterObject PostDto.ListSearchCondition condition,
+            @PageableDefault(size = 8) @ParameterObject Pageable pageable,
+            @AuthenticationPrincipal UserDetails userDetails
+    ) {
+        return postService.getHotVsPosts(condition, userDetails, pageable);
     }
 
     @PatchMapping(value = "/{postId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)

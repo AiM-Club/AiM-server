@@ -442,6 +442,7 @@ public class PostDto {
                     .build();
         }
     }
+
     @Getter
     @AllArgsConstructor
     @Schema(description = "HOT VS 모집글 응답 DTO")
@@ -528,6 +529,68 @@ public class PostDto {
             return PostIdResponse.builder()
                     .postId(post.getId())
                     .build();
+        }
+    }
+
+    @Data
+    @AllArgsConstructor
+    @NoArgsConstructor
+    @Builder
+    @Schema(description = "HOT 게시글 카드 응답")
+    public static class HotPostListResponse {
+
+        @Schema(description = "게시글 ID", example = "1")
+        private Long postId;
+
+        @Schema(description = "작성자 정보(profile, nickname, tier값 참고)")
+        private UserDto.UserResponse user;
+
+        @Schema(description = "챌린지 시작일", example = "2026-01-01")
+        private LocalDate startDate;
+
+        @Schema(description = "챌린지 기간(주)", example = "4주")
+        private String duration;
+
+        @Schema(description = "게시글 제목", example = "게시글 제목")
+        private String title;
+
+        @Schema(description = "분야 리스트", example = "[\"IT\", \"BUSINESS\"]")
+        private List<String> fields;
+
+        @Schema(description = "태그 리스트", example = "[\"태그1\", \"태그2\", \"태그3\"]")
+        private List<String> tags;
+
+        @Schema(description = "직무", example = "직무")
+        private String job;
+
+        @Schema(description = "좋아요 여부(비로그인 false)", example = "true | false")
+        private Boolean liked;
+
+        @Schema(description = "좋아요 수", example = "10")
+        private Integer likeCount;
+
+        @Schema(description = "챌린지 모드", example = "SOLO | VS")
+        private ChallengeMode mode;
+    }
+
+    @Data
+    @AllArgsConstructor
+    @NoArgsConstructor
+    @Schema(description = "HOT 게시글 페이지 응답")
+    public static class HotPostPageResponse {
+        private List<HotPostListResponse> content;
+        private PageInfo page;
+
+        public static HotPostPageResponse from(Page<HotPostListResponse> page) {
+            return new HotPostPageResponse(
+                    page.getContent(),
+                    new PageInfo(
+                            page.getSize(),
+                            page.getNumber(),
+                            page.getTotalElements(),
+                            page.getTotalPages()
+                    )
+            );
         }
     }
 }

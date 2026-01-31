@@ -94,6 +94,42 @@ public class PostService {
         }
     }
 
+    @Transactional(readOnly = true)
+    public PostDto.HotPostPageResponse getHotSoloPosts(
+            PostDto.ListSearchCondition condition,
+            UserDetails userDetails,
+            Pageable pageable
+    ) {
+        PostSortType sortType = parseSortType(condition.getSort());
+
+        Page<PostDto.HotPostListResponse> page = postQueryRepository.paginateHotPosts(
+                userDetails,
+                pageable,
+                sortType,
+                ChallengeMode.SOLO
+        );
+
+        return PostDto.HotPostPageResponse.from(page);
+    }
+
+    @Transactional(readOnly = true)
+    public PostDto.HotPostPageResponse getHotVsPosts(
+            PostDto.ListSearchCondition condition,
+            UserDetails userDetails,
+            Pageable pageable
+    ) {
+        PostSortType sortType = parseSortType(condition.getSort());
+
+        Page<PostDto.HotPostListResponse> page = postQueryRepository.paginateHotPosts(
+                userDetails,
+                pageable,
+                sortType,
+                ChallengeMode.VS
+        );
+
+        return PostDto.HotPostPageResponse.from(page);
+    }
+
     @Transactional
     public PostDto.PostIdResponse createChallengePost(
             PostDto.CreateChallengePostRequest request,
