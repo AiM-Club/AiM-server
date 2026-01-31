@@ -95,6 +95,32 @@ public class PostController {
     }
 
     @NoJwtAuth
+    @GetMapping("/qna/{postId}")
+    @Operation(
+            summary = "QnA 게시글 상세 조회",
+            description = "해당 id의 QnA 게시글을 상세 조회합니다."
+    )
+    public PostDto.PostDetailResponse getQnaPostDetail(
+            @PathVariable Long postId,
+            @Parameter(hidden = true) @AuthenticationPrincipal UserDetails userDetails
+    ) {
+        return postService.getPostDetail(postId, userDetails);
+    }
+
+    @NoJwtAuth
+    @GetMapping("/review/{postId}")
+    @Operation(
+            summary = "후기 게시글 상세 조회",
+            description = "해당 id의 후기 게시글을 상세 조회합니다."
+    )
+    public PostDto.PostDetailResponse getReviewPostDetail(
+            @PathVariable Long postId,
+            @Parameter(hidden = true) @AuthenticationPrincipal UserDetails userDetails
+    ) {
+        return postService.getPostDetail(postId, userDetails);
+    }
+
+    @NoJwtAuth
     @GetMapping("/review/top")
     @Operation(
             summary = "HOT 후기글 조회",

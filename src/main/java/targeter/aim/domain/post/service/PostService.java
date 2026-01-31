@@ -289,6 +289,29 @@ public class PostService {
     }
 
     @Transactional(readOnly = true)
+    public PostDto.PostDetailResponse getPostDetail(
+            Long postId,
+            UserDetails userDetails
+    ) {
+
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() -> new RestException(ErrorCode.POST_NOT_FOUND));
+
+        if (post.getType() == PostType.VS_RECRUIT) {
+            throw new RestException(ErrorCode.POST_NOT_FOUND);
+        }
+
+        boolean isLiked = false;
+        if (userDetails != null) {
+            isLiked = postLikedRepository.existsByPostAndUser(
+                    post, userDetails.getUser()
+            );
+        }
+
+        return PostDto.PostDetailResponse.from(post, isLiked);
+    }
+
+    @Transactional(readOnly = true)
     public List<PostDto.HotReviewResponse> getHotReview() {
         List<Post> hotReviews = postQueryRepository.findTopLikedReviewInLast3Months(10);
 

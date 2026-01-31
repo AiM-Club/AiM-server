@@ -7,7 +7,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import targeter.aim.domain.challenge.entity.ChallengeResult;
 import targeter.aim.domain.challenge.repository.ChallengeMemberQueryRepository;
-import targeter.aim.domain.challenge.repository.ChallengeMemberRepository;
 import targeter.aim.domain.user.dto.UserDto;
 import targeter.aim.domain.user.entity.User;
 import targeter.aim.domain.user.repository.UserRepository;
@@ -23,7 +22,6 @@ import java.util.List;
 public class UserService {
 
     private final UserRepository userRepository;
-    private final ChallengeMemberRepository challengeMemberRepository;
     private final ChallengeMemberQueryRepository challengeMemberQueryRepository;
 
     @Transactional(readOnly = true)
