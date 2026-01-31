@@ -49,6 +49,7 @@ public class SecurityConfig {
                                 "/v3/api-docs/**",
                                 "/h2-console/**"
                         ).permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/challenges/records").authenticated()
                         // TOP10 유저 랭킹은 비로그인 허용
                         .requestMatchers(HttpMethod.GET, "/api/users/rank/top10").permitAll()
 

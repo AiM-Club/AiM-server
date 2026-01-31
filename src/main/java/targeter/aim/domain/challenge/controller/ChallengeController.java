@@ -17,6 +17,8 @@ import targeter.aim.domain.challenge.entity.ChallengeMode;
 import targeter.aim.domain.challenge.service.ChallengeService;
 import targeter.aim.system.security.annotation.NoJwtAuth;
 import targeter.aim.system.security.model.UserDetails;
+import targeter.aim.domain.challenge.dto.ChallengeRecordDto;
+import targeter.aim.domain.challenge.service.ChallengeRecordService;
 
 import java.util.List;
 
@@ -27,6 +29,7 @@ import java.util.List;
 public class ChallengeController {
 
     private final ChallengeService challengeService;
+    private final ChallengeRecordService challengeRecordService;
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @Operation(
@@ -142,5 +145,15 @@ public class ChallengeController {
             @AuthenticationPrincipal UserDetails userDetails
     ) {
         return challengeService.getChallengeToPost(mode, userDetails);
+    }
+    @GetMapping("/records")
+    @Operation(
+            summary = "유저 챌린지 기록 조회",
+            description = "로그인한 사용자의 전체/SOLO/VS 챌린지 성공률 및 횟수를 조회합니다."
+    )
+    public ChallengeRecordDto.RecordResponse getMyChallengeRecords(
+            @AuthenticationPrincipal UserDetails userDetails
+    ) {
+        return challengeRecordService.getMyChallengeRecords(userDetails.getUser().getId());
     }
 }
