@@ -49,6 +49,9 @@ public class SecurityConfig {
                                 "/v3/api-docs/**",
                                 "/h2-console/**"
                         ).permitAll()
+                        // TOP10 유저 랭킹은 비로그인 허용
+                        .requestMatchers(HttpMethod.GET, "/api/users/rank/top10").permitAll()
+
                         // 비로그인 허용 VS 챌린지 목록 조회(ALL) 및 상세 조회만
                         .requestMatchers(HttpMethod.GET, "/api/files/**", "/api/challenges/**", "/api/posts/**").permitAll()
                         .requestMatchers("/api/**").authenticated()
@@ -71,6 +74,7 @@ public class SecurityConfig {
                     it.exclude("/api/auth/**", ApiPathPattern.METHODS.DELETE);
                     it.exclude("/api/auth/**", ApiPathPattern.METHODS.OPTIONS);
                     it.exclude("/api/**", ApiPathPattern.METHODS.OPTIONS);
+                    it.exclude("/api/users/rank/top10", ApiPathPattern.METHODS.GET);
 
                     // 기존 유지
                     it.include("/api/**", ApiPathPattern.METHODS.GET);
