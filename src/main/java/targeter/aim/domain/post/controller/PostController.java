@@ -11,17 +11,14 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
-import targeter.aim.domain.challenge.dto.ChallengeDto;
 import targeter.aim.domain.post.dto.PostDto;
 import targeter.aim.domain.post.service.PostService;
 import targeter.aim.system.security.annotation.NoJwtAuth;
 import targeter.aim.system.security.model.UserDetails;
 
 import java.util.List;
-import java.util.Map;
 
 @RestController
 @RequiredArgsConstructor
@@ -166,4 +163,35 @@ public class PostController {
     ) {
         postService.deletePost(postId, userDetails);
     }
+
+    @NoJwtAuth
+    @GetMapping("/qna")
+    @Operation(
+            summary = "QnA 게시글 목록 조회",
+            description = "QnA 게시글을 정렬 조건에 따라 페이지네이션 조회합니다."
+    )
+    public PostDto.PostPageResponse getQnaPosts(
+            @ModelAttribute @ParameterObject PostDto.ListSearchCondition condition,
+            @RequestParam(defaultValue = "ALL") String filterType,
+            @PageableDefault(size = 16) @ParameterObject Pageable pageable,
+            @AuthenticationPrincipal UserDetails userDetails
+    ) {
+        return postService.getQnaPosts(condition, userDetails, pageable, filterType);
+    }
+
+    @NoJwtAuth
+    @GetMapping("/review")
+    @Operation(
+            summary = "후기 게시글 목록 조회",
+            description = "후기 게시글을 정렬 조건에 따라 페이지네이션 조회합니다."
+    )
+    public PostDto.PostPageResponse getReviewPosts(
+            @ModelAttribute @ParameterObject PostDto.ListSearchCondition condition,
+            @RequestParam(defaultValue = "ALL") String filterType,
+            @PageableDefault(size = 16) @ParameterObject Pageable pageable,
+            @AuthenticationPrincipal UserDetails userDetails
+    ) {
+        return postService.getReviewPosts(condition, userDetails, pageable, filterType);
+    }
+
 }
