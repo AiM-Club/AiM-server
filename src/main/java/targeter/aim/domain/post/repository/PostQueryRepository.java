@@ -11,6 +11,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
+import targeter.aim.domain.challenge.entity.ChallengeMode;
 import targeter.aim.domain.file.dto.FileDto;
 import targeter.aim.domain.file.entity.PostImage;
 import targeter.aim.domain.file.entity.ProfileImage;
@@ -333,4 +334,149 @@ public class PostQueryRepository {
                 .toList();
     }
 
+    public Page<PostDto.PostListResponse> paginateQnaAndReview(
+            UserDetails userDetails,
+            Pageable pageable,
+            PostType type,
+            PostSortType sortType,
+            String keyword,
+            ChallengeMode mode
+    ) {
+        JPAQuery<Tuple> query = buildBaseQueryForQnaAndReview(
+                userDetails,
+                type,
+                keyword,
+                mode
+        );
+
+        applySorting(query, sortType);
+
+        List<Tuple> tuples = query
+                .offset(pageable.getOffset())
+                .limit(pageable.getPageSize())
+                .fetch();
+
+        Long total = buildCountQueryForQnaAndReview(
+                type,
+                keyword,
+                mode
+        ).fetchOne();
+
+        return new PageImpl<>(
+                enrichPostListDetails(tuples),
+                pageable,
+                total == null ? 0 : total
+        );
+    }
+
+    private JPAQuery<Tuple> buildBaseQueryForQnaAndReview(
+            UserDetails userDetails,
+            PostType type,
+            String keyword,
+            ChallengeMode mode
+    ) {
+        JPAQuery<Tuple> query = queryFactory
+                .select(
+                        post,
+                        userDetails != null
+                                ? JPAExpressions.selectOne()
+                                .from(postLiked)
+                                .where(
+                                        postLiked.post.eq(post)
+                                                .and(postLiked.user.id.eq(userDetails.getUser().getId()))
+                                ).exists()
+                                : Expressions.FALSE,
+                        JPAExpressions.select(postLiked.count())
+                                .from(postLiked)
+                                .where(postLiked.post.eq(post))
+                )
+                .from(post)
+                .leftJoin(post.challenge)
+                .where(
+                        post.type.eq(type),
+                        mode != null ? post.challenge.mode.eq(mode) : null
+                )
+                .leftJoin(post.user).fetchJoin()
+                .leftJoin(post.user.tier).fetchJoin()
+                .leftJoin(post.user.profileImage).fetchJoin();
+
+        BooleanExpression keywordPredicate = keywordCondition(keyword);
+        if (keywordPredicate != null) {
+            query.where(keywordPredicate);
+        }
+
+        return query;
+    }
+
+    private JPAQuery<Long> buildCountQueryForQnaAndReview(
+            PostType type,
+            String keyword,
+            ChallengeMode mode
+    ) {
+        JPAQuery<Long> query = queryFactory
+                .select(post.count())
+                .from(post)
+                .leftJoin(post.challenge)
+                .where(
+                        post.type.eq(type),
+                        mode != null ? post.challenge.mode.eq(mode) : null
+                );
+
+        BooleanExpression keywordPredicate = keywordCondition(keyword);
+        if (keywordPredicate != null) {
+            query.where(keywordPredicate);
+        }
+
+        return query;
+    }
+
+
+    private List<PostDto.PostListResponse> enrichPostListDetails(List<Tuple> tuples) {
+        if (tuples.isEmpty()) return List.of();
+
+        List<Long> ids = tuples.stream()
+                .map(t -> t.get(0, Post.class).getId())
+                .toList();
+
+        Map<Long, List<String>> fieldMap = fetchFields(ids);
+        Map<Long, List<String>> tagMap = fetchTags(ids);
+
+        return tuples.stream()
+                .map(t -> mapToPostListDto(t, fieldMap, tagMap))
+                .toList();
+    }
+
+    private PostDto.PostListResponse mapToPostListDto(
+            Tuple tuple,
+            Map<Long, List<String>> fieldMap,
+            Map<Long, List<String>> tagMap
+    ) {
+        Post p = tuple.get(0, Post.class);
+        User user = p.getUser();
+        ProfileImage profileImage = user.getProfileImage();
+        PostImage postImage = p.getPostImage();
+
+        return PostDto.PostListResponse.builder()
+                .postId(p.getId())
+                .thumbnail(postImage != null
+                        ? FileDto.FileResponse.from(postImage)
+                        : null)
+                .title(p.getTitle())
+                .job(p.getJob())
+                .fields(fieldMap.getOrDefault(p.getId(), List.of()))
+                .tags(tagMap.getOrDefault(p.getId(), List.of()))
+                .isLiked(Boolean.TRUE.equals(tuple.get(1, Boolean.class)))
+                .likeCount(tuple.get(2, Long.class) == null ? 0 : tuple.get(2, Long.class).intValue())
+                .user(
+                        PostDto.PostUserResponse.builder()
+                                .userId(user.getId())
+                                .nickname(user.getNickname())
+                                .tier(TierDto.TierResponse.from(user.getTier()))
+                                .profileImage(profileImage != null
+                                        ? FileDto.FileResponse.from(profileImage)
+                                        : null)
+                                .build()
+                )
+                .build();
+    }
 }
