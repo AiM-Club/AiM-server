@@ -6,11 +6,9 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
-import targeter.aim.domain.challenge.dto.ChallengeDto;
 import targeter.aim.domain.challenge.entity.Challenge;
 import targeter.aim.domain.challenge.entity.ChallengeMode;
 import targeter.aim.domain.challenge.repository.ChallengeRepository;
-import targeter.aim.domain.file.entity.ChallengeImage;
 import targeter.aim.domain.file.entity.PostAttachedFile;
 import targeter.aim.domain.file.entity.PostAttachedImage;
 import targeter.aim.domain.file.entity.PostImage;
@@ -22,11 +20,8 @@ import targeter.aim.domain.label.repository.TagRepository;
 import targeter.aim.domain.label.service.FieldService;
 import targeter.aim.domain.label.service.TagService;
 import targeter.aim.domain.post.dto.PostDto;
-import targeter.aim.domain.post.repository.PostLikedRepository;
-import targeter.aim.domain.post.repository.PostQueryRepository;
-import targeter.aim.domain.post.repository.PostSortType;
+import targeter.aim.domain.post.repository.*;
 import targeter.aim.domain.post.entity.Post;
-import targeter.aim.domain.post.repository.PostRepository;
 import targeter.aim.domain.post.entity.PostType;
 import targeter.aim.domain.user.entity.User;
 import targeter.aim.domain.user.repository.UserRepository;
@@ -393,4 +388,73 @@ public class PostService {
         postLikedRepository.deleteByPost(post);
         postRepository.delete(post);
     }
+
+    @Transactional(readOnly = true)
+    public PostDto.PostPageResponse getQnaPosts(
+            PostDto.ListSearchCondition condition,
+            UserDetails userDetails,
+            Pageable pageable,
+            String filterType
+    ) {
+        return getQnaAndReviewPosts(
+                condition,
+                userDetails,
+                pageable,
+                filterType,
+                PostType.Q_AND_A
+        );
+    }
+
+    @Transactional(readOnly = true)
+    public PostDto.PostPageResponse getReviewPosts(
+            PostDto.ListSearchCondition condition,
+            UserDetails userDetails,
+            Pageable pageable,
+            String filterType
+    ) {
+        return getQnaAndReviewPosts(
+                condition,
+                userDetails,
+                pageable,
+                filterType,
+                PostType.REVIEW
+        );
+    }
+
+    private PostDto.PostPageResponse getQnaAndReviewPosts(
+            PostDto.ListSearchCondition condition,
+            UserDetails userDetails,
+            Pageable pageable,
+            String filterType,
+            PostType postType
+    ) {
+        PostSortType sortType = parseSortType(condition.getSort());
+        String keyword = normalizeKeyword(condition.getKeyword());
+        ChallengeMode mode = parseFilterType(filterType);
+
+        Page<PostDto.PostListResponse> page =
+                postQueryRepository.paginateQnaAndReview(
+                        userDetails,
+                        pageable,
+                        postType,
+                        sortType,
+                        keyword,
+                        mode
+                );
+
+        return PostDto.PostPageResponse.from(page);
+    }
+
+    private ChallengeMode parseFilterType(String filterType) {
+        if (filterType == null || filterType.equals("ALL")) {
+            return null;
+        }
+
+        return switch (filterType) {
+            case "VS" -> ChallengeMode.VS;
+            case "SOLO" -> ChallengeMode.SOLO;
+            default -> throw new RestException(ErrorCode.GLOBAL_BAD_REQUEST);
+        };
+    }
+
 }
