@@ -20,6 +20,7 @@ import targeter.aim.domain.label.repository.TagRepository;
 import targeter.aim.domain.label.service.FieldService;
 import targeter.aim.domain.label.service.TagService;
 import targeter.aim.domain.user.entity.User;
+import targeter.aim.domain.user.repository.UserRepository;
 import targeter.aim.domain.user.service.UserService;
 import targeter.aim.system.exception.model.ErrorCode;
 import targeter.aim.system.exception.model.RestException;
@@ -34,6 +35,10 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 public class ChallengeService {
+
+
+    private final UserRepository userRepository;
+    private final ChallengeMemberQueryRepository challengeMemberQueryRepository;
 
     private final ChallengeRepository challengeRepository;
     private final ChallengeMemberRepository challengeMemberRepository;
@@ -676,5 +681,43 @@ public class ChallengeService {
                 sortType,
                 sortOrder
         );
+    }
+
+    @Transactional(readOnly = true)
+    public ChallengeDto.RecordResponse getMyChallengeRecords(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RestException(ErrorCode.USER_NOT_FOUND));
+
+        int allAttempt = challengeMemberQueryRepository.countFinishedChallenges(user);
+        int allSuccess = challengeMemberQueryRepository.countByUserAndResult(user, ChallengeResult.SUCCESS);
+
+        int soloAttempt = challengeMemberQueryRepository.countFinishedChallengesByMode(user, ChallengeMode.SOLO);
+        int soloSuccess = challengeMemberQueryRepository.countByUserAndResultAndMode(user, ChallengeResult.SUCCESS, ChallengeMode.SOLO);
+
+        int vsAttempt = challengeMemberQueryRepository.countFinishedChallengesByMode(user, ChallengeMode.VS);
+        int vsSuccess = challengeMemberQueryRepository.countByUserAndResultAndMode(user, ChallengeResult.SUCCESS, ChallengeMode.VS);
+
+        ChallengeDto.RecordDetail solo = toDetail(soloAttempt, soloSuccess);
+        ChallengeDto.RecordDetail vs = toDetail(vsAttempt, vsSuccess);
+
+        return ChallengeDto.RecordResponse.builder()
+                .allSuccessRate(calcRate(allAttempt, allSuccess))
+                .soloRecord(solo)
+                .vsRecord(vs)
+                .build();
+    }
+
+    private ChallengeDto.RecordDetail toDetail(int attempt, int success) {
+        return ChallengeDto.RecordDetail.builder()
+                .successRate(calcRate(attempt, success))
+                .attemptCount(attempt)
+                .successCount(success)
+                .failCount(Math.max(attempt - success, 0))
+                .build();
+    }
+
+    private int calcRate(int attempt, int success) {
+        if (attempt <= 0) return 0;
+        return (success * 100) / attempt;
     }
 }

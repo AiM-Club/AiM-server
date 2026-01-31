@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import targeter.aim.domain.user.dto.UserDto;
 import targeter.aim.domain.user.service.UserService;
+import targeter.aim.system.security.annotation.NoJwtAuth;
 import targeter.aim.system.security.model.UserDetails;
 
 import java.util.List;
@@ -30,11 +31,9 @@ public class UserController {
         return userService.getUserProfile(userDetails.getUser().getId());
     }
 
+    @NoJwtAuth
     @GetMapping("/rank/top10")
     @Operation(summary = "TOP 10 유저 랭킹 조회", description = "홈 화면에 노출되는 레벨 상위 10명의 유저 랭킹을 반환합니다.")
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "조회 성공")
-    })
     public List<UserDto.RankTop10Response> getTop10UserRank() {
         return userService.getTop10UserRank();
     }
