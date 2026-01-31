@@ -656,4 +656,25 @@ public class ChallengeService {
                 .map(ChallengeDto.ChallengeToPostResponse::from) // DTO의 factory method 사용
                 .collect(Collectors.toList());
     }
+
+    @Transactional(readOnly = true)
+    public Page<ChallengeDto.ChallengeListResponse> getAllChallenges(
+            UserDetails userDetails,
+            Pageable pageable,
+            AllChallengeSortType sortType,
+            SortOrder sortOrder
+    ) {
+        if (userDetails == null) {
+            throw new RestException(ErrorCode.AUTH_LOGIN_REQUIRED);
+        }
+
+        Long userId = userDetails.getUser().getId();
+
+        return challengeQueryRepository.paginateAllChallenges(
+                userId,
+                pageable,
+                sortType,
+                sortOrder
+        );
+    }
 }
