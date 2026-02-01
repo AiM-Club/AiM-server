@@ -29,7 +29,7 @@ public class ChallengeRouteGenerationService {
                         listToString(req.getTags()),
                         listToString(req.getFields()),
                         req.getJob(),
-                        req.getDuration(),
+                        req.getDurationWeek(),
                         req.getStartedAt().format(DateTimeFormatter.ISO_LOCAL_DATE),
                         req.getUserRequest() != null ? req.getUserRequest() : ""
                 ),
@@ -40,7 +40,7 @@ public class ChallengeRouteGenerationService {
         sanitizePayload(payload);
 
         // 3. 결과 검증 (필수값 확인)
-        validatePayload(payload, req.getDuration());
+        validatePayload(payload, req.getDurationWeek());
 
         return payload;
     }

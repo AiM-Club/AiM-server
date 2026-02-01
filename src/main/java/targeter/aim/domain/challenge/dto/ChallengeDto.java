@@ -9,12 +9,12 @@ import targeter.aim.domain.label.dto.FieldDto;
 import targeter.aim.domain.label.dto.TagDto;
 import targeter.aim.domain.label.entity.Field;
 import targeter.aim.domain.label.entity.Tag;
+import targeter.aim.domain.user.dto.TierDto;
 import targeter.aim.domain.user.dto.UserDto;
 import targeter.aim.domain.user.entity.User;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -26,7 +26,7 @@ public class ChallengeDto {
     @AllArgsConstructor
     @Builder
     @Schema(description = "VS 챌린지 목록 조회 조건")
-    public static class ListSearchCondition {
+    public static class VsListSearchCondition {
 
         @Builder.Default
         @Schema(
@@ -34,7 +34,7 @@ public class ChallengeDto {
                 example = "ALL",
                 allowableValues = {"ALL", "MY"}
         )
-        private String filterType = "ALL";
+        private ChallengeFilterType filterType = ChallengeFilterType.ALL;
 
         @Builder.Default
         @Schema(
@@ -43,13 +43,13 @@ public class ChallengeDto {
                     - LATEST   : 최신순
                     - OLDEST   : 오래된순
                     - TITLE    : 가나다순
-                    - ONGOING  : 진행 중 (종료일 기준 오름차순)
-                    - FINISHED : 진행 완료 (종료일 기준 내림차순)
+                    - IN_PROGRESS  : 진행 중 (종료일 기준 오름차순)
+                    - COMPLETED : 진행 완료 (종료일 기준 내림차순)
                     """,
                 example = "LATEST",
-                allowableValues = {"LATEST", "OLDEST", "TITLE", "ONGOING", "FINISHED"}
+                allowableValues = {"LATEST", "OLDEST", "TITLE", "IN_PROGRESS", "COMPLETED"}
         )
-        private String sort = "LATEST";
+        private ChallengeSortType sort = ChallengeSortType.LATEST;
 
         @Schema(description = "검색 키워드 (제목 기준 포함 검색)", example = "개발")
         private String keyword;
@@ -65,7 +65,7 @@ public class ChallengeDto {
                 - LANGUAGE : 어문
                 - SCIENCE : 자연(과학)
                 - DESIGN : 디자인
-                - SPROTS : 체육
+                - SPORTS : 체육
                 - MUSIC : 음악
                 """,
                 example = "ALL",
@@ -79,7 +79,7 @@ public class ChallengeDto {
     @AllArgsConstructor
     @Builder
     @Schema(description = "SOLO 챌린지 목록 조회 조건")
-    public static class SoloChallengeListRequest {
+    public static class SoloListSearchCondition {
 
         @Builder.Default
         @Schema(
@@ -87,7 +87,7 @@ public class ChallengeDto {
                 example = "IN_PROGRESS",
                 allowableValues = {"IN_PROGRESS", "COMPLETE"}
         )
-        private String filterType = "IN_PROGRESS";
+        private ChallengeFilterType filterType = ChallengeFilterType.IN_PROGRESS;
 
         @Builder.Default
         @Schema(
@@ -95,25 +95,58 @@ public class ChallengeDto {
                 정렬 기준
                 - LATEST : 최신순
                 - OLDEST : 오래된순
+                - LIKED  : 좋아요순
                 - TITLE  : 가나다순
                 """,
                 example = "LATEST",
-                allowableValues = {"LATEST", "OLDEST", "TITLE"}
+                allowableValues = {"LATEST", "OLDEST", "LIKED", "TITLE"}
         )
-        private String sort = "LATEST";
-
-        @Builder.Default
-        @Schema(description = "페이지 번호 (0부터 시작)", example = "0")
-        private Integer page = 0;
-
-        @Builder.Default
-        @Schema(description = "페이지 크기", example = "16")
-        private Integer size = 16;
+        private ChallengeSortType sort = ChallengeSortType.LATEST;
 
         @Schema(description = "검색 키워드 (제목 기준 포함 검색)", example = "개발")
         private String keyword;
     }
 
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Builder
+    @Schema(description = "전체 챌린지 목록 조회 조건")
+    public static class AllListSearchCondition {
+
+        @Builder.Default
+        @Schema(
+                description = """
+                정렬 기준
+                - LATEST : 최신순
+                - OLDEST : 오래된순
+                - LIKED  : 좋아요순
+                - TITLE  : 가나다순
+                """,
+                example = "LATEST",
+                allowableValues = {"LATEST", "OLDEST", "LIKED", "TITLE"}
+        )
+        private ChallengeSortType sort = ChallengeSortType.LATEST;
+
+        @Schema(description = "검색 키워드 (제목 기준 포함 검색)", example = "개발")
+        private String keyword;
+    }
+
+    public enum ChallengeSortType {
+        LATEST,        // 최신순
+        OLDEST,        // 오래된순
+        LIKED,         // 좋아요순
+        TITLE,         // 가나다순
+        IN_PROGRESS,   // 진행 중
+        COMPLETED      // 진행 완료
+    }
+
+    public enum ChallengeFilterType {
+        ALL,           // 전체
+        MY,            // 마이
+        IN_PROGRESS,   // 진행 중
+        COMPLETED      // 진행 완료
+    }
 
     @Data
     @NoArgsConstructor
@@ -121,48 +154,70 @@ public class ChallengeDto {
     @Builder
     @Schema(description = "챌린지 작성자 정보")
     public static class UserResponse {
+
+        @Schema(description = "유저 아이디", example = "1")
         private Long userId;
 
+        @Schema(description = "유저 닉네임", example = "닉네임")
         private String nickname;
 
-        private String badge;
+        @Schema(description = "티어명", example = "BRONZE")
+        private TierDto.TierResponse tier;
 
+        @Schema(description = "프로필 이미지")
         private FileDto.FileResponse profileImage;
+
+        public static UserResponse from(User user) {
+            return UserResponse.builder()
+                    .userId(user.getId())
+                    .nickname(user.getNickname())
+                    .tier(TierDto.TierResponse.from(user.getTier()))
+                    .profileImage(FileDto.FileResponse.from(user.getProfileImage()))
+                    .build();
+        }
     }
 
     @Data
     @NoArgsConstructor
     @AllArgsConstructor
-    @Getter
     @Builder
     @Schema(description = "챌린지 목록 응답")
     public static class ChallengeListResponse {
+
+        @Schema(description = "챌린지 아이디", example = "1")
         private Long challengeId;
 
+        @Schema(description = "챌린지 썸네일")
         private FileDto.FileResponse thumbnail;
 
+        @Schema(description = "챌린지 작성자 정보")
         private UserResponse user;
 
-        private LocalDate startDate;
+        @Schema(description = "챌린지 시작일", example = "2026-01-01")
+        private LocalDate startedAt;
 
-        private String duration;
+        @Schema(description = "챌린지 기간(주)", example = "4")
+        private Integer durationWeek;
 
+        @Schema(description = "챌린지 이름", example = "챌린지 제목")
         private String name;
 
+        @Schema(description = "분야 목록(1~3개)", example = "[\"IT\", \"경영\"]")
         private List<String> fields;
 
+        @Schema(description = "태그 목록(1~3개)", example = "[\"태그1\", \"태그2\", \"태그3\"]")
         private List<String> tags;
 
+        @Schema(description = "직무", example = "직무")
         private String job;
 
+        @Schema(description = "좋아요 여부", example = "true | false")
         private Boolean liked;
 
+        @Schema(description = "좋아요 수", example = "1")
         private Integer likeCount;
 
-        private LocalDateTime createdAt;
-
-        private LocalDateTime lastModifiedAt;
-
+        @Schema(description = "챌린지 상태", example = "IN_PROGRESS | COMPLETED")
         private ChallengeStatus status;
     }
 
@@ -217,7 +272,7 @@ public class ChallengeDto {
         private LocalDate startedAt;
 
         @Schema(description = "기간(주)", example = "6")
-        private Integer duration;
+        private Integer durationWeek;
 
         @Schema(description = "태그 목록(1~3개)", example = "[\"태그1\", \"태그2\", \"태그3\"]")
         private List<String> tags;
@@ -270,7 +325,7 @@ public class ChallengeDto {
         private LocalDate startedAt;
 
         @Schema(description = "기간(주)", example = "6")
-        private Integer duration;
+        private Integer durationWeek;
 
         @Schema(description = "태그 목록(1~3개)", example = "[\"태그1\", \"태그2\", \"태그3\"]")
         private List<String> tags;
@@ -297,8 +352,8 @@ public class ChallengeDto {
             if(startedAt != null) {
                 challenge.setStartedAt(startedAt);
             }
-            if(duration != null) {
-                challenge.setDurationWeek(duration);
+            if(durationWeek != null) {
+                challenge.setDurationWeek(durationWeek);
             }
             if(job != null) {
                 challenge.setJob(job);
@@ -532,15 +587,15 @@ public class ChallengeDto {
     public static class VsResultResponse {
         private Long challengeId;
 
-        private Integer durationWeeks;
+        private Integer durationWeek;
 
-        private UserDto.UserResponse winnerInfo;
+        private UserResponse winnerInfo;
 
         public static VsResultResponse from(Challenge challenge, User user) {
             return VsResultResponse.builder()
                     .challengeId(challenge.getId())
-                    .durationWeeks(challenge.getDurationWeek())
-                    .winnerInfo(UserDto.UserResponse.from(user))
+                    .durationWeek(challenge.getDurationWeek())
+                    .winnerInfo(UserResponse.from(user))
                     .build();
         }
     }
