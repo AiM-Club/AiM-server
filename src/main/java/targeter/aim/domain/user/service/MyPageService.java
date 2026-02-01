@@ -60,7 +60,8 @@ public class MyPageService {
                 end = 80;
             }
             case "DIAMOND" -> {
-                return 100;
+                start = 81;
+                end = 100;
             }
             default -> throw new RestException(ErrorCode.TIER_NOT_FOUND);
         }
