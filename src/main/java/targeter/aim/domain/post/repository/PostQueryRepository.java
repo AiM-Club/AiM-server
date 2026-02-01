@@ -466,6 +466,7 @@ public class PostQueryRepository {
                 .build();
     }
 
+    // Qna, Review 게시글 목록 조회
     public Page<PostDto.PostListResponse> paginateQnaAndReview(
             UserDetails userDetails,
             Pageable pageable,
@@ -610,6 +611,96 @@ public class PostQueryRepository {
                                 .build()
                 )
                 .build();
+    }
+
+    // 내가 쓴 게시글 목록 조회
+    public Page<PostDto.PostListResponse> paginateMyPosts(
+            UserDetails userDetails,
+            Pageable pageable,
+            PostSortType sortType,
+            String keyword,
+            List<PostType> types
+    ) {
+        JPAQuery<Tuple> query = buildBaseQueryForMyPosts(
+                userDetails,
+                keyword,
+                types
+        );
+
+        applySorting(query, sortType);
+
+        List<Tuple> tuples = query
+                .offset(pageable.getOffset())
+                .limit(pageable.getPageSize())
+                .fetch();
+
+        Long total = buildCountQueryForMyPosts(
+                userDetails,
+                keyword,
+                types
+        ).fetchOne();
+
+        return new PageImpl<>(
+                enrichPostListDetails(tuples),
+                pageable,
+                total == null ? 0 : total
+        );
+    }
+
+    private JPAQuery<Tuple> buildBaseQueryForMyPosts(
+            UserDetails userDetails,
+            String keyword,
+            List<PostType> types
+    ) {
+        JPAQuery<Tuple> query = queryFactory
+                .select(
+                        post,
+                        JPAExpressions.selectOne()
+                                .from(postLiked)
+                                .where(
+                                        postLiked.post.eq(post)
+                                                .and(postLiked.user.id.eq(userDetails.getUser().getId()))
+                                ).exists(),
+                        JPAExpressions.select(postLiked.count())
+                                .from(postLiked)
+                                .where(postLiked.post.eq(post))
+                )
+                .from(post)
+                .where(
+                        post.user.id.eq(userDetails.getUser().getId()),
+                        types != null ? post.type.in(types) : null
+                )
+                .leftJoin(post.user).fetchJoin()
+                .leftJoin(post.user.tier).fetchJoin()
+                .leftJoin(post.user.profileImage).fetchJoin();
+
+        BooleanExpression keywordPredicate = keywordCondition(keyword);
+        if (keywordPredicate != null) {
+            query.where(keywordPredicate);
+        }
+
+        return query;
+    }
+
+    private JPAQuery<Long> buildCountQueryForMyPosts(
+            UserDetails userDetails,
+            String keyword,
+            List<PostType> types
+    ) {
+        JPAQuery<Long> query = queryFactory
+                .select(post.count())
+                .from(post)
+                .where(
+                        post.user.id.eq(userDetails.getUser().getId()),
+                        types != null ? post.type.in(types) : null
+                );
+
+        BooleanExpression keywordPredicate = keywordCondition(keyword);
+        if (keywordPredicate != null) {
+            query.where(keywordPredicate);
+        }
+
+        return query;
     }
 
 }
