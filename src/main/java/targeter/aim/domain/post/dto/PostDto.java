@@ -4,6 +4,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 import org.springframework.data.domain.Page;
 import org.springframework.web.multipart.MultipartFile;
+import targeter.aim.domain.challenge.entity.Challenge;
 import targeter.aim.domain.challenge.entity.ChallengeMode;
 import targeter.aim.domain.file.dto.FileDto;
 import targeter.aim.domain.label.dto.FieldDto;
@@ -30,12 +31,12 @@ public class PostDto {
         @Builder.Default
         @Schema(
                 description = """
-                    정렬 기준
-                    - LATEST   : 최신순
-                    - OLDEST   : 오래된순
-                    - LIKED    : 좋아요순
-                    - TITLE    : 가나다순
-                    """,
+                        정렬 기준
+                        - LATEST   : 최신순
+                        - OLDEST   : 오래된순
+                        - LIKED    : 좋아요순
+                        - TITLE    : 가나다순
+                        """,
                 example = "LATEST",
                 allowableValues = {"LATEST", "OLDEST", "LIKED", "TITLE"}
         )
@@ -501,16 +502,16 @@ public class PostDto {
         private List<MultipartFile> attachedFiles;
 
         public void applyTo(Post post, Set<Tag> resolvedTags, Set<Field> resolvedFields) {
-            if(title != null) {
+            if (title != null) {
                 post.setTitle(title);
             }
-            if(tags != null) {
+            if (tags != null) {
                 post.getTags().clear();
-                if(resolvedTags != null) post.getTags().addAll(resolvedTags);
+                if (resolvedTags != null) post.getTags().addAll(resolvedTags);
             }
-            if(fields != null) {
+            if (fields != null) {
                 post.getFields().clear();
-                if(resolvedFields != null) post.getFields().addAll(resolvedFields);
+                if (resolvedFields != null) post.getFields().addAll(resolvedFields);
             }
         }
     }
@@ -530,69 +531,6 @@ public class PostDto {
                     .build();
         }
     }
-
-    @Data
-    @AllArgsConstructor
-    @NoArgsConstructor
-    @Builder
-    @Schema(description = "HOT 게시글 카드 응답")
-    public static class HotPostListResponse {
-
-        @Schema(description = "게시글 ID", example = "1")
-        private Long postId;
-
-        @Schema(description = "작성자 정보(profile, nickname, tier값 참고)")
-        private UserDto.UserResponse user;
-
-        @Schema(description = "챌린지 시작일", example = "2026-01-01")
-        private LocalDate startDate;
-
-        @Schema(description = "챌린지 기간(주)", example = "4주")
-        private String duration;
-
-        @Schema(description = "게시글 제목", example = "게시글 제목")
-        private String title;
-
-        @Schema(description = "분야 리스트", example = "[\"IT\", \"BUSINESS\"]")
-        private List<String> fields;
-
-        @Schema(description = "태그 리스트", example = "[\"태그1\", \"태그2\", \"태그3\"]")
-        private List<String> tags;
-
-        @Schema(description = "직무", example = "직무")
-        private String job;
-
-        @Schema(description = "좋아요 여부(비로그인 false)", example = "true | false")
-        private Boolean liked;
-
-        @Schema(description = "좋아요 수", example = "10")
-        private Integer likeCount;
-
-        @Schema(description = "챌린지 모드", example = "SOLO | VS")
-        private ChallengeMode mode;
-    }
-
-    @Data
-    @AllArgsConstructor
-    @NoArgsConstructor
-    @Schema(description = "HOT 게시글 페이지 응답")
-    public static class HotPostPageResponse {
-        private List<HotPostListResponse> content;
-        private PageInfo page;
-
-        public static HotPostPageResponse from(Page<HotPostListResponse> page) {
-            return new HotPostPageResponse(
-                    page.getContent(),
-                    new PageInfo(
-                            page.getSize(),
-                            page.getNumber(),
-                            page.getTotalElements(),
-                            page.getTotalPages()
-                    )
-            );
-        }
-    }
-
 
     @Data
     @NoArgsConstructor
@@ -671,4 +609,67 @@ public class PostDto {
         private FileDto.FileResponse profileImage;
     }
 
+
+    @Data
+    @AllArgsConstructor
+    @NoArgsConstructor
+    @Builder
+    @Schema(description = "HOT 게시글 카드 응답")
+    public static class HotPostListResponse {
+
+        @Schema(description = "게시글 ID", example = "1")
+        private Long postId;
+
+        @Schema(description = "작성자 정보(profile, nickname, tier값 참고)")
+        private UserDto.UserResponse user;
+
+        @Schema(description = "챌린지 시작일", example = "2026-01-01")
+        private LocalDate startDate;
+
+        @Schema(description = "챌린지 기간(주)", example = "4주")
+        private String duration;
+
+        @Schema(description = "게시글 제목", example = "게시글 제목")
+        private String title;
+
+        @Schema(description = "분야 리스트", example = "[\"IT\", \"BUSINESS\"]")
+        private List<String> fields;
+
+        @Schema(description = "태그 리스트", example = "[\"태그1\", \"태그2\", \"태그3\"]")
+        private List<String> tags;
+
+        @Schema(description = "직무", example = "직무")
+        private String job;
+
+        @Schema(description = "좋아요 여부(비로그인 false)", example = "true | false")
+        private Boolean liked;
+
+        @Schema(description = "좋아요 수", example = "10")
+        private Integer likeCount;
+
+        @Schema(description = "챌린지 모드", example = "SOLO | VS")
+        private ChallengeMode mode;
+
+    }
+
+    @Data
+    @AllArgsConstructor
+    @NoArgsConstructor
+    @Schema(description = "HOT 게시글 페이지 응답")
+    public static class HotPostPageResponse {
+        private List<HotPostListResponse> content;
+        private PageInfo page;
+
+        public static HotPostPageResponse from(Page<HotPostListResponse> page) {
+            return new HotPostPageResponse(
+                    page.getContent(),
+                    new PageInfo(
+                            page.getSize(),
+                            page.getNumber(),
+                            page.getTotalElements(),
+                            page.getTotalPages()
+                    )
+            );
+        }
+    }
 }
