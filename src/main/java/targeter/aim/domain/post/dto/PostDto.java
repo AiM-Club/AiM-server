@@ -4,7 +4,6 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 import org.springframework.data.domain.Page;
 import org.springframework.web.multipart.MultipartFile;
-import targeter.aim.domain.challenge.entity.Challenge;
 import targeter.aim.domain.challenge.entity.ChallengeMode;
 import targeter.aim.domain.file.dto.FileDto;
 import targeter.aim.domain.label.dto.FieldDto;
@@ -12,12 +11,12 @@ import targeter.aim.domain.label.dto.TagDto;
 import targeter.aim.domain.label.entity.Field;
 import targeter.aim.domain.label.entity.Tag;
 import targeter.aim.domain.post.entity.Post;
+import targeter.aim.domain.user.dto.TierDto;
 import targeter.aim.domain.user.dto.UserDto;
 
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 public class PostDto {
 
@@ -593,4 +592,83 @@ public class PostDto {
             );
         }
     }
+
+
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Getter
+    @Builder
+    @Schema(description = "게시글 공통 목록 응답 DTO (QnA / 후기)")
+    public static class PostListResponse {
+
+        @Schema(description = "게시글 아이디", example = "1")
+        private Long postId;
+
+        @Schema(description = "썸네일 정보")
+        private FileDto.FileResponse thumbnail;
+
+        @Schema(description = "작성자 정보")
+        private PostUserResponse user;
+
+        @Schema(description = "게시글 제목", example = "제목")
+        private String title;
+
+        @Schema(description = "분야 리스트")
+        private List<String> fields;
+
+        @Schema(description = "태그 리스트")
+        private List<String> tags;
+
+        @Schema(description = "직무")
+        private String job;
+
+        @Schema(description = "좋아요 여부")
+        private Boolean isLiked;
+
+        @Schema(description = "좋아요 수")
+        private Integer likeCount;
+    }
+
+    @Data
+    @AllArgsConstructor
+    @NoArgsConstructor
+    @Schema(description = "게시글 목록 페이지 응답")
+    public static class PostPageResponse {
+        private List<PostListResponse> content;
+        private PageInfo page;
+
+        public static PostPageResponse from(Page<PostListResponse> page) {
+            return new PostPageResponse(
+                    page.getContent(),
+                    new PageInfo(
+                            page.getSize(),
+                            page.getNumber(),
+                            page.getTotalElements(),
+                            page.getTotalPages()
+                    )
+            );
+        }
+    }
+
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Builder
+    @Schema(description = "게시글 작성자 정보")
+    public static class PostUserResponse {
+
+        @Schema(description = "유저 ID")
+        private Long userId;
+
+        @Schema(description = "닉네임")
+        private String nickname;
+
+        @Schema(description = "티어")
+        private TierDto.TierResponse tier;
+
+        @Schema(description = "프로필 이미지")
+        private FileDto.FileResponse profileImage;
+    }
+
 }
