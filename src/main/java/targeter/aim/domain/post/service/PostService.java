@@ -493,4 +493,41 @@ public class PostService {
         };
     }
 
+    @Transactional(readOnly = true)
+    public PostDto.PostPageResponse getMyPosts(
+            String filterType,
+            PostDto.ListSearchCondition condition,
+            UserDetails userDetails,
+            Pageable pageable
+    ) {
+        if (userDetails == null) {
+            throw new RestException(ErrorCode.AUTH_LOGIN_REQUIRED);
+        }
+
+        PostSortType sortType = parseSortType(condition.getSort());
+        String keyword = normalizeKeyword(condition.getKeyword());
+
+        List<PostType> types;
+        if (filterType == null || filterType.equals("ALL")) {
+            types = null;
+        } else {
+            types = switch (filterType) {
+                case "VS_RECRUIT" -> List.of(PostType.VS_RECRUIT);
+                case "COMMUNITY" -> List.of(PostType.Q_AND_A, PostType.REVIEW);
+                default -> throw new RestException(ErrorCode.GLOBAL_BAD_REQUEST);
+            };
+        }
+
+        Page<PostDto.PostListResponse> page =
+                postQueryRepository.paginateMyPosts(
+                        userDetails,
+                        pageable,
+                        sortType,
+                        keyword,
+                        types
+                );
+
+        return PostDto.PostPageResponse.from(page);
+
+    }
 }
