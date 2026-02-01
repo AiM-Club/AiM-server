@@ -358,7 +358,7 @@ public class ChallengeQueryRepository {
                 .tags(tagMap.getOrDefault(c.getId(), List.of()))
                 .job(c.getJob())
                 .liked(Boolean.TRUE.equals(tuple.get(1, Boolean.class)))
-                .likeCount(tuple.get(2, Long.class) == null ? 0 : tuple.get(2, Long.class).intValue())
+                .likeCount(tuple.get(2, Integer.class) == null ? 0 : tuple.get(2, Integer.class))
                 .createdAt(c.getCreatedAt())
                 .lastModifiedAt(c.getLastModifiedAt())
                 .status(c.getStatus())
