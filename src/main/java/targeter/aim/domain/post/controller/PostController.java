@@ -2,6 +2,7 @@ package targeter.aim.domain.post.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -200,7 +201,13 @@ public class PostController {
     )
     public PostDto.PostPageResponse getQnaPosts(
             @ModelAttribute @ParameterObject PostDto.ListSearchCondition condition,
-            @RequestParam(defaultValue = "ALL") String filterType,
+            @RequestParam(defaultValue = "ALL") @Parameter(
+                    description = "게시글 필터 타입",
+                    example = "ALL",
+                    schema = @Schema(
+                            allowableValues = {"ALL", "SOLO", "VS"}
+                    )
+            ) String filterType,
             @PageableDefault(size = 16) @ParameterObject Pageable pageable,
             @AuthenticationPrincipal UserDetails userDetails
     ) {
@@ -215,11 +222,44 @@ public class PostController {
     )
     public PostDto.PostPageResponse getReviewPosts(
             @ModelAttribute @ParameterObject PostDto.ListSearchCondition condition,
-            @RequestParam(defaultValue = "ALL") String filterType,
+            @RequestParam(defaultValue = "ALL")
+            @Parameter(
+                    description = "게시글 필터 타입",
+                    example = "ALL",
+                    schema = @Schema(
+                            allowableValues = {"ALL", "SOLO", "VS"}
+                    )
+            )String filterType,
             @PageableDefault(size = 16) @ParameterObject Pageable pageable,
             @AuthenticationPrincipal UserDetails userDetails
     ) {
         return postService.getReviewPosts(condition, userDetails, pageable, filterType);
+    }
+
+    @GetMapping("/me")
+    @Operation(
+            summary = "내가 작성한 게시글 목록 조회",
+            description = "로그안한 사용자가 작성한 게시글을 정렬 조건에 따라 페이지네이션 조회합니다."
+    )
+    public PostDto.PostPageResponse getMyPosts(
+            @RequestParam(defaultValue = "ALL")
+            @Parameter(
+                    description = "게시글 필터 타입",
+                    example = "ALL",
+                    schema = @Schema(
+                            allowableValues = {"ALL", "VS_RECRUIT", "COMMUNITY"}
+                    )
+            ) String filterType,
+            @ModelAttribute @ParameterObject PostDto.ListSearchCondition condition,
+            @PageableDefault(size = 16) @ParameterObject Pageable pageable,
+            @AuthenticationPrincipal UserDetails userDetails
+    ) {
+        return postService.getMyPosts(
+                filterType,
+                condition,
+                userDetails,
+                pageable
+        );
     }
 
 }
