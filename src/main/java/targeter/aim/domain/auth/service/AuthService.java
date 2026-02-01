@@ -57,6 +57,8 @@ public class AuthService {
 
         User toSave = request.toEntity(passwordEncoder);
 
+        toSave.setLevel(1);
+
         Tier bronze = tierRepository.findByName("BRONZE")
                 .orElseThrow(() -> new RestException(ErrorCode.TIER_NOT_FOUND));
         toSave.setTier(bronze);
