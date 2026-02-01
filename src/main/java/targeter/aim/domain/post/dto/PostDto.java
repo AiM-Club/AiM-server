@@ -12,12 +12,12 @@ import targeter.aim.domain.label.dto.TagDto;
 import targeter.aim.domain.label.entity.Field;
 import targeter.aim.domain.label.entity.Tag;
 import targeter.aim.domain.post.entity.Post;
+import targeter.aim.domain.user.dto.TierDto;
 import targeter.aim.domain.user.dto.UserDto;
 
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 public class PostDto {
 
@@ -31,12 +31,12 @@ public class PostDto {
         @Builder.Default
         @Schema(
                 description = """
-                    정렬 기준
-                    - LATEST   : 최신순
-                    - OLDEST   : 오래된순
-                    - LIKED    : 좋아요순
-                    - TITLE    : 가나다순
-                    """,
+                        정렬 기준
+                        - LATEST   : 최신순
+                        - OLDEST   : 오래된순
+                        - LIKED    : 좋아요순
+                        - TITLE    : 가나다순
+                        """,
                 example = "LATEST",
                 allowableValues = {"LATEST", "OLDEST", "LIKED", "TITLE"}
         )
@@ -502,16 +502,16 @@ public class PostDto {
         private List<MultipartFile> attachedFiles;
 
         public void applyTo(Post post, Set<Tag> resolvedTags, Set<Field> resolvedFields) {
-            if(title != null) {
+            if (title != null) {
                 post.setTitle(title);
             }
-            if(tags != null) {
+            if (tags != null) {
                 post.getTags().clear();
-                if(resolvedTags != null) post.getTags().addAll(resolvedTags);
+                if (resolvedTags != null) post.getTags().addAll(resolvedTags);
             }
-            if(fields != null) {
+            if (fields != null) {
                 post.getFields().clear();
-                if(resolvedFields != null) post.getFields().addAll(resolvedFields);
+                if (resolvedFields != null) post.getFields().addAll(resolvedFields);
             }
         }
     }
@@ -531,6 +531,84 @@ public class PostDto {
                     .build();
         }
     }
+
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Getter
+    @Builder
+    @Schema(description = "게시글 공통 목록 응답 DTO (QnA / 후기)")
+    public static class PostListResponse {
+
+        @Schema(description = "게시글 아이디", example = "1")
+        private Long postId;
+
+        @Schema(description = "썸네일 정보")
+        private FileDto.FileResponse thumbnail;
+
+        @Schema(description = "작성자 정보")
+        private PostUserResponse user;
+
+        @Schema(description = "게시글 제목", example = "제목")
+        private String name;
+
+        @Schema(description = "분야 리스트")
+        private List<String> fields;
+
+        @Schema(description = "태그 리스트")
+        private List<String> tags;
+
+        @Schema(description = "직무")
+        private String job;
+
+        @Schema(description = "좋아요 여부")
+        private Boolean isLiked;
+
+        @Schema(description = "좋아요 수")
+        private Integer likeCount;
+    }
+
+    @Data
+    @AllArgsConstructor
+    @NoArgsConstructor
+    @Schema(description = "게시글 목록 페이지 응답")
+    public static class PostPageResponse {
+        private List<PostListResponse> content;
+        private PageInfo page;
+
+        public static PostPageResponse from(Page<PostListResponse> page) {
+            return new PostPageResponse(
+                    page.getContent(),
+                    new PageInfo(
+                            page.getSize(),
+                            page.getNumber(),
+                            page.getTotalElements(),
+                            page.getTotalPages()
+                    )
+            );
+        }
+    }
+
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Builder
+    @Schema(description = "게시글 작성자 정보")
+    public static class PostUserResponse {
+
+        @Schema(description = "유저 ID")
+        private Long userId;
+
+        @Schema(description = "닉네임")
+        private String nickname;
+
+        @Schema(description = "티어")
+        private TierDto.TierResponse tier;
+
+        @Schema(description = "프로필 이미지")
+        private FileDto.FileResponse profileImage;
+    }
+
 
     @Data
     @AllArgsConstructor
@@ -571,6 +649,7 @@ public class PostDto {
 
         @Schema(description = "챌린지 모드", example = "SOLO | VS")
         private ChallengeMode mode;
+
     }
 
     @Data
