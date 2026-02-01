@@ -8,7 +8,9 @@ import org.springframework.transaction.annotation.Transactional;
 import targeter.aim.domain.challenge.entity.ChallengeResult;
 import targeter.aim.domain.challenge.repository.ChallengeMemberQueryRepository;
 import targeter.aim.domain.user.dto.UserDto;
+import targeter.aim.domain.user.entity.Tier;
 import targeter.aim.domain.user.entity.User;
+import targeter.aim.domain.user.repository.TierRepository;
 import targeter.aim.domain.user.repository.UserRepository;
 import targeter.aim.system.exception.model.ErrorCode;
 import targeter.aim.system.exception.model.RestException;
@@ -22,6 +24,7 @@ import java.util.List;
 public class UserService {
 
     private final UserRepository userRepository;
+    private final TierRepository tierRepository;
     private final ChallengeMemberQueryRepository challengeMemberQueryRepository;
 
     @Transactional(readOnly = true)
@@ -44,8 +47,12 @@ public class UserService {
         double score = calculateScore(successCount, totalCount, currentLevel);
 
         if (score >= 1.0) {
-            user.setLevel(currentLevel + 1);
-            log.info("User {} Level Up! {} -> {}", user.getId(), currentLevel, currentLevel + 1);
+            int newLevel = currentLevel + 1;
+            user.setLevel(newLevel);
+
+            Tier newTier = determineTierByLevel(newLevel);
+            user.setTier(newTier);
+            log.info("User {} Level Up! {} -> {}, Tier -> {}", user.getId(), currentLevel, newLevel, newTier.getName());
         }
     }
 
@@ -53,6 +60,13 @@ public class UserService {
         double term1 = (success / total) * (0.5 + 0.002 * level);
         double term2 = Math.min(success / (30.0 + 1.2 * level), 1.0) * (0.5 - 0.002 * level);
         return term1 + term2;
+    }
+
+    private Tier determineTierByLevel(int level) {
+        if (level <= 30) return tierRepository.findByName("BRONZE").orElseThrow();
+        if (level <= 60) return tierRepository.findByName("SILVER").orElseThrow();
+        if (level <= 80) return tierRepository.findByName("GOLD").orElseThrow();
+        return tierRepository.findByName("DIAMOND").orElseThrow();
     }
 
     @Transactional(readOnly = true)
