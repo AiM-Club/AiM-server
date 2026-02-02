@@ -4,6 +4,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 import org.springframework.data.domain.Page;
 import org.springframework.web.multipart.MultipartFile;
+import targeter.aim.domain.challenge.dto.ChallengeDto;
 import targeter.aim.domain.challenge.entity.Challenge;
 import targeter.aim.domain.challenge.entity.ChallengeMode;
 import targeter.aim.domain.file.dto.FileDto;
@@ -14,6 +15,7 @@ import targeter.aim.domain.label.entity.Tag;
 import targeter.aim.domain.post.entity.Post;
 import targeter.aim.domain.user.dto.TierDto;
 import targeter.aim.domain.user.dto.UserDto;
+import targeter.aim.domain.user.entity.User;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -32,6 +34,19 @@ public class PostDto {
         @Schema(
                 description = """
                         정렬 기준
+                        - ALL  : 전체 챌린지
+                        - VS   : VS 챌린지
+                        - SOLO : SOLO 챌린지
+                        """,
+                example = "ALL",
+                allowableValues = {"ALL", "VS", "SOLO"}
+        )
+        private PostFilterType filter = PostFilterType.ALL;
+
+        @Builder.Default
+        @Schema(
+                description = """
+                        정렬 기준
                         - LATEST   : 최신순
                         - OLDEST   : 오래된순
                         - LIKED    : 좋아요순
@@ -40,10 +55,25 @@ public class PostDto {
                 example = "LATEST",
                 allowableValues = {"LATEST", "OLDEST", "LIKED", "TITLE"}
         )
-        private String sort = "LATEST";
+        private PostSortType sort = PostSortType.LATEST;
 
         @Schema(description = "검색 키워드 (제목 기준 포함 검색)", example = "개발")
         private String keyword;
+    }
+
+    public enum PostFilterType {
+        ALL,
+        VS,
+        SOLO,
+        VS_RECRUIT,
+        COMMUNITY
+    }
+
+    public enum PostSortType {
+        LATEST,        // 최신순
+        OLDEST,        // 오래된순
+        LIKED,         // 좋아요순
+        TITLE          // 가나다순
     }
 
     @Data
@@ -63,6 +93,35 @@ public class PostDto {
     @Data
     @NoArgsConstructor
     @AllArgsConstructor
+    @Builder
+    @Schema(description = "게시글 작성자 정보")
+    public static class UserResponse {
+
+        @Schema(description = "유저 아이디", example = "1")
+        private Long userId;
+
+        @Schema(description = "유저 닉네임", example = "닉네임")
+        private String nickname;
+
+        @Schema(description = "티어명", example = "BRONZE")
+        private TierDto.TierResponse tier;
+
+        @Schema(description = "프로필 이미지")
+        private FileDto.FileResponse profileImage;
+
+        public static UserResponse from(User user) {
+            return UserResponse.builder()
+                    .userId(user.getId())
+                    .nickname(user.getNickname())
+                    .tier(TierDto.TierResponse.from(user.getTier()))
+                    .profileImage(FileDto.FileResponse.from(user.getProfileImage()))
+                    .build();
+        }
+    }
+
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
     @Getter
     @Builder
     @Schema(description = "VS모집글 목록 응답")
@@ -73,14 +132,14 @@ public class PostDto {
         @Schema(description = "썸네일 정보(uuid값 참고)")
         private FileDto.FileResponse thumbnail;
 
-        @Schema(description = "작성자 정보(profile, nickname, tier값 참고)")
-        private UserDto.UserResponse user;
+        @Schema(description = "작성자 정보")
+        private UserResponse user;
 
         @Schema(description = "시작일", example = "2026-01-01")
-        private LocalDate startDate;
+        private LocalDate startedAt;
 
         @Schema(description = "챌린지 기간(주)", example = "4주")
-        private String duration;
+        private Integer durationWeek;
 
         @Schema(description = "VS모집글 제목", example = "제목")
         private String name;
@@ -111,6 +170,131 @@ public class PostDto {
 
         public static VSRecruitPageResponse from(Page<VSRecruitListResponse> page) {
             return new VSRecruitPageResponse(
+                    page.getContent(),
+                    new PageInfo(
+                            page.getSize(),
+                            page.getNumber(),
+                            page.getTotalElements(),
+                            page.getTotalPages()
+                    )
+            );
+        }
+    }
+
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Builder
+    @Schema(description = "게시글 공통 목록 응답 DTO (QnA / 후기)")
+    public static class PostListResponse {
+
+        @Schema(description = "게시글 아이디", example = "1")
+        private Long postId;
+
+        @Schema(description = "썸네일 정보")
+        private FileDto.FileResponse thumbnail;
+
+        @Schema(description = "작성자 정보")
+        private UserResponse user;
+
+        @Schema(description = "시작일", example = "2026-01-01")
+        private LocalDate startedAt;
+
+        @Schema(description = "챌린지 기간(주)", example = "4")
+        private Integer durationWeek;
+
+        @Schema(description = "게시글 제목", example = "제목")
+        private String name;
+
+        @Schema(description = "분야 리스트")
+        private List<String> fields;
+
+        @Schema(description = "태그 리스트")
+        private List<String> tags;
+
+        @Schema(description = "직무")
+        private String job;
+
+        @Schema(description = "좋아요 여부")
+        private Boolean isLiked;
+
+        @Schema(description = "좋아요 수")
+        private Integer likeCount;
+    }
+
+    @Data
+    @AllArgsConstructor
+    @NoArgsConstructor
+    @Schema(description = "게시글 목록 페이지 응답")
+    public static class PostPageResponse {
+        private List<PostListResponse> content;
+        private PageInfo page;
+
+        public static PostPageResponse from(Page<PostListResponse> page) {
+            return new PostPageResponse(
+                    page.getContent(),
+                    new PageInfo(
+                            page.getSize(),
+                            page.getNumber(),
+                            page.getTotalElements(),
+                            page.getTotalPages()
+                    )
+            );
+        }
+    }
+
+    @Data
+    @AllArgsConstructor
+    @NoArgsConstructor
+    @Builder
+    @Schema(description = "HOT 게시글 카드 응답")
+    public static class HotPostListResponse {
+
+        @Schema(description = "게시글 ID", example = "1")
+        private Long postId;
+
+        @Schema(description = "작성자 정보(profile, nickname, tier값 참고)")
+        private UserResponse user;
+
+        @Schema(description = "시작일", example = "2026-01-01")
+        private LocalDate startedAt;
+
+        @Schema(description = "챌린지 기간(주)", example = "4")
+        private Integer durationWeek;
+
+        @Schema(description = "게시글 제목", example = "게시글 제목")
+        private String title;
+
+        @Schema(description = "분야 리스트", example = "[\"IT\", \"BUSINESS\"]")
+        private List<String> fields;
+
+        @Schema(description = "태그 리스트", example = "[\"태그1\", \"태그2\", \"태그3\"]")
+        private List<String> tags;
+
+        @Schema(description = "직무", example = "직무")
+        private String job;
+
+        @Schema(description = "좋아요 여부(비로그인 false)", example = "true | false")
+        private Boolean liked;
+
+        @Schema(description = "좋아요 수", example = "10")
+        private Integer likeCount;
+
+        @Schema(description = "챌린지 모드", example = "SOLO | VS")
+        private ChallengeMode mode;
+
+    }
+
+    @Data
+    @AllArgsConstructor
+    @NoArgsConstructor
+    @Schema(description = "HOT 게시글 페이지 응답")
+    public static class HotPostPageResponse {
+        private List<HotPostListResponse> content;
+        private PageInfo page;
+
+        public static HotPostPageResponse from(Page<HotPostListResponse> page) {
+            return new HotPostPageResponse(
                     page.getContent(),
                     new PageInfo(
                             page.getSize(),
@@ -443,8 +627,10 @@ public class PostDto {
         }
     }
 
-    @Getter
+    @Data
     @AllArgsConstructor
+    @NoArgsConstructor
+    @Builder
     @Schema(description = "HOT VS 모집글 응답 DTO")
     public static class HotVsPostResponse {
 
@@ -529,147 +715,6 @@ public class PostDto {
             return PostIdResponse.builder()
                     .postId(post.getId())
                     .build();
-        }
-    }
-
-    @Data
-    @NoArgsConstructor
-    @AllArgsConstructor
-    @Getter
-    @Builder
-    @Schema(description = "게시글 공통 목록 응답 DTO (QnA / 후기)")
-    public static class PostListResponse {
-
-        @Schema(description = "게시글 아이디", example = "1")
-        private Long postId;
-
-        @Schema(description = "썸네일 정보")
-        private FileDto.FileResponse thumbnail;
-
-        @Schema(description = "작성자 정보")
-        private PostUserResponse user;
-
-        @Schema(description = "게시글 제목", example = "제목")
-        private String name;
-
-        @Schema(description = "분야 리스트")
-        private List<String> fields;
-
-        @Schema(description = "태그 리스트")
-        private List<String> tags;
-
-        @Schema(description = "직무")
-        private String job;
-
-        @Schema(description = "좋아요 여부")
-        private Boolean isLiked;
-
-        @Schema(description = "좋아요 수")
-        private Integer likeCount;
-    }
-
-    @Data
-    @AllArgsConstructor
-    @NoArgsConstructor
-    @Schema(description = "게시글 목록 페이지 응답")
-    public static class PostPageResponse {
-        private List<PostListResponse> content;
-        private PageInfo page;
-
-        public static PostPageResponse from(Page<PostListResponse> page) {
-            return new PostPageResponse(
-                    page.getContent(),
-                    new PageInfo(
-                            page.getSize(),
-                            page.getNumber(),
-                            page.getTotalElements(),
-                            page.getTotalPages()
-                    )
-            );
-        }
-    }
-
-    @Data
-    @NoArgsConstructor
-    @AllArgsConstructor
-    @Builder
-    @Schema(description = "게시글 작성자 정보")
-    public static class PostUserResponse {
-
-        @Schema(description = "유저 ID")
-        private Long userId;
-
-        @Schema(description = "닉네임")
-        private String nickname;
-
-        @Schema(description = "티어")
-        private TierDto.TierResponse tier;
-
-        @Schema(description = "프로필 이미지")
-        private FileDto.FileResponse profileImage;
-    }
-
-
-    @Data
-    @AllArgsConstructor
-    @NoArgsConstructor
-    @Builder
-    @Schema(description = "HOT 게시글 카드 응답")
-    public static class HotPostListResponse {
-
-        @Schema(description = "게시글 ID", example = "1")
-        private Long postId;
-
-        @Schema(description = "작성자 정보(profile, nickname, tier값 참고)")
-        private UserDto.UserResponse user;
-
-        @Schema(description = "챌린지 시작일", example = "2026-01-01")
-        private LocalDate startDate;
-
-        @Schema(description = "챌린지 기간(주)", example = "4주")
-        private String duration;
-
-        @Schema(description = "게시글 제목", example = "게시글 제목")
-        private String title;
-
-        @Schema(description = "분야 리스트", example = "[\"IT\", \"BUSINESS\"]")
-        private List<String> fields;
-
-        @Schema(description = "태그 리스트", example = "[\"태그1\", \"태그2\", \"태그3\"]")
-        private List<String> tags;
-
-        @Schema(description = "직무", example = "직무")
-        private String job;
-
-        @Schema(description = "좋아요 여부(비로그인 false)", example = "true | false")
-        private Boolean liked;
-
-        @Schema(description = "좋아요 수", example = "10")
-        private Integer likeCount;
-
-        @Schema(description = "챌린지 모드", example = "SOLO | VS")
-        private ChallengeMode mode;
-
-    }
-
-    @Data
-    @AllArgsConstructor
-    @NoArgsConstructor
-    @Schema(description = "HOT 게시글 페이지 응답")
-    public static class HotPostPageResponse {
-        private List<HotPostListResponse> content;
-        private PageInfo page;
-
-        public static HotPostPageResponse from(Page<HotPostListResponse> page) {
-            return new HotPostPageResponse(
-                    page.getContent(),
-                    new PageInfo(
-                            page.getSize(),
-                            page.getNumber(),
-                            page.getTotalElements(),
-                            page.getTotalPages()
-                    )
-            );
         }
     }
 }

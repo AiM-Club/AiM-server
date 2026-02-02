@@ -14,13 +14,10 @@ import targeter.aim.domain.challenge.entity.WeeklyComment;
 import targeter.aim.domain.challenge.entity.WeeklyProgress;
 import targeter.aim.domain.challenge.repository.ChallengeRepository;
 import targeter.aim.domain.challenge.repository.CommentSortType;
-import targeter.aim.domain.challenge.repository.SortOrder;
 import targeter.aim.domain.challenge.repository.WeeklyCommentRepository;
 import targeter.aim.domain.challenge.repository.WeeklyProgressRepository;
 import targeter.aim.domain.file.entity.ChallengeCommentAttachedFile;
 import targeter.aim.domain.file.entity.ChallengeCommentImage;
-import targeter.aim.domain.file.entity.ChallengeProofAttachedFile;
-import targeter.aim.domain.file.entity.ChallengeProofImage;
 import targeter.aim.domain.file.handler.FileHandler;
 import targeter.aim.domain.user.entity.User;
 import targeter.aim.system.exception.model.ErrorCode;
@@ -129,65 +126,65 @@ public class WeeklyCommentService {
                 });
     }
 
-    @Transactional(readOnly = true)
-    public WeeklyCommentDto.WeeklyCommentListResponse getWeeklyComments(
-            Long challengeId,
-            Long weeksId,
-            CommentSortType sort,
-            SortOrder order,
-            int page,
-            int size,
-            UserDetails userDetails
-    ) {
-        if (userDetails == null) {
-            throw new RestException(ErrorCode.AUTH_LOGIN_REQUIRED);
-        }
-
-        if (page < 0 || size < 1) {
-            throw new RestException(ErrorCode.GLOBAL_INVALID_PARAMETER);
-        }
-
-        if (sort == CommentSortType.LATEST && order != SortOrder.DESC) {
-            throw new RestException(ErrorCode.GLOBAL_INVALID_PARAMETER);
-        }
-
-        Challenge challenge = challengeRepository.findById(challengeId)
-                .orElseThrow(() -> new RestException(ErrorCode.GLOBAL_NOT_FOUND));
-
-        if (challenge.getMode() != ChallengeMode.VS) {
-            throw new RestException(ErrorCode.GLOBAL_BAD_REQUEST);
-        }
-
-        WeeklyProgress weeklyProgress = weeklyProgressRepository.findById(weeksId)
-                .orElseThrow(() -> new RestException(ErrorCode.GLOBAL_NOT_FOUND));
-
-        if (!weeklyProgress.getChallenge().getId().equals(challengeId)) {
-            throw new RestException(ErrorCode.GLOBAL_BAD_REQUEST);
-        }
-
-        Sort parentSort = Sort.by(Sort.Direction.DESC, "createdAt");
-        PageRequest pageRequest = PageRequest.of(page, size, parentSort);
-
-        Page<WeeklyComment> parentPage =
-                weeklyCommentRepository.findAllByWeeklyProgress_IdAndParentCommentIsNull(weeksId, pageRequest);
-
-        List<WeeklyCommentDto.WeeklyCommentResponse> content = parentPage.getContent().stream()
-                .map(parent -> {
-                    WeeklyCommentDto.WeeklyCommentResponse parentDto =
-                            WeeklyCommentDto.WeeklyCommentResponse.from(parent);
-
-                    List<WeeklyCommentDto.WeeklyCommentResponse> children =
-                            weeklyCommentRepository
-                                    .findAllByParentComment_Id(parent.getId(), Sort.by(Sort.Direction.DESC, "createdAt"))
-                                    .stream()
-                                    .map(WeeklyCommentDto.WeeklyCommentResponse::from)
-                                    .toList();
-
-                    parentDto.setChildrenComments(children);
-                    return parentDto;
-                })
-                .toList();
-
-        return WeeklyCommentDto.WeeklyCommentListResponse.of(parentPage, content);
-    }
+//    @Transactional(readOnly = true)
+//    public WeeklyCommentDto.WeeklyCommentListResponse getWeeklyComments(
+//            Long challengeId,
+//            Long weeksId,
+//            CommentSortType sort,
+//            SortOrder order,
+//            int page,
+//            int size,
+//            UserDetails userDetails
+//    ) {
+//        if (userDetails == null) {
+//            throw new RestException(ErrorCode.AUTH_LOGIN_REQUIRED);
+//        }
+//
+//        if (page < 0 || size < 1) {
+//            throw new RestException(ErrorCode.GLOBAL_INVALID_PARAMETER);
+//        }
+//
+//        if (sort == CommentSortType.LATEST && order != SortOrder.DESC) {
+//            throw new RestException(ErrorCode.GLOBAL_INVALID_PARAMETER);
+//        }
+//
+//        Challenge challenge = challengeRepository.findById(challengeId)
+//                .orElseThrow(() -> new RestException(ErrorCode.GLOBAL_NOT_FOUND));
+//
+//        if (challenge.getMode() != ChallengeMode.VS) {
+//            throw new RestException(ErrorCode.GLOBAL_BAD_REQUEST);
+//        }
+//
+//        WeeklyProgress weeklyProgress = weeklyProgressRepository.findById(weeksId)
+//                .orElseThrow(() -> new RestException(ErrorCode.GLOBAL_NOT_FOUND));
+//
+//        if (!weeklyProgress.getChallenge().getId().equals(challengeId)) {
+//            throw new RestException(ErrorCode.GLOBAL_BAD_REQUEST);
+//        }
+//
+//        Sort parentSort = Sort.by(Sort.Direction.DESC, "createdAt");
+//        PageRequest pageRequest = PageRequest.of(page, size, parentSort);
+//
+//        Page<WeeklyComment> parentPage =
+//                weeklyCommentRepository.findAllByWeeklyProgress_IdAndParentCommentIsNull(weeksId, pageRequest);
+//
+//        List<WeeklyCommentDto.WeeklyCommentResponse> content = parentPage.getContent().stream()
+//                .map(parent -> {
+//                    WeeklyCommentDto.WeeklyCommentResponse parentDto =
+//                            WeeklyCommentDto.WeeklyCommentResponse.from(parent);
+//
+//                    List<WeeklyCommentDto.WeeklyCommentResponse> children =
+//                            weeklyCommentRepository
+//                                    .findAllByParentComment_Id(parent.getId(), Sort.by(Sort.Direction.DESC, "createdAt"))
+//                                    .stream()
+//                                    .map(WeeklyCommentDto.WeeklyCommentResponse::from)
+//                                    .toList();
+//
+//                    parentDto.setChildrenComments(children);
+//                    return parentDto;
+//                })
+//                .toList();
+//
+//        return WeeklyCommentDto.WeeklyCommentListResponse.of(parentPage, content);
+//    }
 }

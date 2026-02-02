@@ -110,53 +110,53 @@ public class CommentService {
                 });
     }
 
-    @Transactional(readOnly = true)
-    public CommentDto.CommentListResponse getComments(
-            Long postId,
-            CommentSortType sort,
-            SortOrder order,
-            int page,
-            int size,
-            UserDetails userDetails
-    ) {
-        if (userDetails == null) {
-            throw new RestException(ErrorCode.AUTH_LOGIN_REQUIRED);
-        }
-
-        if (page < 0 || size < 1) {
-            throw new RestException(ErrorCode.GLOBAL_INVALID_PARAMETER);
-        }
-
-        if (sort == CommentSortType.LATEST && order != SortOrder.DESC) {
-            throw new RestException(ErrorCode.GLOBAL_INVALID_PARAMETER);
-        }
-
-        Post post = postRepository.findById(postId)
-                .orElseThrow(() -> new RestException(ErrorCode.GLOBAL_NOT_FOUND));
-
-        Sort parentSort = Sort.by(Sort.Direction.DESC, "createdAt");
-        PageRequest pageRequest = PageRequest.of(page, size, parentSort);
-
-        Page<Comment> parentPage =
-                commentRepository.findAllByPostAndParentIsNull(post, pageRequest);
-
-        List<CommentDto.CommentResponse> content = parentPage.getContent().stream()
-                .map(parent -> {
-                    CommentDto.CommentResponse parentDto =
-                            CommentDto.CommentResponse.from(parent);
-
-                    List<CommentDto.CommentResponse> children =
-                            commentRepository
-                                    .findAllByParent_Id(parent.getId(), Sort.by(Sort.Direction.DESC, "createdAt"))
-                                    .stream()
-                                    .map(CommentDto.CommentResponse::from)
-                                    .toList();
-
-                    parentDto.setChildrenComments(children);
-                    return parentDto;
-                })
-                .toList();
-
-        return CommentDto.CommentListResponse.of(parentPage, content);
-    }
+//    @Transactional(readOnly = true)
+//    public CommentDto.CommentListResponse getComments(
+//            Long postId,
+//            CommentSortType sort,
+//            SortOrder order,
+//            int page,
+//            int size,
+//            UserDetails userDetails
+//    ) {
+//        if (userDetails == null) {
+//            throw new RestException(ErrorCode.AUTH_LOGIN_REQUIRED);
+//        }
+//
+//        if (page < 0 || size < 1) {
+//            throw new RestException(ErrorCode.GLOBAL_INVALID_PARAMETER);
+//        }
+//
+//        if (sort == CommentSortType.LATEST && order != SortOrder.DESC) {
+//            throw new RestException(ErrorCode.GLOBAL_INVALID_PARAMETER);
+//        }
+//
+//        Post post = postRepository.findById(postId)
+//                .orElseThrow(() -> new RestException(ErrorCode.GLOBAL_NOT_FOUND));
+//
+//        Sort parentSort = Sort.by(Sort.Direction.DESC, "createdAt");
+//        PageRequest pageRequest = PageRequest.of(page, size, parentSort);
+//
+//        Page<Comment> parentPage =
+//                commentRepository.findAllByPostAndParentIsNull(post, pageRequest);
+//
+//        List<CommentDto.CommentResponse> content = parentPage.getContent().stream()
+//                .map(parent -> {
+//                    CommentDto.CommentResponse parentDto =
+//                            CommentDto.CommentResponse.from(parent);
+//
+//                    List<CommentDto.CommentResponse> children =
+//                            commentRepository
+//                                    .findAllByParent_Id(parent.getId(), Sort.by(Sort.Direction.DESC, "createdAt"))
+//                                    .stream()
+//                                    .map(CommentDto.CommentResponse::from)
+//                                    .toList();
+//
+//                    parentDto.setChildrenComments(children);
+//                    return parentDto;
+//                })
+//                .toList();
+//
+//        return CommentDto.CommentListResponse.of(parentPage, content);
+//    }
 }
