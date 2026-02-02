@@ -5,34 +5,18 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.multipart.MultipartFile;
-import targeter.aim.domain.challenge.entity.Challenge;
 import targeter.aim.domain.challenge.entity.ChallengeMode;
-import targeter.aim.domain.challenge.repository.ChallengeRepository;
-import targeter.aim.domain.file.entity.PostAttachedFile;
-import targeter.aim.domain.file.entity.PostAttachedImage;
-import targeter.aim.domain.file.entity.PostImage;
-import targeter.aim.domain.file.handler.FileHandler;
-import targeter.aim.domain.label.entity.Field;
-import targeter.aim.domain.label.entity.Tag;
-import targeter.aim.domain.label.repository.FieldRepository;
-import targeter.aim.domain.label.repository.TagRepository;
-import targeter.aim.domain.label.service.FieldService;
-import targeter.aim.domain.label.service.TagService;
 import targeter.aim.domain.post.dto.PostDto;
 import targeter.aim.domain.post.entity.Post;
 import targeter.aim.domain.post.entity.PostType;
 import targeter.aim.domain.post.repository.PostLikedRepository;
 import targeter.aim.domain.post.repository.PostQueryRepository;
 import targeter.aim.domain.post.repository.PostRepository;
-import targeter.aim.domain.user.entity.User;
 import targeter.aim.system.exception.model.ErrorCode;
 import targeter.aim.system.exception.model.RestException;
 import targeter.aim.system.security.model.UserDetails;
 
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -260,4 +244,41 @@ public class PostReadService {
 
         return PostDto.PostPageResponse.from(page);
     }
+
+    public PostDto.PostPageResponse getMyLikedPosts(
+            PostDto.ListSearchCondition condition,
+            UserDetails userDetails,
+            Pageable pageable
+    ) {
+        if (userDetails == null) {
+            throw new RestException(ErrorCode.AUTH_LOGIN_REQUIRED);
+        }
+
+        PostDto.PostSortType sortType = condition.getSort();
+        PostDto.PostFilterType filterType = condition.getFilter();
+        String keyword = normalizeKeyword(condition.getKeyword());
+
+        List<PostType> types;
+        if (filterType == null || filterType.equals(PostDto.PostFilterType.ALL)) {
+            types = null;
+        } else {
+            types = switch (filterType) {
+                case VS_RECRUIT -> List.of(PostType.VS_RECRUIT);
+                case COMMUNITY -> List.of(PostType.Q_AND_A, PostType.REVIEW);
+                default -> throw new RestException(ErrorCode.GLOBAL_BAD_REQUEST);
+            };
+        }
+
+        Page<PostDto.PostListResponse> page =
+                postQueryRepository.paginateLikedPosts(
+                        userDetails,
+                        pageable,
+                        sortType,
+                        keyword,
+                        types
+                );
+
+        return PostDto.PostPageResponse.from(page);
+    }
+
 }
