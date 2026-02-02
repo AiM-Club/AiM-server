@@ -62,6 +62,10 @@ public class CommentService {
             Comment parent = commentRepository.findById(parentCommentId)
                     .orElseThrow(() -> new RestException(ErrorCode.GLOBAL_NOT_FOUND, "부모 댓글을 찾을 수 없습니다."));
 
+            if (parent.getPost() == null || !parent.getPost().getId().equals(postId)) {
+                throw new RestException(ErrorCode.GLOBAL_BAD_REQUEST, "부모 댓글이 해당 게시글에 속하지 않습니다.");
+            }
+
             if(parent.getParent() != null || parent.getDepth() == null || parent.getDepth() != 1 ) {
                 throw new RestException(ErrorCode.GLOBAL_BAD_REQUEST, "대댓글 아래에 대댓글을 작성할 수 없습니다.");
             }
