@@ -12,8 +12,6 @@ import targeter.aim.domain.challenge.repository.ChallengeMemberQueryRepository;
 import targeter.aim.domain.file.dto.FileDto;
 import targeter.aim.domain.file.entity.ProfileImage;
 import targeter.aim.domain.file.handler.FileHandler;
-import targeter.aim.domain.label.repository.FieldRepository;
-import targeter.aim.domain.label.repository.TagRepository;
 import targeter.aim.domain.user.dto.TierDto;
 import targeter.aim.domain.user.dto.UserDto;
 import targeter.aim.domain.user.entity.Tier;
@@ -35,8 +33,6 @@ public class UserService {
     private final UserRepository userRepository;
     private final UserQueryRepository userQueryRepository;
     private final TierRepository tierRepository;
-    private final TagRepository tagRepository;
-    private final FieldRepository fieldRepository;
     private final ChallengeMemberQueryRepository challengeMemberQueryRepository;
 
     private final PasswordEncoder passwordEncoder;
@@ -228,7 +224,7 @@ public class UserService {
         if(!request.getProfileImage().isEmpty()) {
             saveProfileImage(request.getProfileImage(), me);
         }
-        
+
         return getProfile(me.getId(), userDetails);
     }
 

@@ -13,7 +13,6 @@ import targeter.aim.domain.user.entity.SocialLogin;
 import targeter.aim.domain.user.entity.User;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.List;
 
 public class UserDto {
