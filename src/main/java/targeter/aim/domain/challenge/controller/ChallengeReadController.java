@@ -73,7 +73,6 @@ public class ChallengeReadController {
         return challengeService.getSoloChallengeOverview(challengeId, userDetails);
     }
 
-
     @GetMapping("/all")
     @Operation(
             summary = "ALL 챌린지 목록 조회",

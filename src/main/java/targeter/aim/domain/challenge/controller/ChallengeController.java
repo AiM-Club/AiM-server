@@ -40,8 +40,6 @@ public class ChallengeController {
         return challengeService.createChallenge(userDetails, request);
     }
 
-
-
     @NoJwtAuth("VS 결과는 비로그인 유저도 열람 가능")
     @GetMapping("/vs/{challengeId}/result")
     @Operation(

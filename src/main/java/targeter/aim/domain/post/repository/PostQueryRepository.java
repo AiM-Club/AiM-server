@@ -50,7 +50,7 @@ public class PostQueryRepository {
     public Page<PostDto.VSRecruitListResponse> paginateByType(
             UserDetails userDetails,
             Pageable pageable,
-            PostSortType sortType
+            PostDto.PostSortType sortType
     ) {
         JPAQuery<Tuple> query = buildBaseQuery(userDetails, null);
         applySorting(query, sortType);
@@ -74,7 +74,7 @@ public class PostQueryRepository {
     public Page<PostDto.VSRecruitListResponse> paginateByTypeAndKeyword(
             UserDetails userDetails,
             Pageable pageable,
-            PostSortType sortType,
+            PostDto.PostSortType sortType,
             String keyword
     ) {
         JPAQuery<Tuple> query = buildBaseQuery(userDetails, keyword);
@@ -176,7 +176,7 @@ public class PostQueryRepository {
     }
 
     // 정렬
-    private void applySorting(JPAQuery<?> query, PostSortType sortType) {
+    private void applySorting(JPAQuery<?> query, PostDto.PostSortType sortType) {
         switch (sortType) {
             case LATEST -> query.orderBy(post.createdAt.desc());
 
@@ -250,22 +250,22 @@ public class PostQueryRepository {
                 .thumbnail(postImage != null
                         ? FileDto.FileResponse.from(postImage)
                         : null)
-                .user(UserDto.UserResponse.builder()
-                        .id(user.getId())
+                .user(PostDto.UserResponse.builder()
+                        .userId(user.getId())
                         .nickname(user.getNickname())
                         .tier(TierDto.TierResponse.from(user.getTier()))
                         .profileImage(profileImage != null
                                 ? FileDto.FileResponse.from(profileImage)
                                 : null)
                         .build())
-                .startDate(p.getChallenge().getStartedAt())
-                .duration(p.getChallenge().getDurationWeek() + "주")
+                .startedAt(p.getChallenge().getStartedAt())
+                .durationWeek(p.getChallenge().getDurationWeek())
                 .name(p.getTitle())
                 .fields(fieldMap.getOrDefault(p.getId(), List.of()))
                 .tags(tagMap.getOrDefault(p.getId(), List.of()))
                 .job(p.getJob())
                 .isLiked(Boolean.TRUE.equals(tuple.get(1, Boolean.class)))
-                .likeCount(tuple.get(2, Integer.class) == null ? 0 : tuple.get(2, Integer.class))
+                .likeCount(tuple.get(2, Long.class) == null ? 0 : tuple.get(2, Long.class).intValue())
                 .build();
     }
 
@@ -342,7 +342,7 @@ public class PostQueryRepository {
     public Page<PostDto.HotPostListResponse> paginateHotPosts(
             UserDetails userDetails,
             Pageable pageable,
-            PostSortType sortType,
+            PostDto.PostSortType sortType,
             ChallengeMode mode
     ) {
         LocalDateTime threeMonthsAgo = LocalDateTime.now().minusMonths(3);
@@ -403,7 +403,7 @@ public class PostQueryRepository {
         );
     }
 
-    private OrderSpecifier<?>[] secondaryHotOrder(PostSortType sortType) {
+    private OrderSpecifier<?>[] secondaryHotOrder(PostDto.PostSortType sortType) {
         return switch (sortType) {
             case OLDEST -> new OrderSpecifier[]{
                     post.createdAt.asc()
@@ -446,16 +446,16 @@ public class PostQueryRepository {
 
         return PostDto.HotPostListResponse.builder()
                 .postId(p.getId())
-                .user(UserDto.UserResponse.builder()
-                        .id(user.getId())
+                .user(PostDto.UserResponse.builder()
+                        .userId(user.getId())
                         .nickname(user.getNickname())
                         .tier(TierDto.TierResponse.from(user.getTier()))
                         .profileImage(profileImage != null
                                 ? FileDto.FileResponse.from(profileImage)
                                 : null)
                         .build())
-                .startDate(p.getChallenge().getStartedAt())
-                .duration(p.getChallenge().getDurationWeek() + "주")
+                .startedAt(p.getChallenge().getStartedAt())
+                .durationWeek(p.getChallenge().getDurationWeek())
                 .title(p.getTitle())
                 .fields(fieldMap.getOrDefault(p.getId(), List.of()))
                 .tags(tagMap.getOrDefault(p.getId(), List.of()))
@@ -471,7 +471,7 @@ public class PostQueryRepository {
             UserDetails userDetails,
             Pageable pageable,
             PostType type,
-            PostSortType sortType,
+            PostDto.PostSortType sortType,
             String keyword,
             ChallengeMode mode
     ) {
@@ -594,14 +594,8 @@ public class PostQueryRepository {
                 .thumbnail(postImage != null
                         ? FileDto.FileResponse.from(postImage)
                         : null)
-                .name(p.getTitle())
-                .job(p.getJob())
-                .fields(fieldMap.getOrDefault(p.getId(), List.of()))
-                .tags(tagMap.getOrDefault(p.getId(), List.of()))
-                .isLiked(Boolean.TRUE.equals(tuple.get(1, Boolean.class)))
-                .likeCount(tuple.get(2, Long.class) == null ? 0 : tuple.get(2, Long.class).intValue())
                 .user(
-                        PostDto.PostUserResponse.builder()
+                        PostDto.UserResponse.builder()
                                 .userId(user.getId())
                                 .nickname(user.getNickname())
                                 .tier(TierDto.TierResponse.from(user.getTier()))
@@ -610,6 +604,15 @@ public class PostQueryRepository {
                                         : null)
                                 .build()
                 )
+                .startedAt(p.getChallenge().getStartedAt())
+                .durationWeek(p.getChallenge().getDurationWeek())
+                .name(p.getTitle())
+                .job(p.getJob())
+                .fields(fieldMap.getOrDefault(p.getId(), List.of()))
+                .tags(tagMap.getOrDefault(p.getId(), List.of()))
+                .isLiked(Boolean.TRUE.equals(tuple.get(1, Boolean.class)))
+                .likeCount(tuple.get(2, Long.class) == null ? 0 : tuple.get(2, Long.class).intValue())
+
                 .build();
     }
 
@@ -617,7 +620,7 @@ public class PostQueryRepository {
     public Page<PostDto.PostListResponse> paginateMyPosts(
             UserDetails userDetails,
             Pageable pageable,
-            PostSortType sortType,
+            PostDto.PostSortType sortType,
             String keyword,
             List<PostType> types
     ) {
