@@ -2,11 +2,12 @@ package targeter.aim.domain.user.repository;
 
 import com.querydsl.core.BooleanBuilder;
 import com.querydsl.core.types.dsl.CaseBuilder;
-import com.querydsl.core.types.dsl.NumberExpression;
 import com.querydsl.core.types.dsl.Expressions;
+import com.querydsl.core.types.dsl.NumberExpression;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
+import targeter.aim.domain.challenge.entity.ChallengeMode;
 
 import java.util.List;
 
@@ -16,11 +17,9 @@ import static targeter.aim.domain.label.entity.QField.field;
 import static targeter.aim.domain.label.entity.QTag.tag;
 import static targeter.aim.domain.user.entity.QUser.user;
 
-import targeter.aim.domain.challenge.entity.ChallengeMode;
-
 @Repository
 @RequiredArgsConstructor
-public class ProfileQueryRepository {
+public class UserQueryRepository {
 
     private final JPAQueryFactory queryFactory;
 

@@ -7,13 +7,17 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import targeter.aim.domain.challenge.entity.ChallengeResult;
 import targeter.aim.domain.challenge.repository.ChallengeMemberQueryRepository;
+import targeter.aim.domain.file.dto.FileDto;
+import targeter.aim.domain.user.dto.TierDto;
 import targeter.aim.domain.user.dto.UserDto;
 import targeter.aim.domain.user.entity.Tier;
 import targeter.aim.domain.user.entity.User;
 import targeter.aim.domain.user.repository.TierRepository;
+import targeter.aim.domain.user.repository.UserQueryRepository;
 import targeter.aim.domain.user.repository.UserRepository;
 import targeter.aim.system.exception.model.ErrorCode;
 import targeter.aim.system.exception.model.RestException;
+import targeter.aim.system.security.model.UserDetails;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -24,6 +28,7 @@ import java.util.List;
 public class UserService {
 
     private final UserRepository userRepository;
+    private final UserQueryRepository userQueryRepository;
     private final TierRepository tierRepository;
     private final ChallengeMemberQueryRepository challengeMemberQueryRepository;
 
@@ -80,5 +85,121 @@ public class UserService {
             result.add(UserDto.RankTop10Response.of(i + 1, users.get(i)));
         }
         return result;
+    }
+
+    @Transactional(readOnly = true)
+    public UserDto.MyPageResponse getMyPage(UserDetails userDetails) {
+        User user = userRepository.findById(userDetails.getUser().getId())
+                .orElseThrow(() -> new RestException(ErrorCode.USER_NOT_FOUND));
+
+        int level = user.getLevel();
+        Tier currentTier = user.getTier();
+
+        int tierProgressPercent = calculateTierProgressPercent(level, currentTier);
+        Tier nextTierEntity = findNextTier(currentTier);
+
+        return new UserDto.MyPageResponse(
+                level,
+                TierDto.TierResponse.from(currentTier),
+                tierProgressPercent,
+                nextTierEntity == null
+                        ? null
+                        : TierDto.TierResponse.from(nextTierEntity)
+        );
+    }
+
+    // 티어 진행률 계산
+    private int calculateTierProgressPercent(int level, Tier tier) {
+        int start;
+        int end;
+
+        switch (tier.getName()) {
+            case "BRONZE" -> {
+                start = 1;
+                end = 30;
+            }
+            case "SILVER" -> {
+                start = 31;
+                end = 60;
+            }
+            case "GOLD" -> {
+                start = 61;
+                end = 80;
+            }
+            case "DIAMOND" -> {
+                start = 81;
+                end = 100;
+            }
+            default -> throw new RestException(ErrorCode.TIER_NOT_FOUND);
+        }
+
+        double progress = (double) (level - start) / (end - start);
+        return Math.min(100, (int) Math.round(progress * 100));
+    }
+
+    // 다음 티어 계산
+    private Tier findNextTier(Tier currentTier) {
+        return switch (currentTier.getName()) {
+            case "BRONZE" -> tierRepository.findByName("SILVER").orElse(null);
+            case "SILVER" -> tierRepository.findByName("GOLD").orElse(null);
+            case "GOLD" -> tierRepository.findByName("DIAMOND").orElse(null);
+            case "DIAMOND" -> null;
+            default -> null;
+        };
+    }
+
+    @Transactional(readOnly = true)
+    public UserDto.ProfileResponse getProfile(Long targetUserId, UserDetails viewer) {
+
+        User target = userRepository.findById(targetUserId)
+                .orElseThrow(() -> new RestException(ErrorCode.USER_NOT_FOUND));
+
+        // 관심사 / 관심 분야
+        List<String> tags = userQueryRepository.findUserTagNames(targetUserId);
+        List<String> fields = userQueryRepository.findUserFieldNames(targetUserId);
+
+        // 챌린지 기록
+        UserQueryRepository.Record overall = userQueryRepository.calcOverallRecord(targetUserId);
+        UserQueryRepository.Record solo = userQueryRepository.calcSoloRecord(targetUserId);
+        UserQueryRepository.Record vs = userQueryRepository.calcVsRecord(targetUserId);
+
+        boolean isMine = viewer != null && viewer.getUser().getId().equals(targetUserId);
+
+        return UserDto.ProfileResponse.builder()
+                .userId(target.getId())
+                .loginId(target.getLoginId())
+                .nickname(target.getNickname())
+                .tier(TierDto.TierResponse.builder()
+                        .name(target.getTier().getName())
+                        .build())
+                .level(target.getLevel())
+                .profileImage(
+                        target.getProfileImage() == null
+                                ? null
+                                : FileDto.FileResponse.from(target.getProfileImage())
+                )
+                .tags(tags)
+                .fields(fields)
+                .allChallengeRecord(toRecordDto(overall))
+                .soloChallengeRecord(toRecordDto(solo))
+                .vsChallengeRecord(toRecordDto(vs))
+                .isMine(isMine)
+                .build();
+    }
+
+    private UserDto.ChallengeRecord toRecordDto(UserQueryRepository.Record record) {
+        long attempt = record.attempt();
+        long success = record.success();
+        long fail = attempt - success;
+        double successRate = attempt == 0
+                ? 0
+                : Math.round((success * 100.0) / attempt);
+
+        return UserDto.ChallengeRecord.builder()
+                .attemptCount(attempt)
+                .successCount(success)
+                .failCount(fail)
+                .successRate(successRate)
+                .build();
     }
 }
