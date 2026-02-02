@@ -17,8 +17,6 @@ import targeter.aim.domain.challenge.entity.ChallengeMode;
 import targeter.aim.domain.file.dto.FileDto;
 import targeter.aim.domain.file.entity.PostImage;
 import targeter.aim.domain.file.entity.ProfileImage;
-import targeter.aim.domain.file.entity.QPostAttachedFile;
-import targeter.aim.domain.file.entity.QPostAttachedImage;
 import targeter.aim.domain.label.entity.QField;
 import targeter.aim.domain.label.entity.QTag;
 import targeter.aim.domain.post.dto.PostDto;
@@ -26,7 +24,6 @@ import targeter.aim.domain.post.entity.Post;
 import targeter.aim.domain.post.entity.PostType;
 import targeter.aim.domain.post.entity.QPost;
 import targeter.aim.domain.user.dto.TierDto;
-import targeter.aim.domain.user.dto.UserDto;
 import targeter.aim.domain.user.entity.User;
 import targeter.aim.system.security.model.UserDetails;
 
@@ -695,6 +692,93 @@ public class PostQueryRepository {
                 .from(post)
                 .where(
                         post.user.id.eq(userDetails.getUser().getId()),
+                        types != null ? post.type.in(types) : null
+                );
+
+        BooleanExpression keywordPredicate = keywordCondition(keyword);
+        if (keywordPredicate != null) {
+            query.where(keywordPredicate);
+        }
+
+        return query;
+    }
+
+    // 내가 좋아요 누른 게시글 목록 조회
+    public Page<PostDto.PostListResponse> paginateLikedPosts(
+            UserDetails userDetails,
+            Pageable pageable,
+            PostDto.PostSortType sortType,
+            String keyword,
+            List<PostType> types
+    ) {
+        JPAQuery<Tuple> query = buildBaseQueryForLikedPosts(
+                userDetails,
+                keyword,
+                types
+        );
+
+        applySorting(query, sortType);
+
+        List<Tuple> tuples = query
+                .offset(pageable.getOffset())
+                .limit(pageable.getPageSize())
+                .fetch();
+
+        Long total = buildCountQueryForLikedPosts(
+                userDetails,
+                keyword,
+                types
+        ).fetchOne();
+
+        return new PageImpl<>(
+                enrichPostListDetails(tuples),
+                pageable,
+                total == null ? 0 : total
+        );
+    }
+
+    private JPAQuery<Tuple> buildBaseQueryForLikedPosts(
+            UserDetails userDetails,
+            String keyword,
+            List<PostType> types
+    ) {
+        JPAQuery<Tuple> query = queryFactory
+                .select(
+                        post,
+                        Expressions.TRUE,
+                        JPAExpressions.select(postLiked.count())
+                                .from(postLiked)
+                                .where(postLiked.post.eq(post))
+                )
+                .from(postLiked)
+                .join(postLiked.post, post)
+                .where(
+                        postLiked.user.id.eq(userDetails.getUser().getId()),
+                        types != null ? post.type.in(types) : null
+                )
+                .leftJoin(post.user).fetchJoin()
+                .leftJoin(post.user.tier).fetchJoin()
+                .leftJoin(post.user.profileImage).fetchJoin();
+
+        BooleanExpression keywordPredicate = keywordCondition(keyword);
+        if (keywordPredicate != null) {
+            query.where(keywordPredicate);
+        }
+
+        return query;
+    }
+
+    private JPAQuery<Long> buildCountQueryForLikedPosts(
+            UserDetails userDetails,
+            String keyword,
+            List<PostType> types
+    ) {
+        JPAQuery<Long> query = queryFactory
+                .select(post.count())
+                .from(postLiked)
+                .join(postLiked.post, post)
+                .where(
+                        postLiked.user.id.eq(userDetails.getUser().getId()),
                         types != null ? post.type.in(types) : null
                 );
 
