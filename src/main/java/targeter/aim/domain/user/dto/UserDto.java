@@ -1,7 +1,12 @@
 package targeter.aim.domain.user.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 import lombok.*;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.web.multipart.MultipartFile;
 import targeter.aim.domain.file.dto.FileDto;
 import targeter.aim.domain.user.entity.Gender;
 import targeter.aim.domain.user.entity.SocialLogin;
@@ -187,6 +192,61 @@ public class UserDto {
 
         @Schema(description = "실패 횟수", example = "10")
         private Long failCount;
+    }
 
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Schema(description = "챌린지 기록(시도/성공/실패/성공률)")
+    public static class UpdateProfileRequest {
+        @NotBlank(message = "아이디를 입력해주세요.")
+        @Schema(description = "아이디", example = "user1234")
+        @Pattern(regexp = "^(?=.*[a-z])(?=.*[0-9])[a-z0-9]{8,16}$", message = "아이디는 영문 소문자와 숫자를 각각 1자 이상 포함하며, 8~16자여야 합니다.")
+        private String loginId;
+
+        @NotBlank(message = "닉네임을 입력해주세요.")
+        @Schema(description = "닉네임", example = "nickname")
+        @Pattern(regexp = "^[a-zA-Z0-9가-힣]{1,10}$",
+                message = "닉네임은 한글, 영문, 숫자로만 구성되며 1~10자여야 합니다.")
+        private String nickname;
+
+        @NotBlank(message = "비밀번호를 입력해주세요.")
+        @Schema(description = "비밀번호", example = "password123!")
+        @Pattern(regexp = "^(?=.*[a-z])(?=.*[0-9])(?=.*[!@#$%^&*?_])[a-z0-9!@#$%^&*?_]{8,16}$", message = "비밀번호는 영문 소문자, 숫자, 특수문자를 각각 1자 이상 포함하며 8~16자여야 합니다.")
+        private String password;
+
+        @NotNull(message = "생년월일을 입력해주세요.")
+        @Schema(description = "생년월일", example = "yyyy-mm-dd")
+        private LocalDate birthday;
+
+        @Schema(description = "프로필 이미지")
+        private MultipartFile profileImage;
+
+        @NotNull(message = "성별을 입력해주세요.")
+        @Schema(
+                description = "사용자 성별",
+                example = "MALE | FEMALE | OTHER",
+                allowableValues = {"MALE", "FEMALE", "OTHER"}
+        )
+        private Gender gender;
+
+        public void applyTo(User user, PasswordEncoder encoder) {
+            if(loginId != null && !loginId.equals(user.getLoginId())) {
+                user.setLoginId(loginId);
+            }
+            if(nickname != null && !nickname.equals(user.getNickname())) {
+                user.setNickname(nickname);
+            }
+            if(password != null) {
+                user.setPassword(encoder.encode(password));
+            }
+            if(birthday != null) {
+                user.setBirthday(birthday);
+            }
+            if(gender != null) {
+                user.setGender(gender);
+            }
+        }
     }
 }

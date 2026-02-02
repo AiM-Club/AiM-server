@@ -25,7 +25,7 @@ public class ProfileImage extends AttachedFile {
     @JoinColumn(name = "user_id")
     private User user;
 
-    public static ProfileImage from(MultipartFile file) {
+    public static ProfileImage from(MultipartFile file, User user) {
         throwIfNotAImageFile(file);
 
         String uuId = UUID.randomUUID().toString();
@@ -37,6 +37,7 @@ public class ProfileImage extends AttachedFile {
                 .fileName(safeFilename(file.getOriginalFilename()))
                 .size(file.getSize())
                 .filePath(filePath)
+                .user(user)
                 .build();
     }
 

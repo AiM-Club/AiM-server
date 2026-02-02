@@ -71,7 +71,7 @@ public class AuthService {
 
     private void saveProfileImage(MultipartFile file, User user) {
         if(file != null && !file.isEmpty()) {
-            ProfileImage profileImage = ProfileImage.from(file);
+            ProfileImage profileImage = ProfileImage.from(file, user);
             if(profileImage == null) return;
             user.setProfileImage(profileImage);
             profileImage.setUser(user);

@@ -3,11 +3,17 @@ package targeter.aim.domain.user.service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 import targeter.aim.domain.challenge.entity.ChallengeResult;
 import targeter.aim.domain.challenge.repository.ChallengeMemberQueryRepository;
 import targeter.aim.domain.file.dto.FileDto;
+import targeter.aim.domain.file.entity.ProfileImage;
+import targeter.aim.domain.file.handler.FileHandler;
+import targeter.aim.domain.label.repository.FieldRepository;
+import targeter.aim.domain.label.repository.TagRepository;
 import targeter.aim.domain.user.dto.TierDto;
 import targeter.aim.domain.user.dto.UserDto;
 import targeter.aim.domain.user.entity.Tier;
@@ -19,8 +25,7 @@ import targeter.aim.system.exception.model.ErrorCode;
 import targeter.aim.system.exception.model.RestException;
 import targeter.aim.system.security.model.UserDetails;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 @Slf4j
 @Service
@@ -30,7 +35,12 @@ public class UserService {
     private final UserRepository userRepository;
     private final UserQueryRepository userQueryRepository;
     private final TierRepository tierRepository;
+    private final TagRepository tagRepository;
+    private final FieldRepository fieldRepository;
     private final ChallengeMemberQueryRepository challengeMemberQueryRepository;
+
+    private final PasswordEncoder passwordEncoder;
+    private final FileHandler fileHandler;
 
     @Transactional(readOnly = true)
     public UserDto.UserResponse getUserProfile(Long userId) {
@@ -201,5 +211,45 @@ public class UserService {
                 .failCount(fail)
                 .successRate(successRate)
                 .build();
+    }
+
+    @Transactional
+    public UserDto.ProfileResponse updateMyProfile(UserDto.UpdateProfileRequest request, UserDetails userDetails) {
+        if (userDetails == null) {
+            throw new RestException(ErrorCode.AUTH_LOGIN_REQUIRED);
+        }
+
+        User me = userRepository.findById(userDetails.getUser().getId())
+                .orElseThrow(() -> new RestException(ErrorCode.USER_NOT_FOUND));
+
+        cannotCreateWithDuplicatedLoginIdOrNickname(request, me);
+
+        request.applyTo(me, passwordEncoder);
+        if(!request.getProfileImage().isEmpty()) {
+            saveProfileImage(request.getProfileImage(), me);
+        }
+        
+        return getProfile(me.getId(), userDetails);
+    }
+
+    private void cannotCreateWithDuplicatedLoginIdOrNickname(UserDto.UpdateProfileRequest request, User found) {
+        if (request.getLoginId() != null &&
+                !found.getLoginId().equals(request.getLoginId()) &&
+                userRepository.existsByLoginId(request.getLoginId())) {
+            throw new RestException(ErrorCode.USER_ALREADY_LOGIN_ID_EXISTS);
+        }
+        if (request.getNickname() != null &&
+                !found.getNickname().equals(request.getNickname()) &&
+                userRepository.existsByNickname(request.getNickname())) {
+            throw new RestException(ErrorCode.USER_ALREADY_NICKNAME_EXISTS);
+        }
+    }
+
+    private void saveProfileImage(MultipartFile image, User user) {
+        if (image == null || image.isEmpty()) return;
+
+        ProfileImage profileImage = ProfileImage.from(image, user);
+        user.setProfileImage(profileImage);
+        fileHandler.saveFile(image, profileImage);
     }
 }
