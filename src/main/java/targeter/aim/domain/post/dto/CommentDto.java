@@ -6,7 +6,9 @@ import org.springframework.data.domain.Page;
 import org.springframework.web.multipart.MultipartFile;
 import targeter.aim.domain.file.dto.FileDto;
 import targeter.aim.domain.post.entity.Comment;
+import targeter.aim.domain.user.dto.TierDto;
 import targeter.aim.domain.user.dto.UserDto;
+import targeter.aim.domain.user.entity.User;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -30,13 +32,55 @@ public class CommentDto {
 
         @Schema(description = "전체 페이지 수", example = "13")
         private int totalPages;
+    }
 
-        public static PageInfo from(Page<?> page) {
-            return PageInfo.builder()
-                    .page(page.getNumber())
-                    .size(page.getSize())
-                    .totalElements(page.getTotalElements())
-                    .totalPages(page.getTotalPages())
+
+    @Data
+    @AllArgsConstructor
+    @NoArgsConstructor
+    @Schema(description = "게시글 댓글 목록 페이지 응답")
+    public static class CommentPageResponse {
+        private List<CommentResponse> content;
+        private PageInfo page;
+
+        public static CommentPageResponse from(Page<CommentResponse> page) {
+            return new CommentPageResponse(
+                    page.getContent(),
+                    new PageInfo(
+                            page.getSize(),
+                            page.getNumber(),
+                            page.getTotalElements(),
+                            page.getTotalPages()
+                    )
+            );
+        }
+    }
+
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Builder
+    @Schema(description = "댓글 작성자 정보")
+    public static class UserResponse {
+
+        @Schema(description = "유저 아이디", example = "1")
+        private Long userId;
+
+        @Schema(description = "유저 닉네임", example = "닉네임")
+        private String nickname;
+
+        @Schema(description = "티어명", example = "BRONZE")
+        private TierDto.TierResponse tier;
+
+        @Schema(description = "프로필 이미지")
+        private FileDto.FileResponse profileImage;
+
+        public static UserResponse from(User user) {
+            return UserResponse.builder()
+                    .userId(user.getId())
+                    .nickname(user.getNickname())
+                    .tier(TierDto.TierResponse.from(user.getTier()))
+                    .profileImage(FileDto.FileResponse.from(user.getProfileImage()))
                     .build();
         }
     }
@@ -45,30 +89,7 @@ public class CommentDto {
     @AllArgsConstructor
     @NoArgsConstructor
     @Builder
-    @Schema(description = "챌린지 주차별 댓글 목록 조회 응답")
-    public static class CommentListResponse {
-        @Schema(description = "댓글 목록(부모 댓글 + childrenComments 포함)")
-        private List<CommentDto.CommentResponse> comments;
-
-        @Schema(description = "페이지 메타 정보")
-        private PageInfo pageInfo;
-
-        public static CommentDto.CommentListResponse of(
-                Page<?> page,
-                List<CommentDto.CommentResponse> comments
-        ) {
-            return CommentDto.CommentListResponse.builder()
-                    .pageInfo(PageInfo.from(page))
-                    .comments(comments)
-                    .build();
-        }
-    }
-
-    @Data
-    @AllArgsConstructor
-    @NoArgsConstructor
-    @Builder
-    @Schema(description = "챌린지 주차별 댓글 조회 응답")
+    @Schema(description = "게시글 댓글 조회 응답")
     public static class CommentResponse {
         @Schema(description = "댓글 아이디", example = "1")
         private Long commentId;
@@ -76,8 +97,8 @@ public class CommentDto {
         @Schema(description = "댓글/대댓글 깊이(1: 댓글, 2:대댓글)", example = "1")
         private Integer depth;
 
-        @Schema(description = "작성자 정보, 여기서 nickname, profileImage, tier 사용")
-        private UserDto.UserResponse writerInfo;
+        @Schema(description = "작성자 정보")
+        private UserResponse writerInfo;
 
         @Schema(description = "댓글 내용", example = "댓글 내용")
         private String content;
@@ -91,9 +112,6 @@ public class CommentDto {
         @Schema(description = "댓글 작성 날짜", example = "ISO DateTime")
         private LocalDateTime createdAt;
 
-        @Schema(description = "최종 수정 날짜", example = "ISO DateTime")
-        private LocalDateTime updatedAt;
-
         @Schema(description = "자식 댓글 목록")
         private List<CommentDto.CommentResponse> childrenComments;
 
@@ -101,7 +119,7 @@ public class CommentDto {
             return CommentDto.CommentResponse.builder()
                     .commentId(comment.getId())
                     .depth(comment.getDepth())
-                    .writerInfo(UserDto.UserResponse.from(comment.getUser()))
+                    .writerInfo(UserResponse.from(comment.getUser()))
                     .content(comment.getContents())
                     .attachedImages(comment.getAttachedImages().stream()
                             .map(FileDto.FileResponse::from)
@@ -110,7 +128,6 @@ public class CommentDto {
                             .map(FileDto.FileResponse::from)
                             .toList())
                     .createdAt(comment.getCreatedAt())
-                    .updatedAt(comment.getLastModifiedAt())
                     .childrenComments(List.of())
                     .build();
         }
