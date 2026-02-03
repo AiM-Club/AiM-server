@@ -15,6 +15,8 @@ import targeter.aim.system.exception.model.ErrorCode;
 import targeter.aim.system.exception.model.RestException;
 import targeter.aim.system.security.model.UserDetails;
 
+import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -155,6 +157,11 @@ public class ChallengeRequestService {
             throw new RestException(ErrorCode.GLOBAL_NOT_FOUND, "HOST의 주차별 진행 데이터가 없습니다.");
         }
 
+        LocalDate today = LocalDate.now();
+        LocalDate startDate = challenge.getStartedAt();
+
+        int currentWeek = (int) ChronoUnit.WEEKS.between(startDate, today) + 1;
+
         List<WeeklyProgress> toSave = new ArrayList<>();
 
         for (WeeklyProgress src : hostProgressList) {
@@ -169,11 +176,24 @@ public class ChallengeRequestService {
                     "createdAt",
                     "lastModifiedAt",
                     "attachedImages",
-                    "attachedFiles"
+                    "attachedFiles",
+                    "elapsedTimeSeconds",
+                    "weeklyStatus",
+                    "isComplete"
             );
 
             cloned.setChallenge(challenge);
             cloned.setUser(memberUser);
+
+            if (src.getWeekNumber() < currentWeek) {
+                cloned.setElapsedTimeSeconds(0);
+                cloned.setWeeklyStatus(WeeklyStatus.FAIL);
+                cloned.setIsComplete(true);
+            } else {
+                cloned.setElapsedTimeSeconds(0);
+                cloned.setWeeklyStatus(WeeklyStatus.PENDING);
+                cloned.setIsComplete(false);
+            }
 
             cloned.setAttachedFiles(new ArrayList<>());
             cloned.setAttachedImages(new ArrayList<>());
