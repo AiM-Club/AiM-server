@@ -241,6 +241,7 @@ public class PostQueryRepository {
         User user = p.getUser();
         ProfileImage profileImage = user.getProfileImage();
         PostImage postImage = p.getPostImage();
+        Integer likeCount = tuple.get(2, Integer.class);
 
         return PostDto.VSRecruitListResponse.builder()
                 .postId(p.getId())
@@ -262,7 +263,7 @@ public class PostQueryRepository {
                 .tags(tagMap.getOrDefault(p.getId(), List.of()))
                 .job(p.getJob())
                 .isLiked(Boolean.TRUE.equals(tuple.get(1, Boolean.class)))
-                .likeCount(tuple.get(2, Long.class) == null ? 0 : tuple.get(2, Long.class).intValue())
+                .likeCount(likeCount == null ? 0 : likeCount)
                 .build();
     }
 
