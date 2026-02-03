@@ -1,7 +1,6 @@
 package targeter.aim.domain.post.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -11,12 +10,8 @@ import org.springframework.data.web.PageableDefault;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
-import targeter.aim.domain.challenge.repository.CommentSortType;
 import targeter.aim.domain.post.dto.CommentDto;
-import targeter.aim.domain.post.dto.PostDto;
 import targeter.aim.domain.post.service.CommentService;
-import targeter.aim.system.exception.model.ErrorCode;
-import targeter.aim.system.exception.model.RestException;
 import targeter.aim.system.security.model.UserDetails;
 
 @RestController

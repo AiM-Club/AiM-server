@@ -1,15 +1,16 @@
 package targeter.aim.domain.challenge.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springdoc.core.annotations.ParameterObject;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import targeter.aim.domain.challenge.dto.WeeklyCommentDto;
-import targeter.aim.domain.challenge.repository.CommentSortType;
 import targeter.aim.domain.challenge.service.WeeklyCommentService;
 import targeter.aim.system.security.model.UserDetails;
 
@@ -37,26 +38,18 @@ public class WeeklyCommentController {
         );
     }
 
-//    @GetMapping
-//    @Operation(
-//            summary = "챌린지 주차별 댓글 목록 조회",
-//            description = "챌린지의 특정 주차(weeks)에 작성된 댓글 목록(부모/대댓글)을 최신순으로 조회합니다."
-//    )
-//    public WeeklyCommentDto.WeeklyCommentListResponse getWeeklyComments(
-//            @PathVariable Long challengeId,
-//            @PathVariable Long weeksId,
-//            @Parameter(description = "정렬 기준", example = "LATEST")
-//            @RequestParam(defaultValue = "LATEST") CommentSortType sort,
-//            @Parameter(description = "정렬 방향", example = "DESC")
-//            @RequestParam(defaultValue = "DESC") SortOrder order,
-//            @Parameter(description = "페이지 번호(0부터 시작)", example = "0")
-//            @RequestParam(defaultValue = "0") int page,
-//            @Parameter(description = "페이지 크기", example = "10")
-//            @RequestParam(defaultValue = "10") int size,
-//            @AuthenticationPrincipal UserDetails userDetails
-//    ) {
-//        return weeklyCommentService.getWeeklyComments(
-//                challengeId, weeksId, sort, order, page, size, userDetails
-//        );
-//    }
+    @GetMapping
+    @Operation(
+            summary = "챌린지 주차별 댓글 목록 조회",
+            description = "챌린지 주차별 댓글 및 대댓글을 조회합니다."
+    )
+    public WeeklyCommentDto.WeeklyCommentPageResponse getWeeklyComments(
+            @PathVariable Long challengeId,
+            @PathVariable Long weeksId,
+            @PageableDefault @ParameterObject Pageable pageable,
+            @AuthenticationPrincipal UserDetails userDetails
+    ) {
+        return weeklyCommentService.getWeeklyComments(challengeId, weeksId, pageable, userDetails);
+    }
+
 }

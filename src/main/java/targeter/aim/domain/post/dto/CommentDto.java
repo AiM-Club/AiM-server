@@ -7,7 +7,6 @@ import org.springframework.web.multipart.MultipartFile;
 import targeter.aim.domain.file.dto.FileDto;
 import targeter.aim.domain.post.entity.Comment;
 import targeter.aim.domain.user.dto.TierDto;
-import targeter.aim.domain.user.dto.UserDto;
 import targeter.aim.domain.user.entity.User;
 
 import java.time.LocalDateTime;

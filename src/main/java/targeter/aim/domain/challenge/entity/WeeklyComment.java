@@ -6,8 +6,6 @@ import lombok.experimental.SuperBuilder;
 import targeter.aim.common.auditor.TimeStampedEntity;
 import targeter.aim.domain.file.entity.ChallengeCommentAttachedFile;
 import targeter.aim.domain.file.entity.ChallengeCommentImage;
-import targeter.aim.domain.file.entity.ChallengeProofAttachedFile;
-import targeter.aim.domain.file.entity.ChallengeProofImage;
 import targeter.aim.domain.user.entity.User;
 
 import java.util.ArrayList;
