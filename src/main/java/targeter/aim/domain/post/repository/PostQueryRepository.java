@@ -589,6 +589,8 @@ public class PostQueryRepository {
 
         return PostDto.PostListResponse.builder()
                 .postId(p.getId())
+                .postType(p.getType())
+                .challengeMode(p.getChallenge().getMode())
                 .thumbnail(postImage != null
                         ? FileDto.FileResponse.from(postImage)
                         : null)

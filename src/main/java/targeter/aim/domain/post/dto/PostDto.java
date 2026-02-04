@@ -13,6 +13,7 @@ import targeter.aim.domain.label.dto.TagDto;
 import targeter.aim.domain.label.entity.Field;
 import targeter.aim.domain.label.entity.Tag;
 import targeter.aim.domain.post.entity.Post;
+import targeter.aim.domain.post.entity.PostType;
 import targeter.aim.domain.user.dto.TierDto;
 import targeter.aim.domain.user.dto.UserDto;
 import targeter.aim.domain.user.entity.User;
@@ -190,6 +191,23 @@ public class PostDto {
 
         @Schema(description = "게시글 아이디", example = "1")
         private Long postId;
+
+        @Schema(
+                description = """
+                        게시글 종류
+                        - VS_RECRUIT : VS 모집글
+                        - Q_AND_A    : Q&A
+                        - REVIEW     : 후기글
+                        """,
+                example = "VS_RECRUIT | Q_AND_A | REVIEW"
+        )
+        private PostType postType;
+
+        @Schema(
+                description = "연관된 챌린지 모드",
+                example = "VS | SOLO"
+        )
+        private ChallengeMode challengeMode;
 
         @Schema(description = "썸네일 정보")
         private FileDto.FileResponse thumbnail;
