@@ -601,4 +601,81 @@ public class ChallengeQueryRepository {
                 .orderBy(challenge.startedAt.desc())       // 최신순 정렬
                 .fetch();                                  // List로 반환
     }
+
+    public Page<ChallengeDto.ChallengeListResponse> paginateLiked(
+            UserDetails userDetails,
+            Pageable pageable,
+            ChallengeDto.ChallengeSortType sortType
+    ) {
+        return paginateLikedByKeyword(userDetails, pageable, sortType, null);
+    }
+
+    public Page<ChallengeDto.ChallengeListResponse> paginateLikedByKeyword(
+            UserDetails userDetails,
+            Pageable pageable,
+            ChallengeDto.ChallengeSortType sortType,
+            String keyword
+    ) {
+        JPAQuery<Tuple> query = buildLikedBaseQuery(userDetails, keyword);
+        applySorting(query, sortType);
+
+        List<Tuple> tuples = query
+                .offset(pageable.getOffset())
+                .limit(pageable.getPageSize())
+                .fetch();
+
+        Long total = buildCountLikedQuery(userDetails, keyword).fetchOne();
+
+        return new PageImpl<>(
+                enrichDetails(tuples),
+                pageable,
+                total == null ? 0 : total
+        );
+    }
+
+    private JPAQuery<Tuple> buildLikedBaseQuery(
+            UserDetails userDetails,
+            String keyword
+    ) {
+        JPAQuery<Tuple> query = queryFactory
+                .select(
+                        challenge,
+                        Expressions.TRUE,
+                        JPAExpressions.select(challengeLiked.count())
+                                .from(challengeLiked)
+                                .where(challengeLiked.challenge.eq(challenge))
+                )
+                .from(challengeLiked)
+                .join(challengeLiked.challenge, challenge)
+                .where(challengeLiked.user.id.eq(userDetails.getUser().getId()))
+                .leftJoin(challenge.host).fetchJoin()
+                .leftJoin(challenge.host.tier).fetchJoin()
+                .leftJoin(challenge.host.profileImage).fetchJoin();
+
+        BooleanExpression keywordPredicate = keywordCondition(keyword);
+        if (keywordPredicate != null) {
+            query.where(keywordPredicate);
+        }
+
+        return query;
+    }
+
+    private JPAQuery<Long> buildCountLikedQuery(
+            UserDetails userDetails,
+            String keyword
+    ) {
+        JPAQuery<Long> query = queryFactory
+                .select(challenge.count())
+                .from(challengeLiked)
+                .join(challengeLiked.challenge, challenge)
+                .where(challengeLiked.user.id.eq(userDetails.getUser().getId()));
+
+        BooleanExpression keywordPredicate = keywordCondition(keyword);
+        if (keywordPredicate != null) {
+            query.where(keywordPredicate);
+        }
+
+        return query;
+    }
+
 }
