@@ -85,4 +85,18 @@ public class ChallengeReadController {
     ) {
         return challengeService.getAllChallenges(request, userDetails, pageable);
     }
+
+    @GetMapping("/liked")
+    @Operation(
+            summary = "내가 좋아요 누른 챌린지 목록 조회",
+            description = "로그인한 사용자가 좋아요를 누른 챌린지 목록을 정렬 조건과 검색 키워드에 따라 페이지네이션 조회합니다."
+    )
+    public ChallengeDto.ChallengePageResponse getLikedChallenges(
+            @ModelAttribute @ParameterObject ChallengeDto.AllListSearchCondition request,
+            @PageableDefault(size = 16) @ParameterObject Pageable pageable,
+            @AuthenticationPrincipal UserDetails userDetails
+    ) {
+        return challengeService.getLikedChallenges(request, userDetails, pageable);
+    }
+
 }
