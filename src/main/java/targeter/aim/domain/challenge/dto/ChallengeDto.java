@@ -409,6 +409,9 @@ public class ChallengeDto {
             @Schema(description = "작성자 아이디", example = "1")
             private Long writerId;
 
+            @Schema(description = "작성자 닉네임", example = "닉네임")
+            private String writerNickname;
+
             @Schema(description = "챌린지 썸네일")
             private FileDto.FileResponse thumbnail;
 
@@ -442,6 +445,7 @@ public class ChallengeDto {
             public static ChallengeInfo from(Challenge challenge, boolean isLiked) {
                 return ChallengeInfo.builder()
                         .writerId(challenge.getHost().getId())
+                        .writerNickname(challenge.getHost().getNickname())
                         .thumbnail(challenge.getChallengeImage() == null ? null : FileDto.FileResponse.from(challenge.getChallengeImage()))
                         .name(challenge.getName())
                         .isLiked(isLiked)
@@ -634,6 +638,9 @@ public class ChallengeDto {
             @Schema(description = "작성자 아이디", example = "1")
             private Long writerId;
 
+            @Schema(description = "작성자 닉네임", example = "닉네임")
+            private String writerNickname;
+
             @Schema(description = "챌린지 썸네일")
             private FileDto.FileResponse thumbnail;
 
@@ -673,6 +680,7 @@ public class ChallengeDto {
             public static ChallengeInfo from(Challenge challenge, boolean isLiked) {
                 return ChallengeInfo.builder()
                         .writerId(challenge.getHost().getId())
+                        .writerNickname(challenge.getHost().getNickname())
                         .thumbnail(
                                 challenge.getChallengeImage() == null
                                         ? null
