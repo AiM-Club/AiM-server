@@ -348,4 +348,31 @@ public class ChallengeReadService {
 
         return ChallengeDto.ChallengePageResponse.from(page);
     }
+
+    public ChallengeDto.ChallengePageResponse getLikedChallenges(
+            ChallengeDto.AllListSearchCondition condition,
+            UserDetails userDetails,
+            Pageable pageable
+    ) {
+        if (userDetails == null) {
+            return ChallengeDto.ChallengePageResponse.from(
+                    Page.empty(pageable)
+            );
+        }
+
+        ChallengeDto.ChallengeSortType sortType = condition.getSort();
+        String keyword = normalizeKeyword(condition.getKeyword());
+
+        Page<ChallengeDto.ChallengeListResponse> page =
+                keyword != null
+                        ? challengeQueryRepository.paginateLikedByKeyword(
+                        userDetails, pageable, sortType, keyword
+                )
+                        : challengeQueryRepository.paginateLiked(
+                        userDetails, pageable, sortType
+                );
+
+        return ChallengeDto.ChallengePageResponse.from(page);
+    }
+
 }
