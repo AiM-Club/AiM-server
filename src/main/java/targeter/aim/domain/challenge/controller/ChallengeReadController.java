@@ -99,4 +99,18 @@ public class ChallengeReadController {
         return challengeService.getLikedChallenges(request, userDetails, pageable);
     }
 
+    @NoJwtAuth
+    @GetMapping("/search")
+    @Operation(
+            summary = "챌린지 검색",
+            description = "키워드 기반으로 공개(PUBLIC) + (로그인 시) 내가 참여한 PRIVATE 챌린지까지 검색합니다."
+    )
+    public ChallengeDto.ChallengePageResponse searchChallenges(
+            @RequestParam(required = false) String keyword,
+            @RequestParam(defaultValue = "LATEST") ChallengeDto.ChallengeSortType sort,
+            @PageableDefault(size = 16) @ParameterObject Pageable pageable,
+            @AuthenticationPrincipal UserDetails userDetails
+    ) {
+        return challengeService.searchChallenges(keyword, sort, pageable, userDetails);
+    }
 }

@@ -34,7 +34,6 @@ public class PostReadService {
             Pageable pageable
     ) {
         PostDto.PostSortType sortType = condition.getSort();
-
         String keyword = normalizeKeyword(condition.getKeyword());
 
         Page<PostDto.VSRecruitListResponse> page;
@@ -50,12 +49,6 @@ public class PostReadService {
         }
 
         return PostDto.VSRecruitPageResponse.from(page);
-    }
-
-    private String normalizeKeyword(String keyword) {
-        if (keyword == null) return null;
-        String k = keyword.trim();
-        return k.isEmpty() ? null : k;
     }
 
     public PostDto.HotPostPageResponse getHotSoloPosts(
@@ -96,7 +89,6 @@ public class PostReadService {
             Long postId,
             UserDetails userDetails
     ) {
-
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new RestException(ErrorCode.POST_NOT_FOUND));
 
@@ -118,7 +110,6 @@ public class PostReadService {
             Long postId,
             UserDetails userDetails
     ) {
-
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new RestException(ErrorCode.POST_NOT_FOUND));
 
@@ -281,4 +272,23 @@ public class PostReadService {
         return PostDto.PostPageResponse.from(page);
     }
 
+    public PostDto.PostPageResponse searchPosts(
+            String keyword,
+            PostDto.PostSortType sort,
+            Pageable pageable,
+            UserDetails userDetails
+    ) {
+        String k = normalizeKeyword(keyword);
+
+        Page<PostDto.PostListResponse> page =
+                postQueryRepository.paginateSearchAllByKeyword(userDetails, pageable, sort, k);
+
+        return PostDto.PostPageResponse.from(page);
+    }
+
+    private String normalizeKeyword(String keyword) {
+        if (keyword == null) return null;
+        String k = keyword.trim();
+        return k.isEmpty() ? null : k;
+    }
 }

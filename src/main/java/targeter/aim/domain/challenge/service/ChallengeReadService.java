@@ -47,7 +47,7 @@ public class ChallengeReadService {
 
         Page<ChallengeDto.ChallengeListResponse> page;
 
-        if(field != null) {
+        if (field != null) {
             page = challengeQueryRepository.paginateVsByTypeAndKeywordAndField(
                     userDetails, pageable, filterType, sortType, keyword, field
             );
@@ -76,10 +76,10 @@ public class ChallengeReadService {
         if (field == null) return null;
 
         String f = field.trim();
-        if(f.isEmpty()) return null;
+        if (f.isEmpty()) return null;
 
         String upper = f.toUpperCase(Locale.ROOT);
-        if("ALL".equals(upper)) return null;
+        if ("ALL".equals(upper)) return null;
 
         return upper;
     }
@@ -127,7 +127,7 @@ public class ChallengeReadService {
         User me = hostUser;
         User opponent = memberUser;
 
-        if(loginUserId != null && memberUser != null && loginUserId.equals(memberUser.getId())) {
+        if (loginUserId != null && memberUser != null && loginUserId.equals(memberUser.getId())) {
             me = memberUser;
             opponent = hostUser;
         }
@@ -201,7 +201,7 @@ public class ChallengeReadService {
                 );
 
         boolean isLiked = false;
-        if(loginUserId != null) {
+        if (loginUserId != null) {
             isLiked = challengeLikedRepository.existsByUserAndChallenge(userDetails.getUser(), challenge);
         }
 
@@ -312,7 +312,7 @@ public class ChallengeReadService {
         );
 
         boolean isLiked = false;
-        if(loginUserId != null) {
+        if (loginUserId != null) {
             isLiked = challengeLikedRepository.existsByUserAndChallenge(userDetails.getUser(), challenge);
         }
 
@@ -349,15 +349,55 @@ public class ChallengeReadService {
         return ChallengeDto.ChallengePageResponse.from(page);
     }
 
+    // 홈 화면(또는 검색 화면)에서 쓰는 "공개 + (로그인 시) 내가 참여한 PRIVATE" 통합 검색
+    public ChallengeDto.ChallengePageResponse searchAllChallenges(
+            ChallengeDto.AllListSearchCondition condition,
+            UserDetails userDetails,
+            Pageable pageable
+    ) {
+        ChallengeDto.ChallengeSortType sortType = condition.getSort();
+        String keyword = normalizeKeyword(condition.getKeyword());
+
+        Page<ChallengeDto.ChallengeListResponse> page =
+                keyword != null
+                        ? challengeQueryRepository.paginateSearchAllByKeyword(
+                        userDetails, pageable, sortType, keyword
+                )
+                        : challengeQueryRepository.paginateSearchAll(
+                        userDetails, pageable, sortType
+                );
+
+        return ChallengeDto.ChallengePageResponse.from(page);
+    }
+
+    public ChallengeDto.ChallengePageResponse searchChallenges(
+            String keyword,
+            ChallengeDto.ChallengeSortType sortType,
+            Pageable pageable,
+            UserDetails userDetails
+    ) {
+        String k = normalizeKeyword(keyword);
+
+        Page<ChallengeDto.ChallengeListResponse> page =
+                k != null
+                        ? challengeQueryRepository.paginateSearchAllByKeyword(
+                        userDetails, pageable, sortType, k
+                )
+                        : challengeQueryRepository.paginateSearchAll(
+                        userDetails, pageable, sortType
+                );
+
+        return ChallengeDto.ChallengePageResponse.from(page);
+    }
+
+    // /api/challenges/liked 용 (로그인 필수)
     public ChallengeDto.ChallengePageResponse getLikedChallenges(
             ChallengeDto.AllListSearchCondition condition,
             UserDetails userDetails,
             Pageable pageable
     ) {
         if (userDetails == null) {
-            return ChallengeDto.ChallengePageResponse.from(
-                    Page.empty(pageable)
-            );
+            return ChallengeDto.ChallengePageResponse.from(Page.empty(pageable));
         }
 
         ChallengeDto.ChallengeSortType sortType = condition.getSort();
@@ -374,5 +414,4 @@ public class ChallengeReadService {
 
         return ChallengeDto.ChallengePageResponse.from(page);
     }
-
 }

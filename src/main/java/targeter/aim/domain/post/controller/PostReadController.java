@@ -2,7 +2,6 @@ package targeter.aim.domain.post.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springdoc.core.annotations.ParameterObject;
@@ -51,7 +50,6 @@ public class PostReadController {
     ) {
         return postService.getVsPostDetail(postId, userDetails);
     }
-
 
     @NoJwtAuth
     @GetMapping("/qna")
@@ -189,4 +187,18 @@ public class PostReadController {
         );
     }
 
+    @NoJwtAuth
+    @GetMapping("/search")
+    @Operation(
+            summary = "게시글 검색",
+            description = "키워드 기반으로 게시글을 검색합니다."
+    )
+    public PostDto.PostPageResponse searchPosts(
+            @RequestParam(required = false) String keyword,
+            @RequestParam(defaultValue = "LATEST") PostDto.PostSortType sort,
+            @PageableDefault(size = 16) @ParameterObject Pageable pageable,
+            @AuthenticationPrincipal UserDetails userDetails
+    ) {
+        return postService.searchPosts(keyword, sort, pageable, userDetails);
+    }
 }
