@@ -443,6 +443,9 @@ public class ChallengeDto {
             @Schema(description = "총 기간(주)", example = "4")
             private Integer totalWeeks;
 
+            @Schema(description = "챌린지 상태", example = "IN_PROGRESS | COMPLETED")
+            private ChallengeStatus status;
+
             public static ChallengeInfo from(Challenge challenge, boolean isLiked) {
                 return ChallengeInfo.builder()
                         .writerId(challenge.getHost().getId())
@@ -461,6 +464,7 @@ public class ChallengeDto {
                         .startDate(challenge.getStartedAt())
                         .endDate(challenge.getStartedAt().plusWeeks(challenge.getDurationWeek()).minusDays(1))
                         .totalWeeks(challenge.getDurationWeek())
+                        .status(challenge.getStatus())
                         .build();
             }
         }
@@ -672,7 +676,7 @@ public class ChallengeDto {
             @Schema(description = "총 기간(주)", example = "4")
             private Integer totalWeeks;
 
-            @Schema(description = "챌린지 상태", example = "IN_PROGRESS")
+            @Schema(description = "챌린지 상태", example = "IN_PROGRESS | COMPLETED")
             private ChallengeStatus state;
 
             @Schema(description = "공개 여부", example = "PUBLIC")
