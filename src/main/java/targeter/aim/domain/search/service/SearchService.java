@@ -1,6 +1,7 @@
 package targeter.aim.domain.search.service;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -9,29 +10,23 @@ import targeter.aim.domain.challenge.service.ChallengeReadService;
 import targeter.aim.domain.post.dto.PostDto;
 import targeter.aim.domain.post.service.PostReadService;
 import targeter.aim.domain.search.dto.SearchDto;
+import targeter.aim.domain.search.repository.SearchQueryRepository;
 import targeter.aim.system.security.model.UserDetails;
 
 @Service
 @RequiredArgsConstructor
 public class SearchService {
 
-    private final PostReadService postService;
-    private final ChallengeReadService challengeService;
+    private final SearchQueryRepository searchQueryRepository;
 
     @Transactional(readOnly = true)
-    public SearchDto.SearchResponse search(
-            String keyword,
-            PostDto.PostSortType postSort,
-            ChallengeDto.ChallengeSortType challengeSort,
-            Pageable pageable,
-            UserDetails userDetails
+    public SearchDto.SearchPageResponse getSearchList(
+            SearchDto.ListSearchCondition condition,
+            UserDetails userDetails,
+            Pageable pageable
     ) {
-        PostDto.PostPageResponse posts = postService.searchPosts(keyword, postSort, pageable, userDetails);
-        ChallengeDto.ChallengePageResponse challenges = challengeService.searchChallenges(keyword, challengeSort, pageable, userDetails);
+        Page<SearchDto.SearchListResponse> page = searchQueryRepository.paginateSearchList(userDetails, condition, pageable);
 
-        return SearchDto.SearchResponse.builder()
-                .posts(posts)
-                .challenges(challenges)
-                .build();
+        return SearchDto.SearchPageResponse.from(page);
     }
 }

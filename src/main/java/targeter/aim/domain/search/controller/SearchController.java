@@ -29,13 +29,11 @@ public class SearchController {
             summary = "통합 검색",
             description = "키워드 기반으로 게시글(/api/posts/search) + 챌린지(/api/challenges/search)를 통합 검색합니다."
     )
-    public SearchDto.SearchResponse search(
-            @RequestParam(required = false) String keyword,
-            @RequestParam(defaultValue = "LATEST") PostDto.PostSortType postSort,
-            @RequestParam(defaultValue = "LATEST") ChallengeDto.ChallengeSortType challengeSort,
+    public SearchDto.SearchPageResponse search(
+            @ModelAttribute @ParameterObject SearchDto.ListSearchCondition condition,
             @PageableDefault(size = 16) @ParameterObject Pageable pageable,
             @AuthenticationPrincipal UserDetails userDetails
     ) {
-        return searchService.search(keyword, postSort, challengeSort, pageable, userDetails);
+        return searchService.getSearchList(condition, userDetails, pageable);
     }
 }
