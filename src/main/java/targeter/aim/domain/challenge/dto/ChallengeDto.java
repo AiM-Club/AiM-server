@@ -187,6 +187,9 @@ public class ChallengeDto {
         @Schema(description = "챌린지 아이디", example = "1")
         private Long challengeId;
 
+        @Schema(description = "챌린지 모드", example = "VS | SOLO")
+        private ChallengeMode mode;
+
         @Schema(description = "챌린지 썸네일")
         private FileDto.FileResponse thumbnail;
 

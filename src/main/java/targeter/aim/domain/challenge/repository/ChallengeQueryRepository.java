@@ -550,6 +550,7 @@ public class ChallengeQueryRepository {
 
         return ChallengeDto.ChallengeListResponse.builder()
                 .challengeId(c.getId())
+                .mode(c.getMode())
                 .thumbnail(challengeImage != null
                         ? FileDto.FileResponse.from(challengeImage)
                         : null)
