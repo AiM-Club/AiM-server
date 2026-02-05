@@ -348,4 +348,45 @@ public class ChallengeReadService {
 
         return ChallengeDto.ChallengePageResponse.from(page);
     }
+
+    public ChallengeDto.ChallengePageResponse searchAllChallenges(
+            ChallengeDto.AllListSearchCondition condition,
+            UserDetails userDetails,
+            Pageable pageable
+    ) {
+        ChallengeDto.ChallengeSortType sortType = condition.getSort();
+        String keyword = normalizeKeyword(condition.getKeyword());
+
+        Page<ChallengeDto.ChallengeListResponse> page;
+
+        if (keyword != null) {
+            page = challengeQueryRepository.paginateSearchAllByKeyword(
+                    userDetails, pageable, sortType, keyword
+            );
+        } else {
+            page = challengeQueryRepository.paginateSearchAll(
+                    userDetails, pageable, sortType
+            );
+        }
+
+        return ChallengeDto.ChallengePageResponse.from(page);
+    }
+    public ChallengeDto.ChallengePageResponse searchChallenges(
+            String keyword,
+            ChallengeDto.ChallengeSortType sortType,
+            Pageable pageable,
+            UserDetails userDetails
+    ) {
+        String k = normalizeKeyword(keyword);
+
+        Page<ChallengeDto.ChallengeListResponse> page;
+
+        if (k != null) {
+            page = challengeQueryRepository.paginateSearchAllByKeyword(userDetails, pageable, sortType, k);
+        } else {
+            page = challengeQueryRepository.paginateSearchAll(userDetails, pageable, sortType);
+        }
+
+        return ChallengeDto.ChallengePageResponse.from(page);
+    }
 }

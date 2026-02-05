@@ -66,7 +66,6 @@ public class PostQueryRepository {
                 total == null ? 0 : total
         );
     }
-
     // 분야 필터링
     public Page<PostDto.VSRecruitListResponse> paginateByTypeAndKeyword(
             UserDetails userDetails,
@@ -139,6 +138,79 @@ public class PostQueryRepository {
         return query;
     }
 
+    public Page<PostDto.PostListResponse> paginateSearchAllByKeyword(
+            UserDetails userDetails,
+            Pageable pageable,
+            PostDto.PostSortType sortType,
+            String keyword
+    ) {
+        JPAQuery<Tuple> query = buildSearchAllBaseQuery(userDetails, keyword);
+        applySorting(query, sortType);
+
+        List<Tuple> tuples = query
+                .offset(pageable.getOffset())
+                .limit(pageable.getPageSize())
+                .fetch();
+
+        Long total = buildCountSearchAllQuery(keyword).fetchOne();
+
+        return new PageImpl<>(
+                enrichPostListDetails(tuples),
+                pageable,
+                total == null ? 0 : total
+        );
+    }
+
+    private JPAQuery<Tuple> buildSearchAllBaseQuery(
+            UserDetails userDetails,
+            String keyword
+    ) {
+        JPAQuery<Tuple> query = queryFactory
+                .select(
+                        post,
+                        userDetails != null
+                                ? JPAExpressions.selectOne()
+                                .from(postLiked)
+                                .where(
+                                        postLiked.post.eq(post)
+                                                .and(postLiked.user.id.eq(userDetails.getUser().getId()))
+                                ).exists()
+                                : Expressions.FALSE,
+                        JPAExpressions.select(postLiked.count())
+                                .from(postLiked)
+                                .where(postLiked.post.eq(post))
+                )
+                .from(post)
+                .leftJoin(post.challenge).fetchJoin()
+                .leftJoin(post.user).fetchJoin()
+                .leftJoin(post.user.tier).fetchJoin()
+                .leftJoin(post.user.profileImage).fetchJoin()
+                .where(post.type.in(PostType.VS_RECRUIT, PostType.Q_AND_A, PostType.REVIEW));
+
+        BooleanExpression keywordPredicate = keywordCondition(keyword);
+        if (keywordPredicate != null) {
+            query.where(keywordPredicate);
+        }
+
+        return query;
+    }
+
+    private JPAQuery<Long> buildCountSearchAllQuery(
+            String keyword
+    ) {
+        JPAQuery<Long> query = queryFactory
+                .select(post.count())
+                .from(post)
+                .leftJoin(post.challenge)
+                .where(post.type.in(PostType.VS_RECRUIT, PostType.Q_AND_A, PostType.REVIEW));
+
+        BooleanExpression keywordPredicate = keywordCondition(keyword);
+        if (keywordPredicate != null) {
+            query.where(keywordPredicate);
+        }
+
+        return query;
+    }
     // 제목 + 분야 + 태그 검색 조건설정
     private BooleanExpression keywordCondition(String keyword) {
         if (keyword == null || keyword.isBlank()) return null;
@@ -147,7 +219,6 @@ public class PostQueryRepository {
 
         BooleanExpression inTitle = post.title.containsIgnoreCase(k);
 
-        // 분야 검색
         var pField = new QPost("pField");
         QField f = new QField("f");
 
@@ -158,7 +229,6 @@ public class PostQueryRepository {
                 .where(pField.id.eq(post.id).and(f.name.containsIgnoreCase(k)))
                 .exists();
 
-        // 태그 검색
         var pTag = new QPost("pTag");
         QTag t = new QTag("t");
 
@@ -171,8 +241,8 @@ public class PostQueryRepository {
 
         return inTitle.or(inField).or(inTag);
     }
-
     // 정렬
+
     private void applySorting(JPAQuery<?> query, PostDto.PostSortType sortType) {
         switch (sortType) {
             case LATEST -> query.orderBy(post.createdAt.desc());
@@ -187,7 +257,6 @@ public class PostQueryRepository {
             );
         }
     }
-
     //DTO 매핑
     private List<PostDto.VSRecruitListResponse> enrichDetails(List<Tuple> tuples) {
         if (tuples.isEmpty()) return List.of();
@@ -273,12 +342,12 @@ public class PostQueryRepository {
         return queryFactory
                 .selectFrom(post)
                 .where(
-                        post.type.eq(PostType.REVIEW),      // 후기글만
-                        post.createdAt.goe(threeMonthsAgo)  // 최근 3개월 내
+                        post.type.eq(PostType.REVIEW),           // 후기글만
+                        post.createdAt.goe(threeMonthsAgo)   // 최근 3개월 내
                 )
                 .orderBy(
-                        post.likeCount.desc(),              // 좋아요 많은 순
-                        post.createdAt.desc()               // (동점일 경우 최신순)
+                        post.likeCount.desc(),           // 좋아요 많은 순
+                        post.createdAt.desc()           // (동점일 경우 최신순)
                 )
                 .limit(limit)
                 .fetch();
@@ -335,7 +404,6 @@ public class PostQueryRepository {
                 })
                 .toList();
     }
-
     // HOT 게시글(SOLO/VS) 페이지네이션 조회
     public Page<PostDto.HotPostListResponse> paginateHotPosts(
             UserDetails userDetails,
@@ -463,7 +531,6 @@ public class PostQueryRepository {
                 .mode(p.getChallenge().getMode())
                 .build();
     }
-
     // Qna, Review 게시글 목록 조회
     public Page<PostDto.PostListResponse> paginateQnaAndReview(
             UserDetails userDetails,
@@ -561,7 +628,6 @@ public class PostQueryRepository {
         return query;
     }
 
-
     private List<PostDto.PostListResponse> enrichPostListDetails(List<Tuple> tuples) {
         if (tuples.isEmpty()) return List.of();
 
@@ -612,10 +678,8 @@ public class PostQueryRepository {
                 .tags(tagMap.getOrDefault(p.getId(), List.of()))
                 .isLiked(Boolean.TRUE.equals(tuple.get(1, Boolean.class)))
                 .likeCount(tuple.get(2, Long.class) == null ? 0 : tuple.get(2, Long.class).intValue())
-
                 .build();
     }
-
     // 내가 쓴 게시글 목록 조회
     public Page<PostDto.PostListResponse> paginateMyPosts(
             UserDetails userDetails,
@@ -705,7 +769,6 @@ public class PostQueryRepository {
 
         return query;
     }
-
     // 내가 좋아요 누른 게시글 목록 조회
     public Page<PostDto.PostListResponse> paginateLikedPosts(
             UserDetails userDetails,
@@ -792,5 +855,4 @@ public class PostQueryRepository {
 
         return query;
     }
-
 }

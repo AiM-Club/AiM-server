@@ -16,6 +16,7 @@ import targeter.aim.domain.challenge.entity.Challenge;
 import targeter.aim.domain.challenge.entity.ChallengeMode;
 import targeter.aim.domain.challenge.entity.ChallengeStatus;
 import targeter.aim.domain.challenge.entity.QChallenge;
+import targeter.aim.domain.challenge.entity.ChallengeVisibility;
 import targeter.aim.domain.file.dto.FileDto;
 import targeter.aim.domain.file.entity.ChallengeImage;
 import targeter.aim.domain.file.entity.ProfileImage;
@@ -44,9 +45,9 @@ public class ChallengeQueryRepository {
 
     private final JPAQueryFactory queryFactory;
 
-/**
-* 1. VS 챌린지용 Query
- */
+    /**
+     * 1. VS 챌린지용 Query
+     */
 
     // 기존 전체 조회용
     public Page<ChallengeDto.ChallengeListResponse> paginateVsByType(
@@ -105,6 +106,7 @@ public class ChallengeQueryRepository {
 
             return slice(sorted, pageable);
         }
+
         JPAQuery<Tuple> query = buildVsBaseQuery(userDetails, filterType, keyword, field);
         applyVsSorting(query, sortType);
 
@@ -600,5 +602,121 @@ public class ChallengeQueryRepository {
                 )
                 .orderBy(challenge.startedAt.desc())       // 최신순 정렬
                 .fetch();                                  // List로 반환
+    }
+
+    /**
+     * 4. 전체(공개 + 내가 참여한 비공개) 검색용 Query
+     */
+    public Page<ChallengeDto.ChallengeListResponse> paginateSearchAll(
+            UserDetails userDetails,
+            Pageable pageable,
+            ChallengeDto.ChallengeSortType sortType
+    ) {
+        return paginateSearchAllByKeyword(userDetails, pageable, sortType, null);
+    }
+
+    // 전체 챌린지 검색 - 키워드 있음/없음 통합
+    public Page<ChallengeDto.ChallengeListResponse> paginateSearchAllByKeyword(
+            UserDetails userDetails,
+            Pageable pageable,
+            ChallengeDto.ChallengeSortType sortType,
+            String keyword
+    ) {
+        JPAQuery<Tuple> query = buildPublicAllBaseQuery(userDetails, keyword);
+        applySorting(query, sortType);
+
+        List<Tuple> tuples = query
+                .offset(pageable.getOffset())
+                .limit(pageable.getPageSize())
+                .fetch();
+
+        Long total = buildCountPublicAllQuery(userDetails, keyword).fetchOne();
+
+        return new PageImpl<>(
+                enrichDetails(tuples),
+                pageable,
+                total == null ? 0 : total
+        );
+    }
+    public Page<ChallengeDto.ChallengeListResponse> paginatePublicAllByTypeAndKeyword(
+            UserDetails userDetails,
+            Pageable pageable,
+            ChallengeDto.ChallengeSortType sortType,
+            String keyword
+    ) {
+        return paginateSearchAllByKeyword(userDetails, pageable, sortType, keyword);
+    }
+
+    private JPAQuery<Tuple> buildPublicAllBaseQuery(
+            UserDetails userDetails,
+            String keyword
+    ) {
+        JPAQuery<Tuple> query = queryFactory
+                .select(
+                        challenge,
+                        userDetails != null
+                                ? JPAExpressions.selectOne()
+                                .from(challengeLiked)
+                                .where(
+                                        challengeLiked.challenge.eq(challenge)
+                                                .and(challengeLiked.user.id.eq(userDetails.getUser().getId()))
+                                ).exists()
+                                : Expressions.FALSE,
+                        JPAExpressions.select(challengeLiked.count())
+                                .from(challengeLiked)
+                                .where(challengeLiked.challenge.eq(challenge))
+                )
+                .from(challenge)
+                .leftJoin(challenge.host).fetchJoin()
+                .leftJoin(challenge.host.tier).fetchJoin()
+                .leftJoin(challenge.host.profileImage).fetchJoin()
+                .where(visibleToUser(userDetails));
+
+        BooleanExpression keywordPredicate = keywordCondition(keyword);
+
+        if (keywordPredicate != null) {
+            query.where(keywordPredicate);
+        }
+
+        return query;
+    }
+
+    private JPAQuery<Long> buildCountPublicAllQuery(
+            UserDetails userDetails,
+            String keyword
+    ) {
+        JPAQuery<Long> query = queryFactory
+                .select(challenge.count())
+                .from(challenge)
+                .where(visibleToUser(userDetails));
+
+        BooleanExpression keywordPredicate = keywordCondition(keyword);
+
+        if (keywordPredicate != null) {
+            query.where(keywordPredicate);
+        }
+
+        return query;
+    }
+
+    private BooleanExpression visibleToUser(UserDetails userDetails) {
+        if (userDetails == null) {
+            return challenge.visibility.eq(ChallengeVisibility.PUBLIC);
+        }
+
+        BooleanExpression isPublic = challenge.visibility.eq(ChallengeVisibility.PUBLIC);
+
+        BooleanExpression isMyPrivate = challenge.visibility.eq(ChallengeVisibility.PRIVATE)
+                .and(
+                        JPAExpressions.selectOne()
+                                .from(challengeMember)
+                                .where(
+                                        challengeMember.id.challenge.eq(challenge),
+                                        challengeMember.id.user.id.eq(userDetails.getUser().getId())
+                                )
+                                .exists()
+                );
+
+        return isPublic.or(isMyPrivate);
     }
 }
