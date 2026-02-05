@@ -221,7 +221,7 @@ public class UserService {
         cannotCreateWithDuplicatedLoginIdOrNickname(request, me);
 
         request.applyTo(me, passwordEncoder);
-        if(!request.getProfileImage().isEmpty()) {
+        if(request.getProfileImage() != null && !request.getProfileImage().isEmpty()) {
             saveProfileImage(request.getProfileImage(), me);
         }
 

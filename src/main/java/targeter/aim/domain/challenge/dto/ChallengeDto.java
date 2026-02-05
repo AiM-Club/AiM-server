@@ -10,11 +10,9 @@ import targeter.aim.domain.label.dto.TagDto;
 import targeter.aim.domain.label.entity.Field;
 import targeter.aim.domain.label.entity.Tag;
 import targeter.aim.domain.user.dto.TierDto;
-import targeter.aim.domain.user.dto.UserDto;
 import targeter.aim.domain.user.entity.User;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
