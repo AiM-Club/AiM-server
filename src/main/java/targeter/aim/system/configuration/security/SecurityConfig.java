@@ -49,7 +49,7 @@ public class SecurityConfig {
                                 "/v3/api-docs/**",
                                 "/h2-console/**"
                         ).permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/files/**", "/api/challenges/**", "/api/posts/**", "/api/users/rank/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/files/**", "/api/challenges/**", "/api/posts/**", "/api/users/rank/**", "/api/search/**").permitAll()
                         .requestMatchers("/api/**").authenticated()
                         .anyRequest().permitAll()
                 )
