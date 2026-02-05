@@ -615,7 +615,6 @@ public class ChallengeQueryRepository {
         return paginateSearchAllByKeyword(userDetails, pageable, sortType, null);
     }
 
-    // 전체 챌린지 검색 - 키워드 있음/없음 통합
     public Page<ChallengeDto.ChallengeListResponse> paginateSearchAllByKeyword(
             UserDetails userDetails,
             Pageable pageable,
@@ -637,14 +636,6 @@ public class ChallengeQueryRepository {
                 pageable,
                 total == null ? 0 : total
         );
-    }
-    public Page<ChallengeDto.ChallengeListResponse> paginatePublicAllByTypeAndKeyword(
-            UserDetails userDetails,
-            Pageable pageable,
-            ChallengeDto.ChallengeSortType sortType,
-            String keyword
-    ) {
-        return paginateSearchAllByKeyword(userDetails, pageable, sortType, keyword);
     }
 
     private JPAQuery<Tuple> buildPublicAllBaseQuery(
@@ -673,7 +664,6 @@ public class ChallengeQueryRepository {
                 .where(visibleToUser(userDetails));
 
         BooleanExpression keywordPredicate = keywordCondition(keyword);
-
         if (keywordPredicate != null) {
             query.where(keywordPredicate);
         }
@@ -691,7 +681,6 @@ public class ChallengeQueryRepository {
                 .where(visibleToUser(userDetails));
 
         BooleanExpression keywordPredicate = keywordCondition(keyword);
-
         if (keywordPredicate != null) {
             query.where(keywordPredicate);
         }
@@ -718,5 +707,89 @@ public class ChallengeQueryRepository {
                 );
 
         return isPublic.or(isMyPrivate);
+    }
+
+    /**
+     * 5. 내가 좋아요 누른 챌린지 목록 조회용 Query
+     */
+    public Page<ChallengeDto.ChallengeListResponse> paginateLiked(
+            UserDetails userDetails,
+            Pageable pageable,
+            ChallengeDto.ChallengeSortType sortType
+    ) {
+        return paginateLikedByKeyword(userDetails, pageable, sortType, null);
+    }
+
+    public Page<ChallengeDto.ChallengeListResponse> paginateLikedByKeyword(
+            UserDetails userDetails,
+            Pageable pageable,
+            ChallengeDto.ChallengeSortType sortType,
+            String keyword
+    ) {
+        // liked는 로그인 필수
+        if (userDetails == null) {
+            return new PageImpl<>(List.of(), pageable, 0);
+        }
+
+        JPAQuery<Tuple> query = buildLikedBaseQuery(userDetails, keyword);
+        applySorting(query, sortType);
+
+        List<Tuple> tuples = query
+                .offset(pageable.getOffset())
+                .limit(pageable.getPageSize())
+                .fetch();
+
+        Long total = buildCountLikedQuery(userDetails, keyword).fetchOne();
+
+        return new PageImpl<>(
+                enrichDetails(tuples),
+                pageable,
+                total == null ? 0 : total
+        );
+    }
+
+    private JPAQuery<Tuple> buildLikedBaseQuery(
+            UserDetails userDetails,
+            String keyword
+    ) {
+        JPAQuery<Tuple> query = queryFactory
+                .select(
+                        challenge,
+                        Expressions.TRUE,
+                        JPAExpressions.select(challengeLiked.count())
+                                .from(challengeLiked)
+                                .where(challengeLiked.challenge.eq(challenge))
+                )
+                .from(challengeLiked)
+                .join(challengeLiked.challenge, challenge)
+                .where(challengeLiked.user.id.eq(userDetails.getUser().getId()))
+                .leftJoin(challenge.host).fetchJoin()
+                .leftJoin(challenge.host.tier).fetchJoin()
+                .leftJoin(challenge.host.profileImage).fetchJoin();
+
+        BooleanExpression keywordPredicate = keywordCondition(keyword);
+        if (keywordPredicate != null) {
+            query.where(keywordPredicate);
+        }
+
+        return query;
+    }
+
+    private JPAQuery<Long> buildCountLikedQuery(
+            UserDetails userDetails,
+            String keyword
+    ) {
+        JPAQuery<Long> query = queryFactory
+                .select(challenge.count())
+                .from(challengeLiked)
+                .join(challengeLiked.challenge, challenge)
+                .where(challengeLiked.user.id.eq(userDetails.getUser().getId()));
+
+        BooleanExpression keywordPredicate = keywordCondition(keyword);
+        if (keywordPredicate != null) {
+            query.where(keywordPredicate);
+        }
+
+        return query;
     }
 }
