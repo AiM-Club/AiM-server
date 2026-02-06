@@ -18,7 +18,7 @@ public class SwaggerConfig {
     public OpenAPI openAPI() {
         Info info = new Info()
                 .title("Aim API Document")
-                .version("v0.0.1")
+                .version("v1.0.0")
                 .description("Aim의 API 명세서입니다.");
 
         SecurityScheme securityScheme = new SecurityScheme()
