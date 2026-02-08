@@ -271,7 +271,7 @@ public class ChallengeQueryRepository {
                 .limit(pageable.getPageSize())
                 .fetch();
 
-        Long total = buildCountSoloQuery(filterType, keyword).fetchOne();
+        Long total = buildCountSoloQuery(userDetails, filterType, keyword).fetchOne();
 
         return new PageImpl<>(
                 enrichDetails(tuples),
@@ -303,6 +303,7 @@ public class ChallengeQueryRepository {
                 .from(challenge)
                 .where(
                         challenge.mode.eq(ChallengeMode.SOLO),
+                        challenge.host.id.eq(userDetails.getUser().getId()),
                         soloStatusCondition(filterType)
                 )
                 .leftJoin(challenge.host).fetchJoin()
@@ -319,6 +320,7 @@ public class ChallengeQueryRepository {
     }
 
     private JPAQuery<Long> buildCountSoloQuery(
+            UserDetails userDetails,
             ChallengeDto.ChallengeFilterType filterType,
             String keyword
     ) {
@@ -327,6 +329,7 @@ public class ChallengeQueryRepository {
                 .from(challenge)
                 .where(
                         challenge.mode.eq(ChallengeMode.SOLO),
+                        challenge.host.id.eq(userDetails.getUser().getId()),
                         soloStatusCondition(filterType)
                 );
 
