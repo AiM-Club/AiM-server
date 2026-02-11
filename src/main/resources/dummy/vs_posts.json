@@ -1,0 +1,57 @@
+{
+  "vsRecruitPosts": [
+    {
+      "authorId": "jungsej28",
+      "title": "지원서 집중 배틀 모집",
+      "thumbnail": "vs_recruit1_thumbnail.jpg",
+      "tags": ["공고분석", "자소서", "타임어택"],
+      "field": "BUSINESS",
+      "job": "퍼포먼스 마케터",
+      "startDate": "2026-02-04",
+      "durationWeeks": 1,
+      "vsType": "대결1",
+      "content": "이번 주 60분 집중 세션으로 공고 1개 분석하고 지원서 문장 5개 다듬기까지 같이 달릴 분 구해요. 같은 루트로 경쟁해서 끝까지 가봅시다.",
+      "fontSize": 14,
+      "isBold": true,
+      "hasAttachment": true,
+      "attachment": {
+        "fileName": "vs_recruit1_attachedimage.jpg",
+        "description": "공고 체크리스트 예시 캡처"
+      }
+    },
+    {
+      "authorId": "kimdoy26",
+      "title": "모닝 취업 루틴 같이 할 사람",
+      "thumbnail": "vs_recruit2_thumbnail.jpg",
+      "tags": ["아침공부", "문제풀이", "습관"],
+      "field": "IT",
+      "job": "서버 개발자",
+      "startDate": "2026-02-07",
+      "durationWeeks": 2,
+      "vsType": "대결2",
+      "content": "아침 30분 핵심 공부를 기본으로 같이 달릴 분 구합니다. 선택으로 면접 질문 정리나 공고 분석까지 추가해서 루틴을 탄탄하게 만들어요.",
+      "fontSize": 15,
+      "isBold": false,
+      "hasAttachment": false
+    },
+    {
+      "authorId": "kangmin25",
+      "title": "주간 코테 타임어택 모집",
+      "thumbnail": "vs_recruit3_thumbnail.jpg",
+      "tags": ["코딩테스트", "알고리즘", "타임어택"],
+      "field": "IT",
+      "job": "프론트엔드 개발자",
+      "startDate": "2025-12-25",
+      "durationWeeks": 7,
+      "vsType": "대결3",
+      "content": "주차당 1회 60분 코테 세션으로 2문제 풀고 풀이 요약 3줄까지 남기는 방식으로 경쟁해요. 기록이 남아서 동기부여 확실합니다.",
+      "fontSize": 13,
+      "isBold": true,
+      "hasAttachment": true,
+      "attachment": {
+        "fileName": "vs_recruit3_attachedfile.jpg",
+        "description": "코테 풀이 요약 예시 캡처"
+      }
+    }
+  ]
+}

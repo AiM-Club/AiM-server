@@ -1,0 +1,121 @@
+{
+  "users": [
+    {
+      "id": "kimdoy26",
+      "password": "doyoon26!",
+      "name": "김도윤",
+      "age": 26,
+      "birthday": "2001-01-01",
+      "gender": "MALE",
+      "jobStatus": "취준생(대기업 공채 준비)",
+      "nickname": "도윤",
+      "level": 12,
+      "tier": "BRONZE",
+      "profileImage": "doyun.jpg"
+    },
+    {
+      "id": "parksoy24",
+      "password": "soyeon24!",
+      "name": "박소연",
+      "age": 24,
+      "birthday": "2003-01-01",
+      "gender": "FEMALE",
+      "jobStatus": "취준생(인턴 경험 1회)",
+      "nickname": "소연",
+      "level": 35,
+      "tier": "SILVER",
+      "profileImage": "soyeon.jpg"
+    },
+    {
+      "id": "jungsej28",
+      "password": "sejin28!",
+      "name": "정세진",
+      "age": 28,
+      "birthday": "1999-01-01",
+      "gender": "MALE",
+      "jobStatus": "취준생(전직 마케터, 커리어 전환)",
+      "nickname": "세진",
+      "level": 67,
+      "tier": "GOLD",
+      "profileImage": "sejin.jpg"
+    },
+    {
+      "id": "yoongae22",
+      "password": "gaeun22!",
+      "name": "윤가은",
+      "age": 22,
+      "birthday": "2005-01-01",
+      "gender": "FEMALE",
+      "jobStatus": "취준생(졸업유예, 첫 취업 준비)",
+      "nickname": "가은",
+      "level": 88,
+      "tier": "DIAMOND",
+      "profileImage": "gaeun.jpg"
+    },
+    {
+      "id": "ohharin31",
+      "password": "harin31!",
+      "name": "오하린",
+      "age": 31,
+      "birthday": "1996-01-01",
+      "gender": "FEMALE",
+      "jobStatus": "취준생(경력단절 후 재취업 준비)",
+      "nickname": "하린",
+      "level": 54,
+      "tier": "SILVER",
+      "profileImage": "harin.jpg"
+    },
+    {
+      "id": "kangmin25",
+      "password": "minjae25!",
+      "name": "강민재",
+      "age": 25,
+      "birthday": "2002-01-01",
+      "gender": "MALE",
+      "jobStatus": "취준생(프론트엔드 신입 준비)",
+      "nickname": "민재",
+      "level": 29,
+      "tier": "BRONZE",
+      "profileImage": "minjae.jpg"
+    },
+    {
+      "id": "jangwoo23",
+      "password": "woojin23!",
+      "name": "장우진",
+      "age": 23,
+      "birthday": "2004-01-01",
+      "gender": "MALE",
+      "jobStatus": "취준생(백엔드/서버 신입 준비)",
+      "nickname": "우진",
+      "level": 73,
+      "tier": "GOLD",
+      "profileImage": "woojin.jpg"
+    },
+    {
+      "id": "seoyerin27",
+      "password": "yerin27!",
+      "name": "서예린",
+      "age": 27,
+      "birthday": "2000-01-01",
+      "gender": "FEMALE",
+      "jobStatus": "취준생(공기업 NCS 준비)",
+      "nickname": "예린",
+      "level": 41,
+      "tier": "SILVER",
+      "profileImage": "yerin.jpg"
+    },
+    {
+      "id": "baesua30",
+      "password": "sua30!aa",
+      "name": "배수아",
+      "age": 30,
+      "birthday": "1997-01-01",
+      "gender": "FEMALE",
+      "jobStatus": "취준생(회계/재무 직무 준비)",
+      "nickname": "수아",
+      "level": 84,
+      "tier": "DIAMOND",
+      "profileImage": "suah.jpg"
+    }
+  ]
+}

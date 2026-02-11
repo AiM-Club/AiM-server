@@ -1,0 +1,57 @@
+{
+  "comments": [
+    {
+      "challengeName": "모닝 취업 준비 배틀",
+      "pageOwnerId": "parksoy24",
+      "week": 1,
+      "authorId": "kimdoy26",
+      "content": "소연님 화이팅! 오늘은 아침 30분 핵심 공부부터 찍고 시작할게요",
+      "createdAt": "2026-02-09T07:05:00",
+      "replies": [
+        {
+          "authorId": "parksoy24",
+          "content": "도윤님도 화이팅! 난 면접 질문 1개 정리하고 바로 들어갑니다",
+          "createdAt": "2026-02-09T07:16:00"
+        }
+      ]
+    },
+    {
+      "challengeName": "모닝 취업 준비 배틀",
+      "pageOwnerId": "kimdoy26",
+      "week": 1,
+      "authorId": "parksoy24",
+      "content": "전 오늘 기본 미션 완료했습니다!",
+      "createdAt": "2026-02-10T07:18:00"
+    },
+    {
+      "challengeName": "주간 코테 타임어택 배틀",
+      "pageOwnerId": "kangmin25",
+      "week": 2,
+      "authorId": "jangwoo23",
+      "content": "1주차부터 2문제씩 꾸준히 가는 거 멋있다 이번 주도 같이 페이스 유지하자",
+      "createdAt": "2026-01-06T21:18:00",
+      "replies": [
+        {
+          "authorId": "kangmin25",
+          "content": "지금 봤다 미안! 10일 동안 정신없었네 ㅋㅋ 이번 주는 시간 더 줄여볼게",
+          "createdAt": "2026-01-16T23:47:00"
+        }
+      ]
+    },
+    {
+      "challengeName": "주간 코테 타임어택 배틀",
+      "pageOwnerId": "jangwoo23",
+      "week": 7,
+      "authorId": "kangmin25",
+      "content": "2월도 화이팅! 이번 주 마무리까지 같이 깔끔하게 가자",
+      "createdAt": "2026-02-09T07:12:00",
+      "replies": [
+        {
+          "authorId": "jangwoo23",
+          "content": "님도 화이팅 오늘 60분 세션 끝내고 요약까지 딱 남기자",
+          "createdAt": "2026-02-10T08:03:00"
+        }
+      ]
+    }
+  ]
+}

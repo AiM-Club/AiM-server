@@ -1,0 +1,82 @@
+{
+  "comments": [
+
+    {
+      "postTitle": "진행률 질문",
+      "authorId": "parksoy24",
+      "content": "완료 기준을 ‘공고 1개 분석 + 지원서 문장 5개 다듬기’처럼 체크리스트로 고정해두는 게 제일 깔끔해요.",
+      "createdAt": "2026-02-05T22:40:00",
+      "replies": [
+        {
+          "authorId": "kimdoy26",
+          "content": "좋은 생각이네요!",
+          "createdAt": "2026-02-05T23:00:00"
+        }
+      ]
+    },
+
+    {
+      "postTitle": "스톱워치 관련 질문",
+      "authorId": "kimdoy26",
+      "content": "응, 주차 시작하면 Start 누르는 순간부터 공유가 시작돼서 상대가 실시간으로 볼 수 있어. 끝나면 Finish 누르고 그때 기록이 저장되고, 그 주차는 다시 못 돌려",
+      "createdAt": "2026-02-08T01:30:00",
+      "replies": [
+        {
+          "authorId": "parksoy24",
+          "content": "네 이해됐어요 감사합니다",
+          "createdAt": "2026-02-08T01:34:00"
+        }
+      ]
+    },
+
+    {
+      "postTitle": "면접30분 후기",
+      "authorId": "jungsej28",
+      "content": "면접 루틴 후기 좋다 템플릿 잡히는 지점이 포인트네",
+      "createdAt": "2026-02-10T01:05:00",
+      "replies": [
+        {
+          "authorId": "parksoy24",
+          "content": "그 템플릿 구조 공유 가능?",
+          "createdAt": "2026-02-10T01:20:00"
+        }
+      ]
+    },
+
+    {
+      "postTitle": "지원서 집중 후기",
+      "authorId": "kimdoy26",
+      "content": "결과 비교 화면이 제일 설득력 있더라 기록 확정도 깔끔하고",
+      "createdAt": "2026-02-11T02:40:00",
+      "replies": [
+        {
+          "authorId": "jungsej28",
+          "content": "Finish 누르면 기록 확정되는 거 너무 좋네 중간에 핑계 못 대서 집중 더 하게 될 듯",
+          "attachedImage": "post_comment_attachedimage1.jpg",
+          "createdAt": "2026-02-11T03:05:00"
+        }
+      ]
+    },
+
+    {
+      "postTitle": "모닝루틴 중간후기",
+      "authorId": "jungsej28",
+      "content": "진행중일 때 상대가 실시간 확인 가능하면 대결맛 확 살아남",
+      "createdAt": "2026-02-12T00:55:00",
+      "replies": [
+        {
+          "authorId": "parksoy24",
+          "content": "인정합니다",
+          "createdAt": "2026-02-12T01:10:00"
+        },
+        {
+          "authorId": "yoongae22",
+          "content": "진행률이 숫자로 보이니까 동기부여가 확실히 되는 것 같아요",
+          "attachedImage": "post_comment_attachedimage2.jpg",
+          "createdAt": "2026-02-12T01:30:00"
+        }
+      ]
+    }
+
+  ]
+}
