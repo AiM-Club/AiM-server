@@ -25,4 +25,11 @@ public interface ChallengeRepository extends JpaRepository<Challenge, Long> {
     );
 
     List<Challenge> findAllByStatus(ChallengeStatus status);
+
+    List<Challenge> findAllByHostAndModeAndVisibility(
+            User host,
+            ChallengeMode mode,
+            ChallengeVisibility visibility
+    );
+
 }

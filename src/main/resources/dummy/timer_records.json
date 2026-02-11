@@ -1,0 +1,195 @@
+{
+  "records": [
+
+    {
+      "challengeName": "면접 준비 챌린지",
+      "userId": "kimdoy26",
+      "week": 1,
+      "startedAt": "2026-02-03T07:12:05",
+      "finishedAt": "2026-02-09T23:59:10",
+      "elapsedSeconds": 578825,
+      "status": "COMPLETE"
+    },
+
+    {
+      "challengeName": "포트폴리오 리빌드",
+      "userId": "ohharin31",
+      "week": 1,
+      "startedAt": "2026-02-06T06:18:09",
+      "finishedAt": null,
+      "elapsedSeconds": 546111,
+      "status": "IN_PROGRESS"
+    },
+
+    {
+      "challengeName": "포트폴리오 리빌드",
+      "userId": "ohharin31",
+      "week": 2,
+      "startedAt": null,
+      "finishedAt": null,
+      "elapsedSeconds": 0,
+      "status": "PENDING"
+    },
+
+    {
+      "challengeName": "지원서 집중 세션 배틀",
+      "userId": "jungsej28",
+      "week": 1,
+      "startedAt": "2026-02-04T08:15:00",
+      "finishedAt": "2026-02-10T20:05:33",
+      "elapsedSeconds": 561013,
+      "status": "COMPLETE"
+    },
+
+    {
+      "challengeName": "지원서 집중 세션 배틀",
+      "userId": "yoongae22",
+      "week": 1,
+      "startedAt": "2026-02-04T14:45:00",
+      "finishedAt": "2026-02-10T20:05:33",
+      "elapsedSeconds": 537578,
+      "status": "COMPLETE"
+    },
+
+    {
+      "challengeName": "모닝 취업 준비 배틀",
+      "userId": "kimdoy26",
+      "week": 1,
+      "startedAt": "2026-02-07T05:40:33",
+      "finishedAt": "2026-02-11T22:10:05",
+      "elapsedSeconds": 404972,
+      "status": "COMPLETE"
+    },
+
+    {
+      "challengeName": "모닝 취업 준비 배틀",
+      "userId": "parksoy24",
+      "week": 1,
+      "startedAt": "2026-02-07T15:55:10",
+      "finishedAt": null,
+      "elapsedSeconds": 425090,
+      "status": "IN_PROGRESS"
+    },
+
+    {
+      "challengeName": "모닝 취업 준비 배틀",
+      "userId": "kimdoy26",
+      "week": 2,
+      "startedAt": null,
+      "finishedAt": null,
+      "elapsedSeconds": 0,
+      "status": "PENDING"
+    },
+
+    {
+      "challengeName": "모닝 취업 준비 배틀",
+      "userId": "parksoy24",
+      "week": 2,
+      "startedAt": null,
+      "finishedAt": null,
+      "elapsedSeconds": 0,
+      "status": "PENDING"
+    },
+
+    {
+      "challengeName": "NCS 40분 챌린지",
+      "userId": "seoyerin27",
+      "week": 2,
+      "startedAt": "2026-01-29T06:50:12",
+      "finishedAt": "2026-02-04T23:10:30",
+      "elapsedSeconds": 577218,
+      "status": "COMPLETE"
+    },
+
+    {
+      "challengeName": "NCS 40분 챌린지",
+      "userId": "seoyerin27",
+      "week": 3,
+      "startedAt": "2026-02-06T07:40:33",
+      "finishedAt": null,
+      "elapsedSeconds": 541167,
+      "status": "IN_PROGRESS"
+    },
+
+    {
+      "challengeName": "재무회계 루틴",
+      "userId": "baesua30",
+      "week": 5,
+      "startedAt": "2026-01-29T08:15:05",
+      "finishedAt": "2026-02-04T23:55:10",
+      "elapsedSeconds": 574805,
+      "status": "COMPLETE"
+    },
+
+    {
+      "challengeName": "재무회계 루틴",
+      "userId": "baesua30",
+      "week": 6,
+      "startedAt": "2026-02-06T10:12:44",
+      "finishedAt": "2026-02-12T14:00:00",
+      "elapsedSeconds": 532036,
+      "status": "COMPLETE"
+    },
+
+    {
+      "challengeName": "주간 코테 타임어택 배틀",
+      "userId": "kangmin25",
+      "week": 5,
+      "startedAt": "2026-01-22T08:40:12",
+      "finishedAt": "2026-01-28T21:12:45",
+      "elapsedSeconds": 563553,
+      "status": "COMPLETE"
+    },
+
+    {
+      "challengeName": "주간 코테 타임어택 배틀",
+      "userId": "jangwoo23",
+      "week": 5,
+      "startedAt": "2026-01-22T18:55:30",
+      "finishedAt": "2026-01-28T21:12:45",
+      "elapsedSeconds": 526635,
+      "status": "COMPLETE"
+    },
+
+    {
+      "challengeName": "주간 코테 타임어택 배틀",
+      "userId": "kangmin25",
+      "week": 6,
+      "startedAt": null,
+      "finishedAt": null,
+      "elapsedSeconds": 0,
+      "status": "PENDING"
+    },
+
+    {
+      "challengeName": "주간 코테 타임어택 배틀",
+      "userId": "jangwoo23",
+      "week": 6,
+      "startedAt": null,
+      "finishedAt": null,
+      "elapsedSeconds": 0,
+      "status": "PENDING"
+    },
+
+    {
+      "challengeName": "주간 코테 타임어택 배틀",
+      "userId": "kangmin25",
+      "week": 7,
+      "startedAt": "2026-02-05T09:12:44",
+      "finishedAt": null,
+      "elapsedSeconds": 622036,
+      "status": "IN_PROGRESS"
+    },
+
+    {
+      "challengeName": "주간 코테 타임어택 배틀",
+      "userId": "jangwoo23",
+      "week": 7,
+      "startedAt": "2026-02-05T15:05:10",
+      "finishedAt": null,
+      "elapsedSeconds": 605690,
+      "status": "IN_PROGRESS"
+    }
+
+  ]
+}

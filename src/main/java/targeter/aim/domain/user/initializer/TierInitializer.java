@@ -3,6 +3,7 @@ package targeter.aim.domain.user.initializer;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import targeter.aim.domain.user.entity.Tier;
@@ -14,6 +15,7 @@ import java.util.List;
 @Slf4j
 @Component
 @RequiredArgsConstructor
+@Order(1)
 public class TierInitializer implements CommandLineRunner {
 
     private final TierRepository tierRepository;
