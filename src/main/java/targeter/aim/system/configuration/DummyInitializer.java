@@ -94,7 +94,7 @@ public class DummyInitializer implements ApplicationRunner {
         seedCommunityPosts();
         seedCommunityComments();
 
-        seedUserRecords();
+        //seedUserRecords();
 
         log.info("Dummy seed completed.");
     }
