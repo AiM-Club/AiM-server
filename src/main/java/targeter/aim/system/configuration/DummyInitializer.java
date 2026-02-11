@@ -1105,7 +1105,7 @@ public class DummyInitializer implements ApplicationRunner {
                     commentRepository.save(child);
                     createdAtField.set(child, replyItem.getCreatedAt());
 
-                    // 첨부 이미지 처리
+                    // 첨부 이미지
                     if (replyItem.getAttachedImage() != null) {
                         seedCommentAttachmentImage(child, replyItem.getAttachedImage());
                     }
